@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>市场洞察 · 省级运营报告</title>
+    <style>
+        :root {
+            --accent: #2c7da0;
+            --accent-dark: #1e5f7a;
+            --bg: #f0f4f8;
+            --text: #1a2c3e;
+            --muted: #5a7688;
+            --card: #fff;
+            --border: #e2edf2;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: clamp(1rem, 4vw, 2rem);
+        }
+        .wrap {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 1rem;
+        }
+        h1 {
+            font-size: clamp(1.35rem, 4vw, 1.75rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        header p {
+            margin-top: 0.35rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .search-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+            align-items: center;
+        }
+        .search-row label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            width: 100%;
+        }
+        input[type="search"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--card);
+            color: var(--text);
+            outline: none;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        input[type="search"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.65rem;
+        }
+        .province-card {
+            display: block;
+            padding: 0.85rem 0.75rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .province-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(44, 125, 160, 0.12);
+            border-color: var(--accent);
+        }
+        .province-card:active {
+            transform: translateY(0);
+        }
+        .province-card.available {
+            border-left: 4px solid var(--accent);
+        }
+        .province-card.available::after {
+            content: '查看报告';
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .province-card.hidden {
+            display: none;
+        }
+        .empty-state {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: var(--muted);
+        }
+        .empty-state.show {
+            display: block;
+        }
+        footer {
+            margin-top: 2.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <h1>市场运营分析 · 省级报告</h1>
+            <p>在下方搜索或点击行政区名称。已上线省份将打开对应分析报告。</p>
+        </header>
+
+        <div class="search-row">
+            <label for="q">搜索省、自治区、直辖市或关键词</label>
+            <input id="q" type="search" placeholder="例如：山东、新疆、内蒙古…" autocomplete="off" enterkeyhint="search">
+        </div>
+        <p class="hint" id="countHint">共 31 个省级行政区</p>
+
+        <div class="grid" id="grid" aria-live="polite"></div>
+        <p class="empty-state" id="empty">未匹配到行政区，请尝试其他关键词。</p>
+
+        <footer>市场洞察网站 · 数据仅供参考</footer>
+    </div>
+
+    <script>
+        // 31 个省级行政区（省 / 自治区 / 直辖市），与国家统计局常用口径一致
+        const PROVINCES = [
+            { name: '北京市', slug: 'beijing', href: null },
+            { name: '天津市', slug: 'tianjin', href: null },
+            { name: '河北省', slug: 'hebei', href: null },
+            { name: '山西省', slug: 'shanxi', href: null },
+            { name: '内蒙古自治区', slug: 'neimenggu', href: null },
+            { name: '辽宁省', slug: 'liaoning', href: null },
+            { name: '吉林省', slug: 'jilin', href: null },
+            { name: '黑龙江省', slug: 'heilongjiang', href: null },
+            { name: '上海市', slug: 'shanghai', href: null },
+            { name: '江苏省', slug: 'jiangsu', href: null },
+            { name: '浙江省', slug: 'zhejiang', href: null },
+            { name: '安徽省', slug: 'anhui', href: null },
+            { name: '福建省', slug: 'fujian', href: null },
+            { name: '江西省', slug: 'jiangxi', href: null },
+            { name: '山东省', slug: 'shandong', href: '山东市场运营分析报告.html' },
+            { name: '河南省', slug: 'henan', href: null },
+            { name: '湖北省', slug: 'hubei', href: null },
+            { name: '湖南省', slug: 'hunan', href: null },
+            { name: '广东省', slug: 'guangdong', href: null },
+            { name: '广西壮族自治区', slug: 'guangxi', href: null },
+            { name: '海南省', slug: 'hainan', href: null },
+            { name: '重庆市', slug: 'chongqing', href: null },
+            { name: '四川省', slug: 'sichuan', href: null },
+            { name: '贵州省', slug: 'guizhou', href: null },
+            { name: '云南省', slug: 'yunnan', href: null },
+            { name: '西藏自治区', slug: 'xizang', href: null },
+            { name: '陕西省', slug: 'shanxi1', href: null },
+            { name: '甘肃省', slug: 'gansu', href: null },
+            { name: '青海省', slug: 'qinghai', href: null },
+            { name: '宁夏回族自治区', slug: 'ningxia', href: null },
+            { name: '新疆维吾尔自治区', slug: 'xinjiang', href: null }
+        ];
+
+        const grid = document.getElementById('grid');
+        const q = document.getElementById('q');
+        const empty = document.getElementById('empty');
+        const countHint = document.getElementById('countHint');
+
+        function render() {
+            const term = (q.value || '').trim().toLowerCase();
+            grid.innerHTML = '';
+            let visible = 0;
+
+            PROVINCES.forEach((p) => {
+                const match = !term || p.name.toLowerCase().includes(term);
+                const a = document.createElement(p.href ? 'a' : 'button');
+                a.className = 'province-card' + (p.href ? ' available' : '');
+                a.textContent = p.name;
+                if (p.href) {
+                    a.href = p.href;
+                } else {
+                    a.type = 'button';
+                    a.addEventListener('click', () => {
+                        alert('「' + p.name + '」市场运营分析报告暂未上线，敬请期待。');
+                    });
+                }
+                if (!match) a.classList.add('hidden');
+                else visible++;
+                grid.appendChild(a);
+            });
+
+            empty.classList.toggle('show', visible === 0);
+            countHint.textContent =
+                term ? '当前筛选：' + visible + ' / 31 个行政区' : '共 31 个省级行政区';
+        }
+
+        q.addEventListener('input', render);
+        render();
+    </script>
+</body>
+</html>

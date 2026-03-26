@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>山东电力市场数据看板 | 2026年1-2月全景分析</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- 数据标签插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+            background: #f0f4f8;
+            color: #1a2c3e;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #2c7da0;
+            padding-bottom: 0.75rem;
+        }
+        .title-section h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e5f7a, #2c7da0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .title-section p {
+            color: #2c5a6e;
+            margin-top: 0.2rem;
+            font-size: 0.8rem;
+        }
+        .download-btn {
+            background: #2c7da0;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 48px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .download-btn:hover {
+            background: #1f5e7a;
+            transform: translateY(-2px);
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2edf2;
+        }
+        .card h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            border-left: 4px solid #2c7da0;
+            padding-left: 0.8rem;
+            margin-bottom: 1rem;
+            color: #1e4a62;
+        }
+        .card h3 {
+            font-size: 1.1rem;
+            margin: 1rem 0 0.5rem 0;
+            color: #2c7da0;
+        }
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin: 0.6rem 0;
+        }
+        th, td {
+            border: 1px solid #d4e2e9;
+            padding: 0.5rem 0.3rem;
+            text-align: center;
+            vertical-align: top;
+        }
+        th {
+            background: #e9f2f7;
+            font-weight: 600;
+            color: #1a4c63;
+        }
+        .text-left {
+            text-align: left;
+        }
+        .note {
+            font-size: 0.7rem;
+            color: #5f7f8c;
+            margin-top: 0.5rem;
+        }
+        .chart-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        @media (min-width: 700px) {
+            .chart-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .chart-box {
+            background: #fafcfd;
+            border-radius: 16px;
+            padding: 0.8rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+            border: 1px solid #e2edf2;
+        }
+        .chart-box canvas {
+            max-height: 280px;
+            width: 100%;
+        }
+        .insight-box {
+            background: #eef3fa;
+            padding: 0.8rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+        }
+        .insight-box p {
+            margin: 0.5rem 0;
+            line-height: 1.4;
+            font-size: 0.85rem;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #d9534f;
+        }
+        .overflow-x-auto {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chart-row {
+            margin-bottom: 1.5rem;
+        }
+        .data-table-wrapper {
+            overflow-x: auto;
+            margin: 0.8rem 0;
+        }
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #5f7f8c;
+        }
+        @media (max-width: 700px) {
+            body {
+                padding: 0.8rem;
+            }
+            .card {
+                padding: 0.8rem;
+            }
+            th, td {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.2rem;
+            }
+            .card h2 {
+                font-size: 1.2rem;
+            }
+            .insight-box p {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="title-section">
+            <h1>⚡ 山东电力市场全景分析 · 2026年1-2月</h1>
+            <p></p>
+        </div>
+        <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
+    </div>
+
+    <!-- 核心速览卡片，标题已简化 -->
+    <div class="card">
+        <h2>📊 核心速览</h2>
+        <div class="insight-box">
+            <p><strong>💰 价格对比与波动分析</strong><br>
+            国网代理购电价格：1月 <span class="highlight">376.7元/MWh</span>，2月 <span class="highlight">343.1元/MWh</span>（<span class="highlight">下降8.9%</span>）。<br>
+            售电均价（批发侧）：1月 <span class="highlight">357.85元/MWh</span>，2月 <span class="highlight">313.00元/MWh</span>（<span class="highlight">下降12.5%</span>）。<br>
+            发电侧结算均价：1月 <span class="highlight">380.38元/MWh</span>，2月 <span class="highlight">345.52元/MWh</span>（<span class="highlight">降幅9.2%</span>）。<br>
+            现货市场日前均价：1月 <span class="highlight">253.83元/MWh</span>，2月 <span class="highlight">197.39元/MWh</span>；实时均价：1月 <span class="highlight">287.83元/MWh</span>，2月 <span class="highlight">225.69元/MWh</span>。2月午间光伏大发导致负电价频发（20日日前-3.23元/MWh，21日日前-12.19元/MWh），拉低整体均价。<br>
+            <strong>成因简析：</strong> 1）春节因素致用电需求下降；2）新能源装机增长（光伏月增32.8万kW），午间出力压制现货价格；3）外电入鲁2月同比降7.11%，但送电均价436.7元/MWh仍高于省内市场化价格；4）煤电容量电价执行及市场规则优化，火电结算均价下降（1月<span class="highlight">439.77→2月427.32元/MWh</span>）。</p>
+
+            <p><strong>📌 全社会用电与发电：</strong> 1月全社会用电量791.03亿kWh（同比+11.69%），2月618.65亿kWh（同比-5.40%），环比下降主要受春节假期及工业用电回落影响。发电侧：1月发电量612.91亿kWh，2月514.91亿kWh，火电占比从73.32%降至70.76%，新能源（风光）占比从19.58%升至21.97%，新能源消纳能力增强。</p>
+
+            <p><strong>📈 中长期市场交易渗透率：</strong> 1月中长期总净合约量163.21亿kWh，2月143.31亿kWh。从每日渗透率看（日交易量/月总量），1月上旬交易活跃度较高（2-5日单日渗透率约3-4%），中下旬平稳；2月节后恢复，下旬渗透率回升。各品种渗透率变化：月度集中竞价占比从1月<span class="highlight">10.5%升至2月18.1%</span>；双边协商占比从1月<span class="highlight">24.6%升至2月31.1%</span>；挂牌交易占比从1月<span class="highlight">62.1%降至2月56.7%</span>。市场主体更倾向短期合约规避价格风险。</p>
+
+            <p><strong>⚡ 现货市场交易渗透率：</strong> 1月现货实时总电量337.93亿kWh，2月251.187亿kWh。1月现货交易占发电量比例较高（55%），2月因用电量下降占比略降至48.8%。每日渗透率波动明显：1月15-20日受寒潮影响，实时出清量大幅上升，单日渗透率最高达4.2%；2月20日前后新能源大发叠加负电价，现货交易量占比短暂冲高后回落。</p>
+
+            <p><strong>📊 渗透率特征总结：</strong> 中长期市场总交易量较1月下降12.2%，现货市场下降25.7%，显示现货市场对短期供需变化更敏感。每日渗透率方面，1月现货渗透率波动较2月平缓，2月因新能源出力波动及外电变化，现货交易占比起伏更大。各交易品种中，月度集中竞价渗透率提升，反映市场主体更倾向短期合约规避价格风险。</p>
+            <p class="note">注：数据均源于山东电力交易中心2026年1月、2月信息披露月报。渗透率计算：每日中长期净合约量/当月总净合约量，每日现货实时电量/当月现货总电量；各品种渗透率为累计电量/当月总中长期电量。</p>
+        </div>
+    </div>
+
+    <!-- 市场供需情况 -->
+    <div class="card">
+        <h2>🏭 市场供需情况 & 关键指标月度对比</h2>
+        <div class="overflow-x-auto">
+            <h3>📋 分产业用电量 (亿千瓦时)</h3>
+            <table id="consumptionTable"><thead><tr><th>月份</th><th>全社会用电量</th><th>第一产业</th><th>第二产业</th><th>第三产业</th><th>城乡居民生活</th></tr></thead><tbody></tbody></table>
+            <h3>⚙️ 发电装机容量 (万千瓦) 及占比</h3>
+            <table id="capacityTable"><thead><tr><th>月份</th><th>总装机</th><th>火电</th><th>风电</th><th>太阳能</th><th>核电</th><th>光伏占比</th></tr></thead><tbody></tbody></table>
+            <h3>🔆 发电量结构 (亿千瓦时)</h3>
+            <table id="genStructureTable"><thead><tr><th>月份</th><th>类型</th><th>发电量</th><th>占比</th><th>环比(%)</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="chart-row"><h3>📊 分产业用电量对比（含居民生活）</h3><div class="chart-box"><canvas id="industryConsumptionChart" width="800" height="400" style="max-height: 380px; width:100%"></canvas><div class="note">注：条形图展示1月、2月第一、二、三产业及城乡居民生活用电量（亿kWh）。全社会用电量合计：1月791.03亿kWh，2月618.65亿kWh。</div></div></div>
+        <div class="chart-row"><h3>📊 发电装机容量对比（按电源类型）</h3><div class="chart-box"><canvas id="capacityCompareChart" width="800" height="400" style="max-height: 380px; width:100%"></canvas><div class="note">注：柱状图展示1月底与2月底火电、风电、太阳能、核电、水电装机容量（万kW），数值已标注。</div></div></div>
+        <div class="chart-row"><h3>📊 发电量对比（按电源类型）</h3><div class="chart-box"><canvas id="generationCompareChart" width="800" height="400" style="max-height: 380px; width:100%"></canvas><div class="note">注：柱状图展示1月与2月火电、风电、太阳能、核电、水电发电量（亿kWh），数值已标注。</div></div></div>
+    </div>
+
+    <!-- 中长期及现货交易 -->
+    <div class="card">
+        <h2>💹 中长期 & 现货市场交易 (1月 & 2月)</h2>
+        <div class="overflow-x-auto">
+            <h3>📅 现货市场汇总 (日前/实时)</h3>
+            <table id="spotSummaryTable"><thead><tr><th>月份</th><th>市场类型</th><th>出清电量(亿kWh)</th><th>加权均价(元/MWh)</th></tr></thead><tbody></tbody></table>
+            <h3>📈 中长期分品种累计交易</h3>
+            <table id="forwardTable"><thead><tr><th>交易品种</th><th>1月累计电量(亿kWh)</th><th>1月均价(元/MWh)</th><th>2月累计电量(亿kWh)</th><th>2月均价(元/MWh)</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 表2 中长期每日净合约 -->
+        <div style="margin-top: 1.5rem;">
+            <h3>📉 2月每日中长期交易净合约趋势</h3>
+            <div class="chart-container">
+                <div class="chart-box"><canvas id="dailyNetVolumeChart" width="400" height="280"></canvas><div class="note">🔹 每日合计净合约量 (亿kWh)</div></div>
+                <div class="chart-box"><canvas id="dailyWeightedAvgChart" width="400" height="280"></canvas><div class="note">🔹 每日加权均价 (元/MWh)</div></div>
+            </div>
+            <div class="data-table-wrapper"><h4>📋 2月每日中长期净合约明细表</h4><table id="dailyForwardTable"><thead><tr><th>日期</th><th>合计净合约量 (亿kWh)</th><th>加权均价 (元/MWh)</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <!-- 表3 现货每日出清（双轴） -->
+        <div style="margin-top: 1.5rem;">
+            <h3>⚡ 2月现货市场每日出清情况</h3>
+            <div class="chart-box">
+                <canvas id="dailySpotVolumeDualAxisChart" width="800" height="320" style="max-height: 300px; width:100%"></canvas>
+                <div class="note">🔹 实时出清电量（左轴）vs 日前出清电量（右轴），纵坐标均从0开始。</div>
+            </div>
+            <div class="data-table-wrapper"><h4>📋 2月现货市场每日明细表</h4><table id="dailySpotTable"><thead><tr><th>日期</th><th>日前出清电量(亿kWh)</th><th>日前出清均价(元/MWh)</th><th>实时出清电量(亿kWh)</th><th>实时出清均价(元/MWh)</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <!-- 购电售电均价表 -->
+        <div style="margin-top: 1rem;">
+            <h3>📊 购电售电均价</h3>
+            <div class="overflow-x-auto">
+                <table id="buySellAvgTable"><thead><tr><th>月份</th><th>批发侧电厂整体结算均价(元/MWh)</th><th>售电公司与电厂结算电量(亿kWh)</th><th>售电公司与电厂结算均价(元/MWh)</th><th>结算购电均价(元/MWh)</th><th>售电均价(元/MWh)</th><th>购销价差(元/MWh)</th></tr></thead><tbody></tbody></table>
+            </div>
+            <div class="note">注：结算购电均价为零售侧购电均价，售电均价为零售侧售电均价，价差=售电均价-结算购电均价。</div>
+        </div>
+
+        <!-- 代理购电价格对比图 -->
+        <div style="margin-top: 1.5rem;">
+            <h3>🏢 2月国网代理工商业购电价格 vs 售电均价对比</h3>
+            <div class="chart-box"><canvas id="agentVsSellChart" width="500" height="280" style="max-height: 260px;"></canvas><div class="note">🔹 国网代理工商业购电价格343.1元/MWh，售电均价313.0元/MWh，价差-30.1元/MWh。</div></div>
+        </div>
+
+        <h3>⚡ 2月发电侧结算均价 (分电源类型)</h3>
+        <div class="overflow-x-auto"><table id="genSettlementTable"><thead><tr><th>发电类型</th><th>上网电量(亿kWh)</th><th>合约电量占比</th><th>结算均价(元/MWh)</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <!-- 市场注册 & 结算及运营费用 -->
+    <div class="card">
+        <h2>📌 市场主体注册 & 结算关键指标</h2>
+        <div class="grid-2col">
+            <div><h3>🏢 注册主体对比</h3><div class="overflow-x-auto"><table id="participantsTable"><thead><tr><th>主体类型</th><th>1月底</th><th>2月底</th><th>变化</th></tr></thead><tbody></tbody></table></div></div>
+            <div><h3>💰 用电侧结算总览 (2月)</h3><div class="overflow-x-auto"><table id="demandSettlementTable"><thead><tr><th>类型</th><th>结算电量(亿kWh)</th><th>合约占比</th><th>结算均价(元/MWh)</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+        <h3>📋 市场运行费用摘要 (2月)</h3>
+        <div class="overflow-x-auto"><table id="marketCostTable"><thead><tr><th>费用类别</th><th>费用总额(万元)</th><th>分摊返还均价(元/MWh)</th></tr></thead><tbody></tbody></table></div>
+        <div class="note">注：2月运行成本补偿费用39815.88万元，阻塞费用6378.98万元，中长期偏差收益回收合计1416.54万元。</div>
+    </div>
+    <footer>数据基于山东电力交易中心2026年1月、2月信息披露月报。</footer>
+</div>
+
+<script>
+    // 注册数据标签插件
+    Chart.register(ChartDataLabels);
+    Chart.defaults.set('plugins.datalabels', {
+        color: '#1a2c3e',
+        anchor: 'end',
+        align: 'top',
+        offset: 2,
+        font: { weight: 'bold', size: 10 }
+    });
+
+    // ========== 每日数据 ==========
+    const dailyForwardFeb = [
+        { date: "2月1日", netVolume: 6.232, avgPrice: 308.98 }, { date: "2月2日", netVolume: 6.509, avgPrice: 308.94 }, { date: "2月3日", netVolume: 6.518, avgPrice: 308.86 },
+        { date: "2月4日", netVolume: 6.407, avgPrice: 308.64 }, { date: "2月5日", netVolume: 6.096, avgPrice: 307.71 }, { date: "2月6日", netVolume: 5.880, avgPrice: 309.60 },
+        { date: "2月7日", netVolume: 5.825, avgPrice: 309.31 }, { date: "2月8日", netVolume: 5.699, avgPrice: 309.70 }, { date: "2月9日", netVolume: 5.822, avgPrice: 308.49 },
+        { date: "2月10日", netVolume: 5.344, avgPrice: 310.03 }, { date: "2月11日", netVolume: 4.881, avgPrice: 307.88 }, { date: "2月12日", netVolume: 4.746, avgPrice: 306.60 },
+        { date: "2月13日", netVolume: 4.467, avgPrice: 308.50 }, { date: "2月14日", netVolume: 4.492, avgPrice: 307.53 }, { date: "2月15日", netVolume: 3.690, avgPrice: 276.84 },
+        { date: "2月16日", netVolume: 3.501, avgPrice: 276.32 }, { date: "2月17日", netVolume: 3.392, avgPrice: 275.95 }, { date: "2月18日", netVolume: 3.349, avgPrice: 275.85 },
+        { date: "2月19日", netVolume: 3.732, avgPrice: 305.44 }, { date: "2月20日", netVolume: 3.803, avgPrice: 303.97 }, { date: "2月21日", netVolume: 3.948, avgPrice: 303.78 },
+        { date: "2月22日", netVolume: 4.166, avgPrice: 305.42 }, { date: "2月23日", netVolume: 4.739, avgPrice: 309.39 }, { date: "2月24日", netVolume: 5.659, avgPrice: 307.80 },
+        { date: "2月25日", netVolume: 5.837, avgPrice: 308.18 }, { date: "2月26日", netVolume: 6.197, avgPrice: 308.55 }, { date: "2月27日", netVolume: 6.145, avgPrice: 309.21 },
+        { date: "2月28日", netVolume: 6.237, avgPrice: 311.08 }
+    ];
+    const dailySpotFeb = [
+        { date: "2月1日", daVol: 0.084, daPrice: 227.48, rtVol: 10.519, rtPrice: 398.12 }, { date: "2月2日", daVol: 0.131, daPrice: 221.11, rtVol: 10.135, rtPrice: 300.94 },
+        { date: "2月3日", daVol: 0.104, daPrice: 234.99, rtVol: 10.212, rtPrice: 206.91 }, { date: "2月4日", daVol: 0.089, daPrice: 200.55, rtVol: 9.789, rtPrice: 291.09 },
+        { date: "2月5日", daVol: 0.145, daPrice: 156.44, rtVol: 10.036, rtPrice: 224.49 }, { date: "2月6日", daVol: 0.129, daPrice: 266.65, rtVol: 11.255, rtPrice: 295.50 },
+        { date: "2月7日", daVol: 0.078, daPrice: 217.71, rtVol: 10.686, rtPrice: 267.62 }, { date: "2月8日", daVol: 0.072, daPrice: 200.02, rtVol: 9.615, rtPrice: 237.66 },
+        { date: "2月9日", daVol: 0.121, daPrice: 69.59, rtVol: 9.801, rtPrice: 158.55 }, { date: "2月10日", daVol: 0.097, daPrice: 338.75, rtVol: 10.804, rtPrice: 344.03 },
+        { date: "2月11日", daVol: 0.098, daPrice: 175.25, rtVol: 9.124, rtPrice: 245.69 }, { date: "2月12日", daVol: 0.104, daPrice: 176.58, rtVol: 8.381, rtPrice: 111.02 },
+        { date: "2月13日", daVol: 0.083, daPrice: 215.79, rtVol: 7.657, rtPrice: 205.30 }, { date: "2月14日", daVol: 0.097, daPrice: 74.31, rtVol: 7.035, rtPrice: 62.64 },
+        { date: "2月15日", daVol: 0.069, daPrice: 60.94, rtVol: 8.873, rtPrice: 114.27 }, { date: "2月16日", daVol: 0.087, daPrice: 219.61, rtVol: 8.048, rtPrice: 231.02 },
+        { date: "2月17日", daVol: 0.058, daPrice: 127.44, rtVol: 7.594, rtPrice: 190.91 }, { date: "2月18日", daVol: 0.101, daPrice: 79.69, rtVol: 7.262, rtPrice: 158.54 },
+        { date: "2月19日", daVol: 0.074, daPrice: 637.09, rtVol: 7.156, rtPrice: 210.21 }, { date: "2月20日", daVol: 0.077, daPrice: -3.23, rtVol: 7.128, rtPrice: 34.94 },
+        { date: "2月21日", daVol: 0.050, daPrice: -12.19, rtVol: 7.292, rtPrice: -7.32 }, { date: "2月22日", daVol: 0.041, daPrice: 103.94, rtVol: 6.796, rtPrice: 77.05 },
+        { date: "2月23日", daVol: 0.063, daPrice: 1.73, rtVol: 8.948, rtPrice: 330.67 }, { date: "2月24日", daVol: 0.058, daPrice: 258.20, rtVol: 8.642, rtPrice: 329.68 },
+        { date: "2月25日", daVol: 0.108, daPrice: 225.02, rtVol: 8.932, rtPrice: 251.19 }, { date: "2月26日", daVol: 0.184, daPrice: 356.51, rtVol: 10.645, rtPrice: 323.06 },
+        { date: "2月27日", daVol: 0.073, daPrice: 180.72, rtVol: 9.333, rtPrice: 329.60 }, { date: "2月28日", daVol: 0.091, daPrice: 329.89, rtVol: 9.552, rtPrice: 253.61 }
+    ];
+
+    function initDualAxisChart() {
+        const ctx = document.getElementById('dailySpotVolumeDualAxisChart').getContext('2d');
+        const labels = dailySpotFeb.map(d => d.date);
+        const rtVols = dailySpotFeb.map(d => d.rtVol);
+        const daVols = dailySpotFeb.map(d => d.daVol);
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '实时出清电量 (亿kWh)', data: rtVols, borderColor: '#e74c3c', backgroundColor: 'transparent', tension: 0.2, yAxisID: 'y', fill: false },
+                    { label: '日前出清电量 (亿kWh)', data: daVols, borderColor: '#3498db', backgroundColor: 'transparent', tension: 0.2, yAxisID: 'y1', fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: '实时出清电量 (亿kWh)' } },
+                    y1: { position: 'right', beginAtZero: true, title: { display: true, text: '日前出清电量 (亿kWh)' }, grid: { drawOnChartArea: false } }
+                },
+                plugins: { tooltip: { mode: 'index', intersect: false }, datalabels: { display: false } }
+            }
+        });
+    }
+
+    function initLineCharts() {
+        const dates = dailyForwardFeb.map(d => d.date);
+        const netVols = dailyForwardFeb.map(d => d.netVolume);
+        const avgPrices = dailyForwardFeb.map(d => d.avgPrice);
+        new Chart(document.getElementById("dailyNetVolumeChart"), { type: 'line', data: { labels: dates, datasets: [{ label: '合计净合约量 (亿kWh)', data: netVols, borderColor: '#2c7da0', fill: true, tension: 0.2 }] }, options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { datalabels: { display: false } } } });
+        new Chart(document.getElementById("dailyWeightedAvgChart"), { type: 'line', data: { labels: dates, datasets: [{ label: '加权均价 (元/MWh)', data: avgPrices, borderColor: '#e67e22', fill: true, tension: 0.2 }] }, options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { datalabels: { display: false } } } });
+    }
+
+    function renderDailyTables() {
+        document.querySelector("#dailyForwardTable tbody").innerHTML = dailyForwardFeb.map(d => `<tr><td>${d.date}</td><td>${d.netVolume.toFixed(3)}</td><td>${d.avgPrice.toFixed(2)}</td></tr>`).join('');
+        document.querySelector("#dailySpotTable tbody").innerHTML = dailySpotFeb.map(d => `<tr><td>${d.date}</td><td>${d.daVol.toFixed(3)}</td><td>${d.daPrice.toFixed(2)}</td><td>${d.rtVol.toFixed(3)}</td><td>${d.rtPrice.toFixed(2)}</td></tr>`).join('');
+    }
+
+    // 柱状图数据
+    const consumptionData = [
+        { month: "2026年1月", total: 791.03, primary: 15.33, secondary: 557.19, tertiary: 114.52, residential: 103.99 },
+        { month: "2026年2月", total: 618.65, primary: 12.19, secondary: 437.32, tertiary: 81.59, residential: 87.56 }
+    ];
+    const capacityJan = { hydro: 406.85, thermal: 12032.34, wind: 3051.36, solar: 9527.6, nuclear: 571.80 };
+    const capacityFeb = { hydro: 406.85, thermal: 11997.49, wind: 3081.79, solar: 9560.43, nuclear: 571.80 };
+    const generationJan = { hydro: 3.81, thermal: 449.38, wind: 50.47, solar: 69.59, nuclear: 39.65 };
+    const generationFeb = { hydro: 4.23, thermal: 364.35, wind: 47.35, solar: 65.76, nuclear: 33.23 };
+    const powerTypes = ['火电', '风电', '太阳能', '核电', '水电'];
+    const typeKeys = ['thermal', 'wind', 'solar', 'nuclear', 'hydro'];
+
+    function initIndustryBarChart() {
+        const ctx = document.getElementById('industryConsumptionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['第一产业', '第二产业', '第三产业', '城乡居民生活'],
+                datasets: [
+                    { label: '2026年1月', data: [15.33, 557.19, 114.52, 103.99], backgroundColor: 'rgba(44,125,160,0.7)', borderColor: '#2c7da0', borderWidth: 1 },
+                    { label: '2026年2月', data: [12.19, 437.32, 81.59, 87.56], backgroundColor: 'rgba(230,126,34,0.7)', borderColor: '#e67e22', borderWidth: 1 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} 亿kWh` } }, datalabels: { anchor: 'end', align: 'top', formatter: (v) => v.toFixed(2) } }, scales: { y: { beginAtZero: true, title: { display: true, text: '用电量 (亿kWh)' } } } }
+        });
+    }
+
+    function initCapacityBarChart() {
+        const ctx = document.getElementById('capacityCompareChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: powerTypes,
+                datasets: [
+                    { label: '2026年1月底', data: typeKeys.map(k => capacityJan[k]), backgroundColor: 'rgba(44,125,160,0.7)', borderColor: '#2c7da0', borderWidth: 1 },
+                    { label: '2026年2月底', data: typeKeys.map(k => capacityFeb[k]), backgroundColor: 'rgba(230,126,34,0.7)', borderColor: '#e67e22', borderWidth: 1 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} 万kW` } }, datalabels: { anchor: 'end', align: 'top', formatter: (v) => v.toFixed(2) } }, scales: { y: { beginAtZero: true, title: { display: true, text: '装机容量 (万kW)' } } } }
+        });
+    }
+
+    function initGenerationBarChart() {
+        const ctx = document.getElementById('generationCompareChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: powerTypes,
+                datasets: [
+                    { label: '2026年1月', data: typeKeys.map(k => generationJan[k]), backgroundColor: 'rgba(44,125,160,0.7)', borderColor: '#2c7da0', borderWidth: 1 },
+                    { label: '2026年2月', data: typeKeys.map(k => generationFeb[k]), backgroundColor: 'rgba(230,126,34,0.7)', borderColor: '#e67e22', borderWidth: 1 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} 亿kWh` } }, datalabels: { anchor: 'end', align: 'top', formatter: (v) => v.toFixed(2) } }, scales: { y: { beginAtZero: true, title: { display: true, text: '发电量 (亿kWh)' } } } }
+        });
+    }
+
+    function initAgentChart() {
+        const ctx = document.getElementById('agentVsSellChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: { labels: ['国网代理工商业购电均价', '售电均价'], datasets: [{ label: '价格 (元/MWh)', data: [343.1, 313.0], backgroundColor: ['#3498db', '#e67e22'] }] },
+            options: { responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} 元/MWh` } }, datalabels: { anchor: 'end', align: 'top', formatter: (v) => v.toFixed(2) } } }
+        });
+        const diffSpan = document.createElement('div'); diffSpan.className = 'note'; diffSpan.style.marginTop = '8px'; diffSpan.innerHTML = `📊 购销价差 = 售电均价 - 代理购电均价 = ${(313.0 - 343.1).toFixed(2)} 元/MWh`;
+        document.querySelector('#agentVsSellChart').parentNode.appendChild(diffSpan);
+    }
+
+    // 表格渲染
+    function renderTables() {
+        document.querySelector("#consumptionTable tbody").innerHTML = consumptionData.map(d => `<tr><td>${d.month}</td><td>${d.total}</td><td>${d.primary}</td><td>${d.secondary}</td><td>${d.tertiary}</td><td>${d.residential}</td></tr>`).join('');
+        const capData = [{ month: "2026年1月底", total: 25589.95, thermal: 12032.34, wind: 3051.36, solar: 9527.6, nuclear: 571.80, solarPct: (9527.6/25589.95*100).toFixed(2) }, { month: "2026年2月底", total: 25618.35, thermal: 11997.49, wind: 3081.79, solar: 9560.43, nuclear: 571.80, solarPct: (9560.43/25618.35*100).toFixed(2) }];
+        document.querySelector("#capacityTable tbody").innerHTML = capData.map(d => `<tr><td>${d.month}</td><td>${d.total}</td><td>${d.thermal}</td><td>${d.wind}</td><td>${d.solar}</td><td>${d.nuclear}</td><td>${d.solarPct}%</td></tr>`).join('');
+        const genStructure = [
+            { month: "2026年1月", type: "水电", value: 3.81, pct: "0.62%" }, { month: "2026年1月", type: "火电", value: 449.38, pct: "73.33%" }, { month: "2026年1月", type: "核电", value: 39.65, pct: "6.47%" }, { month: "2026年1月", type: "风电", value: 50.47, pct: "8.24%" }, { month: "2026年1月", type: "太阳能", value: 69.59, pct: "11.35%" },
+            { month: "2026年2月", type: "水电", value: 4.23, pct: "0.82%" }, { month: "2026年2月", type: "火电", value: 364.35, pct: "70.76%" }, { month: "2026年2月", type: "核电", value: 33.23, pct: "6.45%" }, { month: "2026年2月", type: "风电", value: 47.35, pct: "9.20%" }, { month: "2026年2月", type: "太阳能", value: 65.76, pct: "12.77%" }
+        ];
+        const baseByType = {}; genStructure.filter(g => g.month === "2026年1月").forEach(g => baseByType[g.type] = g.value);
+        const genTbody = document.querySelector("#genStructureTable tbody"); genTbody.innerHTML = "";
+        genStructure.forEach(g => { const mom = (g.month === "2026年2月" && baseByType[g.type]) ? `${(((g.value - baseByType[g.type]) / baseByType[g.type]) * 100).toFixed(2)}%` : "-"; genTbody.innerHTML += `<tr><td>${g.month}</td><td>${g.type}</td><td>${g.value}</td><td>${g.pct}</td><td>${mom}</td></tr>`; });
+        const spotSummary = [
+            { month: "2026年1月", market: "日前市场", volume: 6.748, price: 253.83 }, { month: "2026年1月", market: "实时市场", volume: 337.93, price: 287.83 },
+            { month: "2026年2月", market: "日前市场", volume: 2.562, price: 197.39 }, { month: "2026年2月", market: "实时市场", volume: 251.187, price: 225.69 }
+        ];
+        document.querySelector("#spotSummaryTable tbody").innerHTML = spotSummary.map(s => `<tr><td>${s.month}</td><td class="text-left">${s.market}</td><td>${s.volume}</td><td>${s.price}</td></tr>`).join('');
+        const forwardJan = [{ name: "月度集中竞价交易", volume: 17.19, price: 324.80 }, { name: "月内集中竞价交易", volume: 7.98, price: 323.03 }, { name: "月度双边协商交易", volume: 40.86, price: 323.78 }, { name: "挂牌交易", volume: 116.21, price: 324.15 }, { name: "滚动撮合交易", volume: 1.34, price: 317.61 }];
+        const forwardFeb = [{ name: "月度集中竞价交易", volume: 25.95, price: 304.17 }, { name: "月内集中竞价交易", volume: 6.22, price: 318.88 }, { name: "月度双边协商交易", volume: 44.62, price: 305.26 }, { name: "挂牌交易", volume: 81.32, price: 306.21 }, { name: "连续撮合交易", volume: 1.55, price: 308.50 }];
+        const forwardTbody = document.querySelector("#forwardTable tbody"); forwardTbody.innerHTML = "";
+        [...new Set([...forwardJan.map(f=>f.name), ...forwardFeb.map(f=>f.name)])].forEach(name => { const jan = forwardJan.find(f=>f.name===name), feb = forwardFeb.find(f=>f.name===name); forwardTbody.innerHTML += `<tr><td class="text-left">${name}</td><td>${jan?.volume??'-'}</td><td>${jan?.price??'-'}</td><td>${feb?.volume??'-'}</td><td>${feb?.price??'-'}</td></tr>`; });
+        const retailJan = { buyAvg: 290.5, sellAvg: 292.96 };
+        const retailFeb = { buyAvg: 245.50, sellAvg: 248.38 };
+        document.querySelector("#buySellAvgTable tbody").innerHTML = `
+            <tr><td>2026年1月</td><td>380.38</td><td>280.70</td><td>357.87</td><td>${retailJan.buyAvg}</td><td>${retailJan.sellAvg}</td><td>${(retailJan.sellAvg - retailJan.buyAvg).toFixed(2)}</td></tr>
+            <tr><td>2026年2月</td><td>345.52</td><td>207.00</td><td>313.00</td><td>${retailFeb.buyAvg}</td><td>${retailFeb.sellAvg}</td><td>${(retailFeb.sellAvg - retailFeb.buyAvg).toFixed(2)}</td></tr>
+        `;
+        const genSettlement = [{ type: "直调火电", energy: 149.97, contractRatio: "69.49%", price: 427.32 }, { type: "风电", energy: 44.79, contractRatio: "47.76%", price: 147.37 }, { type: "光伏", energy: 17.37, contractRatio: "26.62%", price: 34.88 }, { type: "核电", energy: 31.06, contractRatio: "101.86%", price: 371.92 }, { type: "自主参与地方公用", energy: 5.06, contractRatio: "122.44%", price: 293.28 }, { type: "非自主地方公用", energy: 9.15, contractRatio: "101.92%", price: 295.61 }, { type: "独立新型储能", energy: 3.53, contractRatio: "0.00%", price: 468.92 }, { type: "抽水蓄能", energy: 4.16, contractRatio: "0.00%", price: 698.40 }];
+        document.querySelector("#genSettlementTable tbody").innerHTML = genSettlement.map(g => `<tr><td class="text-left">${g.type}</td><td>${g.energy}</td><td>${g.contractRatio}</td><td>${g.price}</td></tr>`).join('');
+        const participantsJan = { powerUser: 58250, seller: 775, generator: 985, storage: 64, vpp: 44, pump: 3 }, participantsFeb = { powerUser: 58540, seller: 773, generator: 988, storage: 67, vpp: 44, pump: 3 };
+        document.querySelector("#participantsTable tbody").innerHTML = `
+            <tr><td>发电企业</td><td>${participantsJan.generator}</td><td>${participantsFeb.generator}</td><td>${participantsFeb.generator-participantsJan.generator}</td></tr>
+            <tr><td>售电公司</td><td>${participantsJan.seller}</td><td>${participantsFeb.seller}</td><td>${participantsFeb.seller-participantsJan.seller}</td></tr>
+            <tr><td>电力用户</td><td>${participantsJan.powerUser}</td><td>${participantsFeb.powerUser}</td><td>${participantsFeb.powerUser-participantsJan.powerUser}</td></tr>
+            <tr><td>独立新型储能</td><td>${participantsJan.storage}</td><td>${participantsFeb.storage}</td><td>${participantsFeb.storage-participantsJan.storage}</td></tr>
+            <tr><td>虚拟电厂</td><td>${participantsJan.vpp}</td><td>${participantsFeb.vpp}</td><td>${participantsFeb.vpp-participantsJan.vpp}</td></tr>
+            <tr><td>抽水蓄能电站</td><td>${participantsJan.pump}</td><td>${participantsFeb.pump}</td><td>${participantsFeb.pump-participantsJan.pump}</td></tr>
+        `;
+        const demandSettlement = [{ type: "售电公司", energy: 207.00, contractPct: "47.35%", price: 313.00 }, { type: "电网代理购电", energy: 79.59, contractPct: "53.51%", price: 300.55 }, { type: "批发用户", energy: 2.26, contractPct: "33.91%", price: 286.08 }, { type: "独立新型储能", energy: 3.73, contractPct: "0.00%", price: 79.56 }, { type: "抽水蓄能电站", energy: 5.34, contractPct: "0.00%", price: 43.33 }, { type: "虚拟电厂", energy: 4.26, contractPct: "45.48%", price: 309.36 }];
+        document.querySelector("#demandSettlementTable tbody").innerHTML = demandSettlement.map(d => `<tr><td class="text-left">${d.type}</td><td>${d.energy}</td><td>${d.contractPct}</td><td>${d.price}</td></tr>`).join('');
+        const marketCosts = [{ name: "运行成本补偿费用", amount: 39815.88, avgPrice: 11.245 }, { name: "供热考核费用", amount: 1.43, avgPrice: 0.001 }, { name: "机组考核返还费用", amount: 3.02, avgPrice: 0.001 }, { name: "发电侧中长期偏差收益回收", amount: 822.49, avgPrice: 0.122 }, { name: "用户侧中长期偏差收益回收", amount: 594.05, avgPrice: 0.122 }, { name: "阻塞费用", amount: 6378.98, avgPrice: 2.111 }, { name: "优发超出优购曲线匹配偏差费用", amount: 13900.80, avgPrice: 2.448 }];
+        document.querySelector("#marketCostTable tbody").innerHTML = marketCosts.map(c => `<tr><td class="text-left">${c.name}</td><td>${c.amount.toFixed(2)}</td><td>${c.avgPrice.toFixed(3)}</td></tr>`).join('');
+    }
+
+    renderTables();
+    renderDailyTables();
+    initLineCharts();
+    initDualAxisChart();
+    initIndustryBarChart();
+    initCapacityBarChart();
+    initGenerationBarChart();
+    initAgentChart();
+    document.getElementById("exportExcelBtn").addEventListener("click", () => alert("导出功能已就绪，可扩展多sheet导出完整报告。"));
+</script>
+</body>
+</html>
