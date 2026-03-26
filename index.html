@@ -119,6 +119,28 @@
             font-weight: 600;
             color: var(--accent);
         }
+        .province-card.comingsoon {
+            border-left: 4px solid #c7d4dd;
+            color: var(--muted);
+            background: #f7fafc;
+        }
+        .province-card.comingsoon:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #c7d4dd;
+        }
+        .province-card.comingsoon::after {
+            content: '待上线';
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #8aa0ae;
+        }
+        .province-card:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
         .province-card.hidden {
             display: none;
         }
@@ -208,15 +230,14 @@
             PROVINCES.forEach((p) => {
                 const match = !term || p.name.toLowerCase().includes(term);
                 const a = document.createElement(p.href ? 'a' : 'button');
-                a.className = 'province-card' + (p.href ? ' available' : '');
+                a.className = 'province-card' + (p.href ? ' available' : ' comingsoon');
                 a.textContent = p.name;
                 if (p.href) {
                     a.href = p.href;
                 } else {
                     a.type = 'button';
-                    a.addEventListener('click', () => {
-                        alert('「' + p.name + '」市场运营分析报告暂未上线，敬请期待。');
-                    });
+                    // 未上线：置灰展示“待上线”，禁用点击避免误操作
+                    a.disabled = true;
                 }
                 if (!match) a.classList.add('hidden');
                 else visible++;
