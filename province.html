@@ -129,8 +129,12 @@
 
     <div class="controls">
         <div class="row">
-            <label for="ymSelect">选择年月</label>
-            <select id="ymSelect" disabled></select>
+            <label for="yearSelect">选择年份</label>
+            <select id="yearSelect" disabled></select>
+        </div>
+        <div class="row" style="margin-top: 0.75rem;">
+            <label for="monthSelect">选择月份</label>
+            <select id="monthSelect" disabled></select>
         </div>
         <div class="meta" id="meta"></div>
     </div>
@@ -160,7 +164,8 @@
     const provinceTitle = document.getElementById('provinceTitle');
     const provinceSubtitle = document.getElementById('provinceSubtitle');
     const backBtn = document.getElementById('backBtn');
-    const ymSelect = document.getElementById('ymSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
     const meta = document.getElementById('meta');
     const loading = document.getElementById('loading');
     const empty = document.getElementById('empty');
@@ -226,7 +231,8 @@
 
         if (!keys.length) {
             empty.classList.add('show');
-            ymSelect.disabled = true;
+            yearSelect.disabled = true;
+            monthSelect.disabled = true;
             meta.textContent = '当前省份未配置任何报告。';
             frame.style.display = 'none';
             return;
@@ -235,23 +241,39 @@
         empty.classList.remove('show');
         frame.style.display = 'block';
 
-        ymSelect.disabled = false;
-        ymSelect.innerHTML = '';
+        yearSelect.disabled = false;
+        monthSelect.disabled = false;
 
-        keys.forEach((k) => {
-            const item = provinceReports[k];
-            const labelText = (typeof item === 'string')
-                ? k
-                : (item?.label || k);
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = labelText;
-            ymSelect.appendChild(opt);
-        });
+        // 从 props 里解析：YYYY-MM
+        function parseYm(ym) {
+            return {
+                year: ym.slice(0, 4),
+                month: ym.slice(5, 7)
+            };
+        }
+
+        function formatYm(year, month) {
+            return `${year}-${month}`;
+        }
+
+        const allYm = keys;
+        const allParsed = allYm.map(parseYm);
+
+        const years = Array.from(new Set(allParsed.map((x) => x.year))).sort().reverse();
+
+        function getMonthsForYear(year) {
+            return Array.from(
+                new Set(
+                    allParsed
+                        .filter((x) => x.year === year)
+                        .map((x) => x.month)
+                )
+            ).sort().reverse();
+        }
 
         // 默认选中：URL 参数 ym（如果存在且有效），否则取最新一个
         const targetYm = (ymQuery && keys.includes(ymQuery)) ? ymQuery : keys[0];
-        ymSelect.value = targetYm;
+        const target = parseYm(targetYm);
 
         function loadByYm(ym) {
             const entry = provinceReports[ym];
@@ -263,12 +285,55 @@
             meta.textContent = `当前选择：${labelText}（${ym}）`;
         }
 
-        ymSelect.addEventListener('change', (e) => {
-            loadByYm(e.target.value);
+        function renderMonthOptions(year) {
+            const months = getMonthsForYear(year);
+            monthSelect.innerHTML = '';
+            months.forEach((m) => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = `${m}月`;
+                monthSelect.appendChild(opt);
+            });
+            monthSelect.value = months[0] || '';
+        }
+
+        function renderYearOptions() {
+            yearSelect.innerHTML = '';
+            years.forEach((y) => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = `${y}年`;
+                yearSelect.appendChild(opt);
+            });
+            yearSelect.value = years[0] || '';
+        }
+
+        // 初始化下拉框与默认值
+        renderYearOptions();
+        yearSelect.value = target.year;
+        renderMonthOptions(target.year);
+        // 如果目标月份不可用（理论上不会发生），降级到该年的最新月份
+        const availableMonths = getMonthsForYear(target.year);
+        if (availableMonths.includes(target.month)) {
+            monthSelect.value = target.month;
+        }
+
+        // 绑定事件：先切年份再切月份
+        yearSelect.addEventListener('change', (e) => {
+            const year = e.target.value;
+            renderMonthOptions(year);
+            const ym = formatYm(year, monthSelect.value);
+            loadByYm(ym);
         });
 
+        monthSelect.addEventListener('change', () => {
+            const ym = formatYm(yearSelect.value, monthSelect.value);
+            loadByYm(ym);
+        });
+
+        // 触发首次加载
         loadByYm(targetYm);
-        provinceSubtitle.textContent = '请选择年月查看对应报告。';
+        provinceSubtitle.textContent = '请选择年份与月份查看对应报告。';
     }
 
     main();
