@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>省级报告 · 按年月查询</title>
+    <style>
+        :root {
+            --accent: #2c7da0;
+            --accent-dark: #1e5f7a;
+            --bg: #f0f4f8;
+            --text: #1a2c3e;
+            --muted: #5a7688;
+            --card: #fff;
+            --border: #e2edf2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: clamp(1rem, 4vw, 2rem);
+        }
+        .wrap { max-width: 1100px; margin: 0 auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.75rem;
+        }
+        .title h1 {
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
+            font-weight: 750;
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .title p {
+            margin-top: 0.35rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .back-btn {
+            appearance: none;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .controls {
+            margin: 1.2rem 0 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.75);
+        }
+        .row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .row label {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        select {
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--card);
+            color: var(--text);
+            outline: none;
+        }
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+        }
+        .meta {
+            margin-top: 0.75rem;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .empty-state {
+            display: none;
+            margin-top: 1rem;
+            padding: 2rem 1rem;
+            border: 1px dashed #cbd8e2;
+            border-radius: 16px;
+            color: var(--muted);
+            background: rgba(255,255,255,0.6);
+            text-align: center;
+        }
+        .empty-state.show { display: block; }
+        iframe {
+            width: 100%;
+            border: 0;
+            margin-top: 1rem;
+            min-height: 1400px;
+            background: white;
+            border-radius: 16px;
+            display: none;
+        }
+        .loading {
+            margin-top: 1rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="title">
+            <h1 id="provinceTitle">省级报告 · 按年月查询</h1>
+            <p id="provinceSubtitle">正在加载可选年月…</p>
+        </div>
+        <button class="back-btn" id="backBtn" type="button">返回首页</button>
+    </header>
+
+    <div class="controls">
+        <div class="row">
+            <label for="ymSelect">选择年月</label>
+            <select id="ymSelect" disabled></select>
+        </div>
+        <div class="meta" id="meta"></div>
+    </div>
+
+    <div class="loading" id="loading">加载中…</div>
+    <div class="empty-state" id="empty">
+        暂无该省份报告。你可以稍后再试，或继续添加 `reports.json` 映射到对应的 HTML 文件。
+    </div>
+
+    <iframe id="frame" title="报告内容"></iframe>
+</div>
+
+<script>
+    function getQueryParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name) || '';
+    }
+
+    function safeEncodePath(p) {
+        // iframe src 需要正确处理空格等字符
+        return encodeURI(p);
+    }
+
+    const provinceSlug = getQueryParam('province');
+    const ymQuery = getQueryParam('ym');
+
+    const provinceTitle = document.getElementById('provinceTitle');
+    const provinceSubtitle = document.getElementById('provinceSubtitle');
+    const backBtn = document.getElementById('backBtn');
+    const ymSelect = document.getElementById('ymSelect');
+    const meta = document.getElementById('meta');
+    const loading = document.getElementById('loading');
+    const empty = document.getElementById('empty');
+    const frame = document.getElementById('frame');
+
+    backBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+
+    // 省份展示名（仅用于标题，数据以 reports.json 为准）
+    const PROVINCE_LABEL = {
+        beijing: '北京市',
+        tianjin: '天津市',
+        hebei: '河北省',
+        shanxi: '山西省',
+        neimenggu: '内蒙古自治区',
+        liaoning: '辽宁省',
+        jilin: '吉林省',
+        heilongjiang: '黑龙江省',
+        shanghai: '上海市',
+        jiangsu: '江苏省',
+        zhejiang: '浙江省',
+        anhui: '安徽省',
+        fujian: '福建省',
+        jiangxi: '江西省',
+        shandong: '山东省',
+        henan: '河南省',
+        hubei: '湖北省',
+        hunan: '湖南省',
+        guangdong: '广东省',
+        guangxi: '广西壮族自治区',
+        hainan: '海南省',
+        chongqing: '重庆市',
+        sichuan: '四川省',
+        guizhou: '贵州省',
+        yunnan: '云南省',
+        xizang: '西藏自治区',
+        shanxi1: '陕西省',
+        gansu: '甘肃省',
+        qinghai: '青海省',
+        ningxia: '宁夏回族自治区',
+        xinjiang: '新疆维吾尔自治区'
+    };
+
+    async function main() {
+        const label = PROVINCE_LABEL[provinceSlug] || provinceSlug || '该省份';
+        provinceTitle.textContent = `市场运营分析 · ${label}`;
+        provinceSubtitle.textContent = '正在加载可选年月…';
+
+        let reports = {};
+        try {
+            const res = await fetch('reports.json', { cache: 'no-store' });
+            reports = await res.json();
+        } catch (e) {
+            console.error('Failed to load reports.json', e);
+        }
+
+        const provinceReports = reports?.[provinceSlug] || {};
+        const keys = Object.keys(provinceReports);
+        keys.sort().reverse(); // YYYY-MM 按字典序可正确排序
+
+        loading.style.display = 'none';
+
+        if (!keys.length) {
+            empty.classList.add('show');
+            ymSelect.disabled = true;
+            meta.textContent = '当前省份未配置任何报告。';
+            frame.style.display = 'none';
+            return;
+        }
+
+        empty.classList.remove('show');
+        frame.style.display = 'block';
+
+        ymSelect.disabled = false;
+        ymSelect.innerHTML = '';
+
+        keys.forEach((k) => {
+            const item = provinceReports[k];
+            const labelText = (typeof item === 'string')
+                ? k
+                : (item?.label || k);
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = labelText;
+            ymSelect.appendChild(opt);
+        });
+
+        // 默认选中：URL 参数 ym（如果存在且有效），否则取最新一个
+        const targetYm = (ymQuery && keys.includes(ymQuery)) ? ymQuery : keys[0];
+        ymSelect.value = targetYm;
+
+        function loadByYm(ym) {
+            const entry = provinceReports[ym];
+            const file = (typeof entry === 'string') ? entry : entry?.file;
+            const labelText = (typeof entry === 'string') ? ym : (entry?.label || ym);
+            if (!file) return;
+
+            frame.src = safeEncodePath(file);
+            meta.textContent = `当前选择：${labelText}（${ym}）`;
+        }
+
+        ymSelect.addEventListener('change', (e) => {
+            loadByYm(e.target.value);
+        });
+
+        loadByYm(targetYm);
+        provinceSubtitle.textContent = '请选择年月查看对应报告。';
+    }
+
+    main();
+</script>
+</body>
+</html>
+

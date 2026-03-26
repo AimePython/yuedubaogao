@@ -166,7 +166,7 @@
     <div class="wrap">
         <header>
             <h1>市场运营分析 · 省级报告</h1>
-            <p>在下方搜索或点击行政区名称。已上线省份将打开对应分析报告。</p>
+            <p>在下方搜索或点击行政区名称。进入省份后可按年月查询对应报告（未上线会提示暂无）。</p>
         </header>
 
         <div class="search-row">
@@ -184,43 +184,50 @@
     <script>
         // 31 个省级行政区（省 / 自治区 / 直辖市），与国家统计局常用口径一致
         const PROVINCES = [
-            { name: '北京市', slug: 'beijing', href: null },
-            { name: '天津市', slug: 'tianjin', href: null },
-            { name: '河北省', slug: 'hebei', href: null },
-            { name: '山西省', slug: 'shanxi', href: null },
-            { name: '内蒙古自治区', slug: 'neimenggu', href: null },
-            { name: '辽宁省', slug: 'liaoning', href: null },
-            { name: '吉林省', slug: 'jilin', href: null },
-            { name: '黑龙江省', slug: 'heilongjiang', href: null },
-            { name: '上海市', slug: 'shanghai', href: null },
-            { name: '江苏省', slug: 'jiangsu', href: null },
-            { name: '浙江省', slug: 'zhejiang', href: null },
-            { name: '安徽省', slug: 'anhui', href: '安徽1月市场经营分析报告%20.html' },
-            { name: '福建省', slug: 'fujian', href: null },
-            { name: '江西省', slug: 'jiangxi', href: null },
-            { name: '山东省', slug: 'shandong', href: '山东市场运营分析报告.html' },
-            { name: '河南省', slug: 'henan', href: null },
-            { name: '湖北省', slug: 'hubei', href: null },
-            { name: '湖南省', slug: 'hunan', href: null },
-            { name: '广东省', slug: 'guangdong', href: null },
-            { name: '广西壮族自治区', slug: 'guangxi', href: null },
-            { name: '海南省', slug: 'hainan', href: null },
-            { name: '重庆市', slug: 'chongqing', href: null },
-            { name: '四川省', slug: 'sichuan', href: null },
-            { name: '贵州省', slug: 'guizhou', href: null },
-            { name: '云南省', slug: 'yunnan', href: null },
-            { name: '西藏自治区', slug: 'xizang', href: null },
-            { name: '陕西省', slug: 'shanxi1', href: null },
-            { name: '甘肃省', slug: 'gansu', href: null },
-            { name: '青海省', slug: 'qinghai', href: null },
-            { name: '宁夏回族自治区', slug: 'ningxia', href: null },
-            { name: '新疆维吾尔自治区', slug: 'xinjiang', href: null }
+            { name: '北京市', slug: 'beijing' },
+            { name: '天津市', slug: 'tianjin' },
+            { name: '河北省', slug: 'hebei' },
+            { name: '山西省', slug: 'shanxi' },
+            { name: '内蒙古自治区', slug: 'neimenggu' },
+            { name: '辽宁省', slug: 'liaoning' },
+            { name: '吉林省', slug: 'jilin' },
+            { name: '黑龙江省', slug: 'heilongjiang' },
+            { name: '上海市', slug: 'shanghai' },
+            { name: '江苏省', slug: 'jiangsu' },
+            { name: '浙江省', slug: 'zhejiang' },
+            { name: '安徽省', slug: 'anhui' },
+            { name: '福建省', slug: 'fujian' },
+            { name: '江西省', slug: 'jiangxi' },
+            { name: '山东省', slug: 'shandong' },
+            { name: '河南省', slug: 'henan' },
+            { name: '湖北省', slug: 'hubei' },
+            { name: '湖南省', slug: 'hunan' },
+            { name: '广东省', slug: 'guangdong' },
+            { name: '广西壮族自治区', slug: 'guangxi' },
+            { name: '海南省', slug: 'hainan' },
+            { name: '重庆市', slug: 'chongqing' },
+            { name: '四川省', slug: 'sichuan' },
+            { name: '贵州省', slug: 'guizhou' },
+            { name: '云南省', slug: 'yunnan' },
+            { name: '西藏自治区', slug: 'xizang' },
+            { name: '陕西省', slug: 'shanxi1' },
+            { name: '甘肃省', slug: 'gansu' },
+            { name: '青海省', slug: 'qinghai' },
+            { name: '宁夏回族自治区', slug: 'ningxia' },
+            { name: '新疆维吾尔自治区', slug: 'xinjiang' }
         ];
 
         const grid = document.getElementById('grid');
         const q = document.getElementById('q');
         const empty = document.getElementById('empty');
         const countHint = document.getElementById('countHint');
+
+        let reports = {};
+
+        function hasReport(slug) {
+            const p = reports?.[slug];
+            return p && Object.keys(p).length > 0;
+        }
 
         function render() {
             const term = (q.value || '').trim().toLowerCase();
@@ -229,18 +236,14 @@
 
             PROVINCES.forEach((p) => {
                 const match = !term || p.name.toLowerCase().includes(term);
-                const a = document.createElement(p.href ? 'a' : 'button');
-                a.className = 'province-card' + (p.href ? ' available' : ' comingsoon');
+                const a = document.createElement('a');
+                a.href = 'province.html?province=' + encodeURIComponent(p.slug);
+                a.className = 'province-card' + (hasReport(p.slug) ? ' available' : ' comingsoon');
                 a.textContent = p.name;
-                if (p.href) {
-                    a.href = p.href;
-                } else {
-                    a.type = 'button';
-                    // 未上线：置灰展示“待上线”，禁用点击避免误操作
-                    a.disabled = true;
-                }
+
                 if (!match) a.classList.add('hidden');
                 else visible++;
+
                 grid.appendChild(a);
             });
 
@@ -249,8 +252,20 @@
                 term ? '当前筛选：' + visible + ' / 31 个行政区' : '共 31 个省级行政区';
         }
 
+        async function init() {
+            try {
+                const res = await fetch('reports.json', { cache: 'no-store' });
+                reports = await res.json();
+            } catch (e) {
+                // 如果拉取失败，所有省份默认显示“待上线”
+                console.warn('Failed to load reports.json', e);
+                reports = {};
+            }
+            render();
+        }
+
         q.addEventListener('input', render);
-        render();
+        init();
     </script>
 </body>
 </html>
