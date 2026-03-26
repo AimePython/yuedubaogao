@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>安徽电力市场数据看板 | 2026年1月全景分析</title>
+    <!-- SheetJS 导出Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js 轻量图表 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f8;
+            color: #1a2c3e;
+            padding: 2rem 1.5rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #2c7da0;
+            padding-bottom: 1rem;
+        }
+        .title-section h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e5f7a, #2c7da0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .title-section p {
+            color: #2c5a6e;
+            margin-top: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .download-btn {
+            background: #2c7da0;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 48px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .download-btn:hover {
+            background: #1f5e7a;
+            transform: translateY(-2px);
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2edf2;
+        }
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            border-left: 5px solid #2c7da0;
+            padding-left: 1rem;
+            margin-bottom: 1.2rem;
+            color: #1e4a62;
+        }
+        .card h3 {
+            font-size: 1.2rem;
+            margin: 1rem 0 0.5rem 0;
+            color: #2c7da0;
+        }
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.5rem;
+        }
+        .stats-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        .stat-badge {
+            background: #eef3fa;
+            border-radius: 20px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e5f7a;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 0.8rem 0;
+        }
+        th, td {
+            border: 1px solid #d4e2e9;
+            padding: 0.65rem 0.5rem;
+            text-align: center;
+            vertical-align: top;
+        }
+        th {
+            background: #e9f2f7;
+            font-weight: 600;
+            color: #1a4c63;
+        }
+        .text-left {
+            text-align: left;
+        }
+        .note {
+            font-size: 0.75rem;
+            color: #5f7f8c;
+            margin-top: 0.5rem;
+        }
+        .chart-container {
+            margin: 1rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: space-around;
+        }
+        .chart-box {
+            flex: 1;
+            min-width: 250px;
+        }
+        canvas {
+            max-height: 280px;
+            width: 100%;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            color: #5f7f8c;
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .card { padding: 1rem; }
+            th, td { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="title-section">
+            <h1>⚡ 安徽电力市场全景分析 · 2026年1月</h1>
+            <p>基于2026年1月安徽电力市场信息披露月报 | 统调口径 / 交易结算 / 市场主体</p>
+        </div>
+        <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
+    </div>
+
+    <!-- 关键指标卡片 -->
+    <div class="card">
+        <h2>📊 核心速览 · 2026年1月关键指标</h2>
+        <div class="stats-group">
+            <span class="stat-badge">🏭 统调总装机: 7381.78万kW</span>
+            <span class="stat-badge">🔋 新型储能: 292.21万kW (占比3.96%)</span>
+            <span class="stat-badge">⚡ 统调发电量: 241.84亿kWh (+23.41%)</span>
+            <span class="stat-badge">🌞 光伏发电量: 9.00亿kWh (-19.28%)</span>
+            <span class="stat-badge">📈 月度交易总成交: 182.53亿kWh</span>
+            <span class="stat-badge">💡 用电侧结算: 150.31亿kWh</span>
+            <span class="stat-badge">🌱 绿电交易: 8.71亿kWh (均价337.49元/MWh)</span>
+        </div>
+        <div class="grid-2col" style="margin-top: 1rem;">
+            <div>
+                <h3>📌 市场特征</h3>
+                <ul style="margin-left: 1.2rem; line-height: 1.5;">
+                    <li>火电主导，装机占比65.5% (4838.1万kW)</li>
+                    <li>可再生能源装机: 风电1006.5万kW、光伏1187.3万kW</li>
+                    <li>发电量同比增长23.41%，主要靠火电拉动(+27.37%)</li>
+                    <li>市场主体总数36311家，其中虚拟电厂51家、储能21家</li>
+                </ul>
+            </div>
+            <div>
+                <h3>💡 交易与结算亮点</h3>
+                <ul style="margin-left: 1.2rem; line-height: 1.5;">
+                    <li>月度直接交易86.91亿kWh (均价374.13元/MWh)</li>
+                    <li>月内滚动组合交易34.19亿kWh (均价371.81元/MWh)</li>
+                    <li>绿电交易环境溢价明显，省内绿电均价350.38元/MWh</li>
+                    <li>发电侧结算: 火电204.28亿kWh，风电18.75亿kWh</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 一、装机容量 & 发电结构 (图表+表格) -->
+    <div class="card">
+        <h2>🏭 统调装机容量 & 发电量结构</h2>
+        <div class="chart-container">
+            <div class="chart-box">
+                <h3>📊 装机容量构成 (万kW)</h3>
+                <canvas id="installedChart" width="400" height="280"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>⚡ 发电量构成 (亿kWh)</h3>
+                <canvas id="generationChart" width="400" height="280"></canvas>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <h3>📋 统调口径装机明细 (2026年1月底)</h3>
+            <table id="capacityTable">
+                <thead><tr><th>电源类型</th><th>装机容量(万kW)</th><th>占比</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <h3>🔆 统调口径发电量明细 (2026年1月)</h3>
+            <table id="genTable">
+                <thead><tr><th>电源类型</th><th>发电量(亿kWh)</th><th>占比</th><th>同比</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 二、月度交易组织情况 -->
+    <div class="card">
+        <h2>📈 月度交易市场 (2026年1月)</h2>
+        <div style="overflow-x: auto;">
+            <table id="tradeTable">
+                <thead><tr><th>交易类别</th><th>成交电量(亿kWh)</th><th>成交均价(元/MWh)</th><th>备注</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div class="note">数据来源：月度直接交易、次月集中、月内滚动、电网代购、合同转让、绿电交易（含省内/省间）。</div>
+        </div>
+    </div>
+
+    <!-- 三、结算情况：发电侧 & 用电侧 -->
+    <div class="card">
+        <h2>💰 结算情况 (2026年1月)</h2>
+        <div class="grid-2col">
+            <div>
+                <h3>发电机组结算上网电量</h3>
+                <table id="genSettleTable">
+                    <thead><tr><th>发电类型</th><th>电厂家数</th><th>结算电量(亿kWh)</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div>
+                <h3>用电侧电量结算</h3>
+                <table id="demandSettleTable">
+                    <thead><tr><th>结算类别</th><th>结算电量(亿kWh)</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="note">注：发电侧合计结算235.72亿kWh，用电侧合计结算150.31亿kWh（含直接交易合同、绿电、偏差电量）。</div>
+    </div>
+
+    <!-- 四、市场主体注册情况 -->
+    <div class="card">
+        <h2>📌 市场主体注册 (截至2026年1月底)</h2>
+        <div class="grid-2col">
+            <div>
+                <h3>累计注册市场成员</h3>
+                <table id="participantsTotalTable">
+                    <thead><tr><th>主体类型</th><th>累计家数</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div>
+                <h3>本月新增注册</h3>
+                <table id="participantsNewTable">
+                    <thead><tr><th>主体类型</th><th>新增家数</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="stats-group" style="margin-top:0.8rem;">
+            <span class="stat-badge">📊 市场主体总数: 36311家</span>
+            <span class="stat-badge">⚡ 虚拟电厂51家 (含本月新增4家)</span>
+            <span class="stat-badge">🔋 独立储能21家</span>
+        </div>
+    </div>
+
+    <!-- 五、电网建设与检修计划 -->
+    <div class="card">
+        <h2>🏗️ 电网新设备投产 & 检修计划</h2>
+        <div class="grid-2col">
+            <div>
+                <h3>2026年1月新设备投产 (电网及常规电源)</h3>
+                <table id="newEquipmentTable">
+                    <thead><tr><th>设备名称</th><th>电压等级(kV)</th><th>投产日期</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="note">新能源项目1月无投产。</div>
+            </div>
+            <div>
+                <h3>2026年2月计划检修概览</h3>
+                <table id="maintenanceTable">
+                    <thead><tr><th>项目类别</th><th>数量</th><th>占比</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <div class="note">1月计划检修16项，实际执行13项。</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>数据基于安徽电力交易中心2026年1月信息披露月报，统调口径。部分数据为报表汇总，反映安徽电力市场当月全景。</footer>
+</div>
+
+<script>
+    // ======================= 安徽1月数据 =======================
+    // 1. 装机容量 (统调口径)
+    const installedData = [
+        { type: "火电", capacity: 4838.10, percent: (4838.10/7381.78*100).toFixed(2) },
+        { type: "水电", capacity: 57.71, percent: (57.71/7381.78*100).toFixed(2) },
+        { type: "风电", capacity: 1006.51, percent: (1006.51/7381.78*100).toFixed(2) },
+        { type: "光伏", capacity: 1187.25, percent: (1187.25/7381.78*100).toFixed(2) },
+        { type: "储能", capacity: 292.21, percent: (292.21/7381.78*100).toFixed(2) }
+    ];
+    const totalInstalled = 7381.78;
+
+    // 2. 发电量 (统调口径)
+    const generationData = [
+        { type: "火电", value: 213.40, percent: 88.24, yoy: "27.37%" },
+        { type: "水电", value: 0.31, percent: 0.13, yoy: "47.62%" },
+        { type: "风电", value: 18.02, percent: 7.45, yoy: "8.55%" },
+        { type: "光伏", value: 9.00, percent: 3.72, yoy: "-19.28%" }
+    ];
+
+    // 3. 月度交易明细
+    const trades = [
+        { name: "月度直接交易", volume: 86.91, price: 374.13, note: "常规直接交易" },
+        { name: "次月月度集中交易", volume: 3.19, price: 387.13, note: "" },
+        { name: "当月月内滚动组合", volume: 34.19, price: 371.81, note: "" },
+        { name: "电网代购", volume: 47.80, price: 374.90, note: "" },
+        { name: "合同转让 (合计)", volume: 1.73, price: 374.71, note: "发电侧1.46,用户侧0.27" },
+        { name: "绿电交易 (合计)", volume: 8.71, price: 337.49, note: "省内6.26,省间2.46" }
+    ];
+
+    // 4. 发电侧结算 (按类型)
+    const genSettlement = [
+        { type: "火电", plants: 255, energy: 204.28 },
+        { type: "风电", plants: 165, energy: 18.75 },
+        { type: "光伏", plants: 416, energy: 12.09 },
+        { type: "水电", plants: 57, energy: 0.60 },
+        { type: "总计", plants: 1406, energy: 235.72 }
+    ];
+
+    // 5. 用电侧结算
+    const demandSettlement = [
+        { category: "常规直接交易合同", energy: 105.57 },
+        { category: "绿电", energy: 8.71 },
+        { category: "偏差电量", energy: 36.03 },
+        { category: "合计", energy: 150.31 }
+    ];
+
+    // 6. 市场主体累计
+    const participantsTotal = [
+        { type: "发电企业", count: 1057 },
+        { type: "售电公司", count: 176 },
+        { type: "电力用户", count: 35006 },
+        { type: "独立储能企业", count: 21 },
+        { type: "能源聚合类虚拟电厂", count: 51 }
+    ];
+    // 本月新增
+    const participantsNew = [
+        { type: "发电企业", add: 1 },
+        { type: "售电公司", add: 9 },
+        { type: "电力用户", add: 380 },
+        { type: "独立储能企业", add: 0 },
+        { type: "能源聚合类虚拟电厂", add: 4 }
+    ];
+
+    // 7. 新设备投产 (表格简化，取代表性条目)
+    const newEquipment = [
+        { name: "220kV 灌波27A5线路", voltage: 220, date: "2026-01-10" },
+        { name: "500kV 舒合57R2线路", voltage: 500, date: "2026-01-30" },
+        { name: "220kV 灌波27A6线路", voltage: 220, date: "2026-01-10" },
+        { name: "500kV 合舒57R1线路", voltage: 500, date: "2026-01-30" },
+        { name: "500kV 合昌57R3线路", voltage: 500, date: "2026-01-30" },
+        { name: "500kV 合昌57R4线路", voltage: 500, date: "2026-01-30" },
+        { name: "义兴变", voltage: 220, date: "2026-01-27" },
+        { name: "新望变", voltage: 220, date: "2026-01-17" },
+        { name: "文津变", voltage: 220, date: "2026-01-28" }
+    ];
+
+    // 8. 2月检修计划
+    const maintenancePlan = [
+        { category: "500kV及以上系统检修", count: 4, percent: "44.4%" },
+        { category: "220kV系统检修", count: 5, percent: "55.6%" },
+        { category: "其中基建类", count: 4, percent: "44%" },
+        { category: "巡检类", count: 5, percent: "56%" }
+    ];
+
+    // ============= 渲染所有表格 & 图表 =============
+    function renderAll() {
+        // 装机表
+        const capTbody = document.querySelector("#capacityTable tbody");
+        capTbody.innerHTML = "";
+        installedData.forEach(d => {
+            capTbody.innerHTML += `<tr><td class="text-left">${d.type}</td><td>${d.capacity}</td><td>${d.percent}%</td></tr>`;
+        });
+
+        // 发电量明细表
+        const genTbody = document.querySelector("#genTable tbody");
+        genTbody.innerHTML = "";
+        generationData.forEach(d => {
+            genTbody.innerHTML += `<tr><td class="text-left">${d.type}</td><td>${d.value}</td><td>${d.percent}%</td><td>${d.yoy}</td></tr>`;
+        });
+
+        // 交易表
+        const tradeTbody = document.querySelector("#tradeTable tbody");
+        tradeTbody.innerHTML = "";
+        trades.forEach(t => {
+            tradeTbody.innerHTML += `<tr><td class="text-left">${t.name}</td><td>${t.volume}</td><td>${t.price}</td><td>${t.note}</td></tr>`;
+        });
+
+        // 发电侧结算表
+        const genSettleTbody = document.querySelector("#genSettleTable tbody");
+        genSettleTbody.innerHTML = "";
+        genSettlement.forEach(g => {
+            genSettleTbody.innerHTML += `<tr><td class="text-left">${g.type}</td><td>${g.plants}</td><td>${g.energy}</td></tr>`;
+        });
+
+        // 用电侧结算表
+        const demTbody = document.querySelector("#demandSettleTable tbody");
+        demTbody.innerHTML = "";
+        demandSettlement.forEach(d => {
+            demTbody.innerHTML += `<tr><td class="text-left">${d.category}</td><td>${d.energy}</td></tr>`;
+        });
+
+        // 市场主体累计
+        const partTotalTbody = document.querySelector("#participantsTotalTable tbody");
+        partTotalTbody.innerHTML = "";
+        participantsTotal.forEach(p => {
+            partTotalTbody.innerHTML += `<tr><td class="text-left">${p.type}</td><td>${p.count}</td></tr>`;
+        });
+        // 本月新增
+        const partNewTbody = document.querySelector("#participantsNewTable tbody");
+        partNewTbody.innerHTML = "";
+        participantsNew.forEach(p => {
+            partNewTbody.innerHTML += `<tr><td class="text-left">${p.type}</td><td>${p.add}</td></tr>`;
+        });
+
+        // 新设备投产
+        const equipTbody = document.querySelector("#newEquipmentTable tbody");
+        equipTbody.innerHTML = "";
+        newEquipment.forEach(e => {
+            equipTbody.innerHTML += `<tr><td class="text-left">${e.name}</td><td>${e.voltage}</td><td>${e.date}</td></tr>`;
+        });
+
+        // 检修计划表
+        const maintTbody = document.querySelector("#maintenanceTable tbody");
+        maintTbody.innerHTML = "";
+        maintenancePlan.forEach(m => {
+            maintTbody.innerHTML += `<tr><td class="text-left">${m.category}</td><td>${m.count}</td><td>${m.percent}</td></tr>`;
+        });
+    }
+
+    // 图表绘制
+    let installedChart, generationChart;
+    function initCharts() {
+        const ctxInstalled = document.getElementById('installedChart').getContext('2d');
+        const installedLabels = installedData.map(d => d.type);
+        const installedValues = installedData.map(d => d.capacity);
+        installedChart = new Chart(ctxInstalled, {
+            type: 'pie',
+            data: { labels: installedLabels, datasets: [{ data: installedValues, backgroundColor: ['#e06c6c', '#6c8ee0', '#6cc9b0', '#f4c542', '#a28fd0'] }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}万kW (${(ctx.raw/totalInstalled*100).toFixed(1)}%)` } } } }
+        });
+
+        const ctxGen = document.getElementById('generationChart').getContext('2d');
+        const genLabels = generationData.map(d => d.type);
+        const genValues = generationData.map(d => d.value);
+        generationChart = new Chart(ctxGen, {
+            type: 'doughnut',
+            data: { labels: genLabels, datasets: [{ data: genValues, backgroundColor: ['#e06c6c', '#6c8ee0', '#6cc9b0', '#f4c542'] }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}亿kWh (${generationData[ctx.dataIndex].percent}%)` } } } }
+        });
+    }
+
+    // ============= 导出Excel (多Sheet) =============
+    function exportToExcel() {
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1: 装机容量
+        const capSheet = XLSX.utils.json_to_sheet(installedData.map(d => ({ "电源类型": d.type, "装机容量(万kW)": d.capacity, "占比(%)": d.percent })));
+        XLSX.utils.book_append_sheet(wb, capSheet, "统调装机容量");
+
+        // Sheet 2: 发电量
+        const genSheet = XLSX.utils.json_to_sheet(generationData.map(d => ({ "电源类型": d.type, "发电量(亿kWh)": d.value, "占比(%)": d.percent, "同比(%)": d.yoy })));
+        XLSX.utils.book_append_sheet(wb, genSheet, "统调发电量");
+
+        // Sheet 3: 月度交易
+        const tradeSheet = XLSX.utils.json_to_sheet(trades.map(t => ({ "交易类别": t.name, "成交电量(亿kWh)": t.volume, "成交均价(元/MWh)": t.price, "备注": t.note })));
+        XLSX.utils.book_append_sheet(wb, tradeSheet, "月度交易市场");
+
+        // Sheet 4: 发电侧结算
+        const genSettleSheet = XLSX.utils.json_to_sheet(genSettlement.map(g => ({ "发电类型": g.type, "电厂家数": g.plants, "结算电量(亿kWh)": g.energy })));
+        XLSX.utils.book_append_sheet(wb, genSettleSheet, "发电侧结算");
+
+        // Sheet 5: 用电侧结算
+        const demSheet = XLSX.utils.json_to_sheet(demandSettlement.map(d => ({ "结算类别": d.category, "结算电量(亿kWh)": d.energy })));
+        XLSX.utils.book_append_sheet(wb, demSheet, "用电侧结算");
+
+        // Sheet 6: 市场主体累计
+        const partTotalSheet = XLSX.utils.json_to_sheet(participantsTotal.map(p => ({ "主体类型": p.type, "累计家数": p.count })));
+        XLSX.utils.book_append_sheet(wb, partTotalSheet, "市场主体累计");
+
+        // Sheet 7: 本月新增注册
+        const partNewSheet = XLSX.utils.json_to_sheet(participantsNew.map(p => ({ "主体类型": p.type, "新增家数": p.add })));
+        XLSX.utils.book_append_sheet(wb, partNewSheet, "本月新增注册");
+
+        // Sheet 8: 新设备投产
+        const equipSheet = XLSX.utils.json_to_sheet(newEquipment.map(e => ({ "设备名称": e.name, "电压等级(kV)": e.voltage, "投产日期": e.date })));
+        XLSX.utils.book_append_sheet(wb, equipSheet, "新设备投产");
+
+        // Sheet 9: 检修计划
+        const maintSheet = XLSX.utils.json_to_sheet(maintenancePlan.map(m => ({ "项目类别": m.category, "数量": m.count, "占比": m.percent })));
+        XLSX.utils.book_append_sheet(wb, maintSheet, "检修计划_2月");
+
+        // Sheet 10: 关键指标摘要
+        const summary = [
+            { 指标: "统调总装机容量(万kW)", 数值: totalInstalled },
+            { 指标: "统调总发电量(亿kWh)", 数值: 241.84, 同比: "+23.41%" },
+            { 指标: "月度交易总成交电量(亿kWh)", 数值: trades.reduce((s,t)=>s+t.volume,0) },
+            { 指标: "发电侧结算总电量(亿kWh)", 数值: 235.72 },
+            { 指标: "用电侧结算总电量(亿kWh)", 数值: 150.31 },
+            { 指标: "绿电交易电量(亿kWh)", 数值: 8.71, 均价: "337.49元/MWh" },
+            { 指标: "市场主体总数", 数值: 36311 }
+        ];
+        const summarySheet = XLSX.utils.json_to_sheet(summary);
+        XLSX.utils.book_append_sheet(wb, summarySheet, "关键指标摘要");
+
+        XLSX.writeFile(wb, `安徽电力市场月报_2026年1月_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
+    }
+
+    renderAll();
+    initCharts();
+    document.getElementById("exportExcelBtn").addEventListener("click", exportToExcel);
+</script>
+</body>
+</html>
