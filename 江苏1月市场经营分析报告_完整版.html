@@ -211,6 +211,7 @@
 </div>
 
 <script>
+    if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
     // 等待 Chart.js 加载完成
     document.addEventListener('DOMContentLoaded', function() {
         // 注册插件

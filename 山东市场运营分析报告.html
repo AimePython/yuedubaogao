@@ -327,6 +327,7 @@
 </div>
 
 <script>
+    if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
     // 注册数据标签插件
     Chart.register(ChartDataLabels);
     Chart.defaults.set('plugins.datalabels', {

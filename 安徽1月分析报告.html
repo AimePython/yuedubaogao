@@ -341,6 +341,7 @@
 </div>
 
 <script>
+    if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
     new Chart(document.getElementById('capMixChart'), {
         type: 'bar',
         data: {

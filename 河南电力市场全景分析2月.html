@@ -135,6 +135,7 @@
 </div>
 
 <script>
+    if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
     Chart.register(ChartDataLabels);
     Chart.defaults.set('plugins.datalabels', { color: '#1a2c3e', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 10 } });
 
