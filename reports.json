@@ -1,47 +1,47 @@
 {
   "shandong": {
     "2026-01": {
-      "file": "山东市场运营分析报告.html",
+      "file": "reports/shandong/山东市场运营分析报告.html",
       "label": "2026年1-2月"
     },
     "2026-02": {
-      "file": "山东市场运营分析报告.html",
+      "file": "reports/shandong/山东市场运营分析报告.html",
       "label": "2026年2月"
     }
   },
   "anhui": {
     "2026-01": {
-      "file": "安徽1月分析报告.html",
+      "file": "reports/anhui/安徽1月分析报告.html",
       "label": "2026年1月"
     }
   },
   "henan": {
     "2026-02": {
-      "file": "河南电力市场全景分析2月.html",
+      "file": "reports/henan/河南电力市场全景分析2月.html",
       "label": "2026年2月"
     }
   },
   "jiangsu": {
     "2026-01": {
-      "file": "江苏1月市场经营分析报告_完整版.html",
+      "file": "reports/jiangsu/江苏1月市场经营分析报告_完整版.html",
       "label": "2026年1月"
     }
   },
   "jiangxi": {
     "2026-01": {
-      "file": "江西电力市场2026年1月市场运营分析报告.html",
+      "file": "reports/jiangxi/江西电力市场2026年1月市场运营分析报告.html",
       "label": "2026年1月"
     }
   },
   "zhejiang": {
     "2026-01": {
-      "file": "浙江1月分析报告.html",
+      "file": "reports/zhejiang/浙江1月分析报告.html",
       "label": "2026年1月"
     }
   },
   "shanxi1": {
     "2026-01": {
-      "file": "陕西1月分析报告.html",
+      "file": "reports/shanxi1/陕西1月分析报告.html",
       "label": "2026年1月"
     }
   }
