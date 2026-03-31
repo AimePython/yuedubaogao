@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>陕西1月分析报告</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -70,6 +71,7 @@
             <h1>⚡ 陕西1月分析报告</h1>
             <p>基于《陕西电力市场信息披露报告（2026年1月）-发布版》整理</p>
         </div>
+        <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
     </div>
 
     <section class="card">
@@ -396,5 +398,62 @@
     });
     sxRenderTimeCurve('1月1日');
 </script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+
+  function tableToAoA(table){
+    const aoa = [];
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('th,td');
+      const row = [];
+      cells.forEach(cell => row.push((cell.innerText || '').replace(/\s+/g, ' ').trim()));
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+
+  function exportExcel(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.closest('section')?.querySelector('h2') || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title, idx));
+      });
+      if (!wb.SheetNames.length) {
+        const ws = XLSX.utils.aoa_to_sheet([['提示'], ['表格存在但未提取到有效数据']]);
+        XLSX.utils.book_append_sheet(wb, ws, '说明');
+      }
+    }
+
+    const titleText = (document.querySelector('.title-section h1') || document.querySelector('h1') || document.querySelector('title'))?.textContent || '省份月报';
+    const safeTitle = titleText.replace(/[\\\/?*\[\]:]/g, ' ').replace(/\s+/g, '').slice(0, 40);
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `${safeTitle || '省份月报'}_${ts}.xlsx`);
+  }
+
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+
 </body>
 </html>

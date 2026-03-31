@@ -189,17 +189,10 @@
                 font-size: 0.8rem;
             }
         }
-        .timecurve-module .timecurve-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-        .timecurve-module .timecurve-header .note { margin-top:0; font-size:12px; color:#5f7f8c; }
         .timecurve-module .chart-box { border:none !important; padding:0 !important; background:transparent !important; margin-top:0 !important; }
         .timecurve-module .chart-box .note { display:none; }
         .timecurve-module canvas { height: 260px !important; }
-        .timecurve-module .timecurve-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:12px; background:#eef6ff; border:1px solid #d6e9ff; border-radius:14px; padding:12px 14px; }
-        .timecurve-module .timecurve-stat { text-align:center; }
-        .timecurve-module .timecurve-stat .k { font-size:12px; color:#4d6f81; }
-        .timecurve-module .timecurve-stat .v { font-size:30px; color:#2b6f94; font-weight:700; line-height:1.1; }
-        .timecurve-module .timecurve-stat .u { font-size:12px; color:#4d6f81; }
-        .timecurve-module > .note { font-size:12px; color:#5f7f8c; margin-top:8px; }
+        .timecurve-module .note { font-size: 12px; color:#5f7f8c; }
     </style>
 </head>
 <body>
@@ -301,20 +294,20 @@
 
     <div class="card timecurve-module">
         <h2>⏱️ 分时曲线（24小时）- 真实数据</h2>
-        <div class="timecurve-header">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
             <label for="sdDateSelect">选择日期：</label>
             <select id="sdDateSelect"></select>
-            <span class="note">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+            <span style="font-size:0.75rem; color:#5f7f8c;">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
         </div>
         <div class="chart-container">
             <div class="chart-box"><canvas id="sdHourlyPriceChart" width="500" height="280"></canvas><div class="note">日前电价 vs 实时电价 (元/MWh)</div></div>
             <div class="chart-box"><canvas id="sdHourlyVolumeChart" width="500" height="280"></canvas><div class="note">日前电量 vs 实时电量 (MWh)</div></div>
         </div>
-        <div class="timecurve-stats">
-            <div class="timecurve-stat"><div class="k">日前合计电量</div><div class="v" id="sdDaVol">-</div><div class="u">MWh</div></div>
-            <div class="timecurve-stat"><div class="k">实时合计电量</div><div class="v" id="sdRtVol">-</div><div class="u">MWh</div></div>
-            <div class="timecurve-stat"><div class="k">日前加权均价</div><div class="v" id="sdDaAvg">-</div><div class="u">元/MWh</div></div>
-            <div class="timecurve-stat"><div class="k">实时加权均价</div><div class="v" id="sdRtAvg">-</div><div class="u">元/MWh</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;background:#e8f2f8;border:1px solid #cfe3ef;border-radius:12px;padding:10px;">
+            <div style="text-align:center;"><div class="note">日前合计电量</div><div id="sdDaVol" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">MWh</div></div>
+            <div style="text-align:center;"><div class="note">实时合计电量</div><div id="sdRtVol" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">MWh</div></div>
+            <div style="text-align:center;"><div class="note">日前加权均价</div><div id="sdDaAvg" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">元/MWh</div></div>
+            <div style="text-align:center;"><div class="note">实时加权均价</div><div id="sdRtAvg" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">元/MWh</div></div>
         </div>
         <div class="note">注：24小时曲线按日清分数据进行小时分布还原，用于日内形态展示。</div>
     </div>
@@ -606,5 +599,62 @@
     initShandong24hModule();
     document.getElementById("exportExcelBtn").addEventListener("click", () => alert("导出功能已就绪，可扩展多sheet导出完整报告。"));
 </script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+
+  function tableToAoA(table){
+    const aoa = [];
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('th,td');
+      const row = [];
+      cells.forEach(cell => row.push((cell.innerText || '').replace(/\s+/g, ' ').trim()));
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+
+  function exportExcel(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.closest('section')?.querySelector('h2') || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title, idx));
+      });
+      if (!wb.SheetNames.length) {
+        const ws = XLSX.utils.aoa_to_sheet([['提示'], ['表格存在但未提取到有效数据']]);
+        XLSX.utils.book_append_sheet(wb, ws, '说明');
+      }
+    }
+
+    const titleText = (document.querySelector('.title-section h1') || document.querySelector('h1') || document.querySelector('title'))?.textContent || '省份月报';
+    const safeTitle = titleText.replace(/[\\\/?*\[\]:]/g, ' ').replace(/\s+/g, '').slice(0, 40);
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `${safeTitle || '省份月报'}_${ts}.xlsx`);
+  }
+
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+
 </body>
 </html>

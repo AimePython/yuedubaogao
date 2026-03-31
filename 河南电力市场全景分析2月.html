@@ -40,16 +40,6 @@
         .overflow-x-auto table { border-collapse: collapse; }
         .overflow-x-auto th, .overflow-x-auto td { border: 1px solid #d4e2e9; }
         .chart-subsection { margin-top: 2rem; border-top: 1px dashed #ccc; padding-top: 1rem; }
-        .timecurve-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-        .timecurve-header .note { margin-top:0; }
-        .timecurve-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:12px; background:#eef6ff; border:1px solid #d6e9ff; border-radius:14px; padding:12px 14px; }
-        .timecurve-stat { text-align:center; }
-        .timecurve-stat .k { font-size:12px; color:#4d6f81; }
-        .timecurve-stat .v { font-size:30px; font-weight:700; color:#2b6f94; line-height:1.1; }
-        .timecurve-stat .u { font-size:12px; color:#4d6f81; }
-        .timecurve-module .chart-box { border:none !important; background:transparent !important; }
-        .timecurve-module .chart-box .note { display:none; }
-        .timecurve-module .chart-box canvas { height:260px !important; }
     </style>
 </head>
 <body>
@@ -116,24 +106,18 @@
     </div>
 
     <!-- 分时曲线模块 (24小时) 支持全月切换 + 新增全月加权曲线 -->
-    <div class="card timecurve-module">
-        <h2>⏱️ 分时曲线（24小时）- 真实数据</h2>
+    <div class="card">
+        <h2>⏱️ 分时曲线（24小时）</h2>
         
         <!-- 单日曲线选择部分 -->
-        <div class="timecurve-header">
+        <div class="flex-row">
             <label>选择日期：</label>
             <select id="dateSelect"></select>
-            <span class="note">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+            <span style="font-size:0.75rem; color:#5f7f8c;">展示所选日期24点日前/实时电价及电量</span>
         </div>
         <div class="chart-container">
             <div class="chart-box"><canvas id="hourlyPriceChart" width="500" height="280"></canvas><div class="note">日前电价 vs 实时电价 (元/MWh)</div></div>
             <div class="chart-box"><canvas id="hourlyVolumeChart" width="500" height="280"></canvas><div class="note">日前电量 vs 实时电量 (万kWh)</div></div>
-        </div>
-        <div class="timecurve-stats">
-            <div class="timecurve-stat"><div class="k">日前合计电量</div><div class="v" id="hnStatDaVol">-</div><div class="u">万kWh</div></div>
-            <div class="timecurve-stat"><div class="k">实时合计电量</div><div class="v" id="hnStatRtVol">-</div><div class="u">万kWh</div></div>
-            <div class="timecurve-stat"><div class="k">日前加权均价</div><div class="v" id="hnStatDaAvg">-</div><div class="u">元/MWh</div></div>
-            <div class="timecurve-stat"><div class="k">实时加权均价</div><div class="v" id="hnStatRtAvg">-</div><div class="u">元/MWh</div></div>
         </div>
         
         <!-- 新增：2月全月24点加权均价曲线 -->
@@ -363,14 +347,6 @@
                 { label: '实时电量 (万kWh)', data: data.rtVol, borderColor: '#e74c3c', fill: false }
             ] }, options: { responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} 万kWh` } }, datalabels: { display: false } }, scales: { y: { title: { text: '电量 (万kWh)' } } } }
         });
-        const daVolTotal = data.daVol.reduce((p,c)=>p+c,0);
-        const rtVolTotal = data.rtVol.reduce((p,c)=>p+c,0);
-        const daAvg = daVolTotal > 0 ? data.daPrice.reduce((p,c,i)=>p + c * data.daVol[i], 0) / daVolTotal : 0;
-        const rtAvg = rtVolTotal > 0 ? data.rtPrice.reduce((p,c,i)=>p + c * data.rtVol[i], 0) / rtVolTotal : 0;
-        document.getElementById('hnStatDaVol').textContent = daVolTotal.toFixed(2);
-        document.getElementById('hnStatRtVol').textContent = rtVolTotal.toFixed(2);
-        document.getElementById('hnStatDaAvg').textContent = daAvg.toFixed(2);
-        document.getElementById('hnStatRtAvg').textContent = rtAvg.toFixed(2);
     }
     dateSelect.addEventListener('change', (e) => updateHourlyCharts(e.target.value));
 
@@ -426,5 +402,62 @@
     initMonthlyWeightedChart();  // 新增全月加权曲线
     document.getElementById("exportExcelBtn").addEventListener("click", exportToExcel);
 </script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+
+  function tableToAoA(table){
+    const aoa = [];
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('th,td');
+      const row = [];
+      cells.forEach(cell => row.push((cell.innerText || '').replace(/\s+/g, ' ').trim()));
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+
+  function exportExcel(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.closest('section')?.querySelector('h2') || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title, idx));
+      });
+      if (!wb.SheetNames.length) {
+        const ws = XLSX.utils.aoa_to_sheet([['提示'], ['表格存在但未提取到有效数据']]);
+        XLSX.utils.book_append_sheet(wb, ws, '说明');
+      }
+    }
+
+    const titleText = (document.querySelector('.title-section h1') || document.querySelector('h1') || document.querySelector('title'))?.textContent || '省份月报';
+    const safeTitle = titleText.replace(/[\\\/?*\[\]:]/g, ' ').replace(/\s+/g, '').slice(0, 40);
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `${safeTitle || '省份月报'}_${ts}.xlsx`);
+  }
+
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+
 </body>
 </html>
