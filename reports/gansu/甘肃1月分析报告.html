@@ -288,7 +288,7 @@
   }
 
   async function loadSpotXlsx() {
-    const res = await fetch('../../甘肃1月现货数据.xlsx', { cache: 'no-store' });
+    const res = await fetch('./data/甘肃1月现货数据.xlsx', { cache: 'no-store' });
     if (!res.ok) throw new Error('failed to load xlsx');
     const buf = await res.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
