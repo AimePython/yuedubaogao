@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>黑龙江电力市场运行分析 · 2026年1月</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; background: #f0f4f8; color: #1a2c3e; padding: 1rem; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #2c7da0; padding-bottom: 0.75rem; }
+    .title-section h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #1e5f7a, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .title-section p { color: #2c5a6e; margin-top: 0.2rem; font-size: 0.8rem; }
+    .card { background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1rem 1.2rem; margin-bottom: 1.5rem; border: 1px solid #e2edf2; }
+    .card h2 { font-size: 1.3rem; font-weight: 600; border-left: 4px solid #2c7da0; padding-left: 0.8rem; margin-bottom: 1rem; color: #1e4a62; }
+    .card h3 { font-size: 1.05rem; margin: 0.8rem 0 0.5rem 0; color: #2c7da0; }
+    .insight-box { background: #eef3fa; padding: 0.8rem; border-radius: 16px; margin-bottom: 1rem; }
+    .insight-box p { margin: 0.5rem 0; line-height: 1.45; font-size: 0.86rem; }
+    .highlight { font-weight: bold; color: #d9534f; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.6rem; }
+    .stat-item { text-align: center; background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f2 100%); border-radius: 12px; padding: 0.8rem; border: 1px solid #b8d9e8; }
+    .stat-label { font-size: 0.75rem; color: #5f7f8c; margin-bottom: 0.3rem; }
+    .stat-value { font-size: 1.25rem; font-weight: 700; color: #2c7da0; }
+    .chart-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
+    @media (min-width: 900px) { .chart-container { grid-template-columns: 1fr 1fr; } }
+    .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; text-align: center; }
+    .chart-box canvas { max-height: 320px; width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
+    th, td { border: 1px solid #d4e2e9; padding: 0.45rem 0.35rem; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
+    th { background: #e9f2f7; font-weight: 600; color: #1a4c63; }
+    .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .note { font-size: 0.72rem; color: #5f7f8c; margin-top: 0.5rem; }
+    footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #5f7f8c; }
+  
+    .download-btn { background: #2c7da0; border: none; padding: 0.6rem 1.2rem; border-radius: 48px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .download-btn:hover { background: #1f5e7a; transform: translateY(-2px); }
+
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title-section">
+      <h1>⚡ 黑龙江电力市场运行分析 · 2026年1月</h1>
+      <p>基于黑龙江1月信息披露报告与96点交易数据</p>
+    </div>
+        <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
+  </div>
+
+  <div class="card">
+    <h2>📊 核心速览</h2>
+    <div class="insight-box">
+      <p><strong>现货价格：</strong>1月日前平均电价 <span class="highlight">156.27 元/MWh</span>，实时平均电价 <span class="highlight">206.63 元/MWh</span>，实时较日前价差 <span class="highlight">50.36 元/MWh</span>。</p>
+      <p><strong>电网与供需：</strong>1月全社会用电量129.32亿kWh（同比+6.75%），全省发电量147.71亿kWh（同比+12.75%），省间净送出18.62亿kWh。</p>
+      <p><strong>市场运营：</strong>截至1月底注册经营主体3711家；1月省内市场化交易成交458.242亿kWh，电力直接交易成交230.669亿kWh，均价298.60元/MWh。</p>
+      <p><strong>结算与风险：</strong>1月发电侧市场结算合计1167404.1564万kWh，均价296.03元/MWh；用户侧省内市场化结算电量63.95亿kWh，结算均价292.16元/MWh；披露期内未发生违规和市场干预。</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-label">日前平均电价</div><div class="stat-value">156.27 元/MWh</div></div>
+      <div class="stat-item"><div class="stat-label">实时平均电价</div><div class="stat-value">206.63 元/MWh</div></div>
+      <div class="stat-item"><div class="stat-label">实时-日前价差</div><div class="stat-value">50.36 元/MWh</div></div>
+      <div class="stat-item"><div class="stat-label">市场主体数</div><div class="stat-value">3711 家</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏭 市场供需情况 & 关键指标月度对比</h2>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>指标</th><th>1月数据</th></tr></thead>
+        <tbody>
+          <tr><td>全社会用电量</td><td>129.32亿kWh（同比+6.75%）</td></tr>
+          <tr><td>全省发电量</td><td>147.71亿kWh（同比+12.75%）</td></tr>
+          <tr><td>省间交易</td><td>受入9.27亿kWh，送出27.89亿kWh，净送出18.62亿kWh</td></tr>
+          <tr><td>省内市场化交易</td><td>458.242亿kWh；其中电力直接交易230.669亿kWh（均价298.60元/MWh）</td></tr>
+          <tr><td>用户侧结算</td><td>63.95亿kWh（均价292.16元/MWh）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📑 交易组织与结算情况（2026年1月）</h2>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>模块</th><th>细项</th><th>数据</th></tr></thead>
+        <tbody>
+          <tr><td>市场成员注册</td><td>注册经营主体总数</td><td>3711家（同比+850）</td></tr>
+          <tr><td>市场成员注册</td><td>发电企业</td><td>559家（同比+51）</td></tr>
+          <tr><td>市场成员注册</td><td>电力用户</td><td>2980户（同比+770）</td></tr>
+          <tr><td>市场成员注册</td><td>售电公司</td><td>171户（同比+29）</td></tr>
+          <tr><td>跨区跨省交易</td><td>外送成交电量（含年度）</td><td>151.867亿kWh</td></tr>
+          <tr><td>跨区跨省交易</td><td>外送成交均价</td><td>285.26元/MWh</td></tr>
+          <tr><td>跨区跨省交易</td><td>分类型成交</td><td>火电51.022亿（379.76元/MWh）；风电90.276亿（244.13元/MWh）；光伏10.568亿（180.37元/MWh）</td></tr>
+          <tr><td>省内市场化交易</td><td>成交总电量（含年度）</td><td>458.242亿kWh</td></tr>
+          <tr><td>省内市场化交易</td><td>电力直接交易</td><td>230.669亿kWh（299.60元/MWh）</td></tr>
+          <tr><td>省内市场化交易</td><td>绿电交易</td><td>7.193亿kWh（305.75元/MWh）</td></tr>
+          <tr><td>合同转让交易</td><td>成交场次/总电量</td><td>2场 / 2.212亿kWh</td></tr>
+          <tr><td>合同转让交易</td><td>发电侧/用电侧</td><td>发电侧1.943亿kWh；用电侧0亿kWh</td></tr>
+          <tr><td>市场结算</td><td>用户侧省内市场化结算电量</td><td>63.95亿kWh（292.16元/MWh）</td></tr>
+          <tr><td>市场结算</td><td>电网代理购电结算</td><td>34.93亿kWh（299.20元/MWh）</td></tr>
+          <tr><td>市场结算</td><td>直接交易结算</td><td>26.53亿kWh（292.89元/MWh）</td></tr>
+          <tr><td>市场结算</td><td>融合交易结算</td><td>1.71亿kWh（133.30元/MWh）</td></tr>
+          <tr><td>市场结算</td><td>绿电交易结算</td><td>0.78亿kWh（299.19元/MWh）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">注：本表数据均来自《2026年1月份黑龙江电力市场信息披露报告》“三、电力市场运营情况”章节。</div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ 现货市场交易（1月）</h2>
+    <h3>🧾 发电侧市场结算总体及分类构成（1月）</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>发电类型</th><th>结算电量（万kWh）</th><th>结算均价（元/MWh）</th></tr></thead>
+        <tbody>
+          <tr><td>合计</td><td>1167404.1564</td><td>296.03</td></tr>
+          <tr><td>燃煤火电</td><td>624888.1573</td><td>355.96</td></tr>
+          <tr><td>风电</td><td>379879.9257</td><td>187.86</td></tr>
+          <tr><td>光伏</td><td>47575.0014</td><td>186.26</td></tr>
+          <tr><td>生物质</td><td>109629.6752</td><td>374.00</td></tr>
+          <tr><td>水电</td><td>5431.3968</td><td>354.79</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">注：数据来源《2026年01月黑龙江电力市场结算总体情况及分类构成情况》，单位为万千瓦时、元/兆瓦时。</div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>📈 1月每日平均电价趋势</h3>
+        <canvas id="dailyPriceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🕒 分时曲线（24小时）- 真实数据</h2>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>⏱️ 1月24点分时均价曲线（96点→24点）</h3>
+        <canvas id="hourlyPriceChart"></canvas>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <h3>📋 24点分时电价数据表</h3>
+      <table id="hourlyTable">
+        <thead><tr><th>时段</th><th>日前平均电价(元/MWh)</th><th>实时平均电价(元/MWh)</th><th>价差(实时-日前)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="note">说明：由96点每15分钟价格按小时聚合（每4点取算术平均）得到24点曲线，仅抓取日前平均电价与实时平均电价。</div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 市场运行关注点（2月展望）</h2>
+    <div class="insight-box">
+      <p>1）寒潮及春节错峰叠加，负荷波动预计加大，实时价格可能继续高于日前价格。</p>
+      <p>2）建议发电侧加强高峰时段报价策略，用户侧提前锁定中长期合约，降低现货波动风险。</p>
+      <p>3）重点关注极端天气、通道约束和新能源出力偏差对现货价差的影响。</p>
+    </div>
+  </div>
+
+  <footer>数据来源：2026年1月份黑龙江电力市场信息披露报告、黑龙江市场交易数据.xlsx（26年96点边际数据）。</footer>
+</div>
+
+<script>
+    if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
+  const dailyData = [{"day": "2026-01-01", "da_avg": 0.0, "rt_avg": 0.0, "spread": 0.0}, {"day": "2026-01-02", "da_avg": 1.31, "rt_avg": 0.0, "spread": -1.31}, {"day": "2026-01-03", "da_avg": 5.08, "rt_avg": 12.83, "spread": 7.75}, {"day": "2026-01-04", "da_avg": 0.0, "rt_avg": 0.0, "spread": 0.0}, {"day": "2026-01-05", "da_avg": 1.96, "rt_avg": 29.19, "spread": 27.23}, {"day": "2026-01-06", "da_avg": 345.42, "rt_avg": 383.3, "spread": 37.88}, {"day": "2026-01-07", "da_avg": 0.0, "rt_avg": 0.0, "spread": 0.0}, {"day": "2026-01-08", "da_avg": 0.0, "rt_avg": 19.28, "spread": 19.28}, {"day": "2026-01-09", "da_avg": 621.2, "rt_avg": 512.13, "spread": -109.07}, {"day": "2026-01-10", "da_avg": 349.08, "rt_avg": 541.97, "spread": 192.89}, {"day": "2026-01-11", "da_avg": 1.01, "rt_avg": 25.08, "spread": 24.07}, {"day": "2026-01-12", "da_avg": 849.97, "rt_avg": 982.96, "spread": 132.99}, {"day": "2026-01-13", "da_avg": 0.0, "rt_avg": 0.0, "spread": 0.0}, {"day": "2026-01-14", "da_avg": 304.48, "rt_avg": 367.24, "spread": 62.76}, {"day": "2026-01-15", "da_avg": 481.19, "rt_avg": 528.45, "spread": 47.26}, {"day": "2026-01-16", "da_avg": 235.72, "rt_avg": 259.79, "spread": 24.07}, {"day": "2026-01-17", "da_avg": 29.74, "rt_avg": 120.7, "spread": 90.96}, {"day": "2026-01-18", "da_avg": 32.46, "rt_avg": 173.61, "spread": 141.15}, {"day": "2026-01-19", "da_avg": 6.31, "rt_avg": 21.15, "spread": 14.84}, {"day": "2026-01-20", "da_avg": 0.0, "rt_avg": 28.22, "spread": 28.22}, {"day": "2026-01-21", "da_avg": 0.0, "rt_avg": 0.0, "spread": 0.0}, {"day": "2026-01-22", "da_avg": 2.3, "rt_avg": 38.44, "spread": 36.14}, {"day": "2026-01-23", "da_avg": 52.75, "rt_avg": 125.38, "spread": 72.63}, {"day": "2026-01-24", "da_avg": 137.16, "rt_avg": 133.66, "spread": -3.5}, {"day": "2026-01-25", "da_avg": 26.04, "rt_avg": 133.67, "spread": 107.63}, {"day": "2026-01-26", "da_avg": 417.12, "rt_avg": 625.04, "spread": 207.92}, {"day": "2026-01-27", "da_avg": 119.35, "rt_avg": 202.33, "spread": 82.98}, {"day": "2026-01-28", "da_avg": 516.54, "rt_avg": 622.74, "spread": 106.2}, {"day": "2026-01-29", "da_avg": 126.74, "rt_avg": 103.74, "spread": -23.0}, {"day": "2026-01-30", "da_avg": 36.22, "rt_avg": 149.22, "spread": 113.0}, {"day": "2026-01-31", "da_avg": 145.24, "rt_avg": 265.5, "spread": 120.26}];
+  const hourlyData = [{"hour": 0, "da_avg": 139.8, "rt_avg": 188.53, "spread": 48.73}, {"hour": 1, "da_avg": 130.72, "rt_avg": 199.57, "spread": 68.85}, {"hour": 2, "da_avg": 137.98, "rt_avg": 177.56, "spread": 39.58}, {"hour": 3, "da_avg": 135.22, "rt_avg": 143.57, "spread": 8.35}, {"hour": 4, "da_avg": 147.1, "rt_avg": 180.43, "spread": 33.33}, {"hour": 5, "da_avg": 195.38, "rt_avg": 225.74, "spread": 30.36}, {"hour": 6, "da_avg": 183.92, "rt_avg": 224.96, "spread": 41.04}, {"hour": 7, "da_avg": 180.25, "rt_avg": 223.42, "spread": 43.17}, {"hour": 8, "da_avg": 231.14, "rt_avg": 256.67, "spread": 25.53}, {"hour": 9, "da_avg": 138.08, "rt_avg": 132.99, "spread": -5.09}, {"hour": 10, "da_avg": 89.79, "rt_avg": 86.14, "spread": -3.65}, {"hour": 11, "da_avg": 112.61, "rt_avg": 117.36, "spread": 4.75}, {"hour": 12, "da_avg": 136.6, "rt_avg": 128.39, "spread": -8.21}, {"hour": 13, "da_avg": 149.24, "rt_avg": 138.58, "spread": -10.66}, {"hour": 14, "da_avg": 139.25, "rt_avg": 142.82, "spread": 3.57}, {"hour": 15, "da_avg": 161.72, "rt_avg": 184.25, "spread": 22.53}, {"hour": 16, "da_avg": 277.83, "rt_avg": 387.49, "spread": 109.66}, {"hour": 17, "da_avg": 247.48, "rt_avg": 372.26, "spread": 124.78}, {"hour": 18, "da_avg": 136.63, "rt_avg": 261.96, "spread": 125.33}, {"hour": 19, "da_avg": 85.95, "rt_avg": 198.02, "spread": 112.07}, {"hour": 20, "da_avg": 126.83, "rt_avg": 234.65, "spread": 107.82}, {"hour": 21, "da_avg": 168.54, "rt_avg": 316.28, "spread": 147.74}, {"hour": 22, "da_avg": 111.97, "rt_avg": 211.67, "spread": 99.7}, {"hour": 23, "da_avg": 182.37, "rt_avg": 221.35, "spread": 38.98}];
+
+  const dailyLabels = dailyData.map(d => d.day.slice(5));
+  const dailyDa = dailyData.map(d => d.da_avg);
+  const dailyRt = dailyData.map(d => d.rt_avg);
+
+  new Chart(document.getElementById('dailyPriceChart'), {
+    type: 'line',
+    data: {
+      labels: dailyLabels,
+      datasets: [
+        { label: '日前平均电价', data: dailyDa, borderColor: '#2c7da0', backgroundColor: 'rgba(44,125,160,0.12)', tension: 0.25, pointRadius: 1.8 },
+        { label: '实时平均电价', data: dailyRt, borderColor: '#e67e22', backgroundColor: 'rgba(230,126,34,0.12)', tension: 0.25, pointRadius: 1.8 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } } }
+  });
+
+  const hourLabels = hourlyData.map(d => String(d.hour).padStart(2,'0') + ':00');
+  const hourDa = hourlyData.map(d => d.da_avg);
+  const hourRt = hourlyData.map(d => d.rt_avg);
+
+  new Chart(document.getElementById('hourlyPriceChart'), {
+    type: 'line',
+    data: {
+      labels: hourLabels,
+      datasets: [
+        { label: '日前平均电价', data: hourDa, borderColor: '#2c7da0', backgroundColor: 'rgba(44,125,160,0.12)', tension: 0.3, pointRadius: 2 },
+        { label: '实时平均电价', data: hourRt, borderColor: '#e67e22', backgroundColor: 'rgba(230,126,34,0.12)', tension: 0.3, pointRadius: 2 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } } }
+  });
+
+  const tbody = document.querySelector('#hourlyTable tbody');
+  tbody.innerHTML = hourlyData.map(d => `<tr><td>${String(d.hour).padStart(2,'0')}:00</td><td>${d.da_avg.toFixed(2)}</td><td>${d.rt_avg.toFixed(2)}</td><td>${d.spread.toFixed(2)}</td></tr>`).join('');
+</script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+
+  function tableToAoA(table){
+    const aoa = [];
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('th,td');
+      const row = [];
+      cells.forEach(cell => row.push((cell.innerText || '').replace(/\s+/g, ' ').trim()));
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+
+  function exportExcel(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.closest('section')?.querySelector('h2') || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title, idx));
+      });
+      if (!wb.SheetNames.length) {
+        const ws = XLSX.utils.aoa_to_sheet([['提示'], ['表格存在但未提取到有效数据']]);
+        XLSX.utils.book_append_sheet(wb, ws, '说明');
+      }
+    }
+
+    const titleText = (document.querySelector('.title-section h1') || document.querySelector('h1') || document.querySelector('title'))?.textContent || '省份月报';
+    const safeTitle = titleText.replace(/[\\\/?*\[\]:]/g, ' ').replace(/\s+/g, '').slice(0, 40);
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `${safeTitle || '省份月报'}_${ts}.xlsx`);
+  }
+
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+
+</body>
+</html>

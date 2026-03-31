@@ -44,6 +44,12 @@
       "file": "reports/shanxi1/陕西1月分析报告.html",
       "label": "2026年1月"
     }
+  },
+  "heilongjiang": {
+    "2026-01": {
+      "file": "reports/heilongjiang/黑龙江电力市场2026年1月市场运行分析报告.html",
+      "label": "2026年1月"
+    }
   }
 }
 
