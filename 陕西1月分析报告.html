@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>陕西1月分析报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f3f7fb; color: #17324d; line-height: 1.5; }
+        .container { max-width: 1280px; margin: 0 auto; padding: 16px; }
+        .header { border-bottom: 2px solid #2d7da1; padding-bottom: 10px; margin-bottom: 16px; }
+        .title h1 { font-size: 28px; color: #175a7a; }
+        .title p { color: #4b6b81; font-size: 14px; margin-top: 4px; }
+        .card { background: #fff; border: 1px solid #deebf2; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .card h2 { font-size: 20px; color: #205d7a; border-left: 4px solid #2d7da1; padding-left: 10px; margin-bottom: 10px; }
+        .card h3 { font-size: 16px; color: #2b5f7b; margin: 12px 0 8px; }
+        .insight { background: #eef4fa; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+        .insight p + p { margin-top: 6px; }
+        .highlight { color: #d9534f; font-weight: 700; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+        th, td { border: 1px solid #d6e6ef; padding: 8px 6px; text-align: center; }
+        th { background: #eaf3f8; color: #245771; }
+        .text-left { text-align: left; }
+        .chart-box { border: 1px solid #dceaf2; border-radius: 12px; padding: 10px; background: #fbfdff; margin-top: 10px; }
+        .chart-box canvas { width: 100% !important; height: 300px !important; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 12px; }
+        .daily-chart canvas { height: 280px !important; }
+        .data-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .note { color: #607b8a; font-size: 12px; margin-top: 6px; }
+        footer { margin: 18px 0 8px; font-size: 12px; color: #668190; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="title">
+            <h1>⚡ 陕西1月分析报告</h1>
+            <p>基于《陕西电力市场信息披露报告（2026年1月）-发布版》整理</p>
+        </div>
+    </div>
+
+    <section class="card">
+        <h2>📌 核心速览</h2>
+        <div class="insight">
+            <p><strong>💰 现货市场价格对比与波动：</strong>1月省内现货交易31天，发电侧日前日均出清电量约 <span class="highlight">6.12亿kWh</span>、加权均价 <span class="highlight">282.60元/MWh</span>；实时日均出清电量约 <span class="highlight">6.03亿kWh</span>、加权均价 <span class="highlight">277.87元/MWh</span>。日度走势呈“月初高位、月中回落、月底修复”特征。</p>
+            <p><strong>📌 市场供需概况：</strong>截至1月底，全省发电装机 <span class="highlight">12819.23万kW</span>，火电占比约 <span class="highlight">49.6%</span>、太阳能占比约 <span class="highlight">32.8%</span>；1月全社会用电量 <span class="highlight">255.43亿kWh</span>，其中二产用电占比约 <span class="highlight">59.3%</span>。1月最大负荷 <span class="highlight">4053万kW</span>、最小负荷 <span class="highlight">2680万kW</span>。</p>
+            <p><strong>⚡ 现货交易特征：</strong>1月现货分电源合计：日前出清电量 <span class="highlight">178.73亿kWh</span>、均价 <span class="highlight">281.47元/MWh</span>；实时上网电量 <span class="highlight">183.38亿kWh</span>、均价 <span class="highlight">271.27元/MWh</span>。火电仍是现货主力，新能源量价分化明显。</p>
+            <p class="note">注：价格与电量口径均来自披露报告原文表格；本文用于市场分析展示，不构成交易建议。</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>🏭 市场供需情况 & 关键指标月度对比</h2>
+        <h3>📋 分产业用电量（亿千瓦时）</h3>
+        <table>
+            <thead><tr><th>月份</th><th>全社会用电量</th><th>第一产业</th><th>第二产业</th><th>第三产业</th><th>城乡居民生活</th></tr></thead>
+            <tbody><tr><td>2026年1月</td><td>255.43</td><td>2.07</td><td>151.59</td><td>56.79</td><td>44.98</td></tr></tbody>
+        </table>
+
+        <h3>⚙️ 发电装机容量（万kW）</h3>
+        <table>
+            <thead><tr><th>时间</th><th>总装机</th><th>水电</th><th>火电</th><th>风电</th><th>太阳能</th><th>新型储能</th></tr></thead>
+            <tbody><tr><td>2026年1月底</td><td>12819.23</td><td>506.27</td><td>6352.33</td><td>1739.73</td><td>4211.08</td><td>9.80</td></tr></tbody>
+        </table>
+
+        <h3>🔆 发电量结构（亿千瓦时）</h3>
+        <table>
+            <thead><tr><th>月份</th><th>类型</th><th>发电量</th><th>占比</th><th>同比</th></tr></thead>
+            <tbody>
+                <tr><td>2026年1月</td><td>火电</td><td>294.78</td><td>82.30%</td><td>+16.96%</td></tr>
+                <tr><td>2026年1月</td><td>风电</td><td>27.28</td><td>7.62%</td><td>+38.97%</td></tr>
+                <tr><td>2026年1月</td><td>光伏</td><td>29.61</td><td>8.27%</td><td>+16.21%</td></tr>
+                <tr><td>2026年1月</td><td>水电</td><td>6.34</td><td>1.77%</td><td>+59.70%</td></tr>
+            </tbody>
+        </table>
+
+        <div class="chart-box"><h3>📊 分产业用电量对比</h3><canvas id="industryChart"></canvas></div>
+        <div class="chart-box"><h3>📊 发电装机容量对比</h3><canvas id="capacityChart"></canvas></div>
+        <div class="chart-box"><h3>📊 发电量对比</h3><canvas id="generationChart"></canvas></div>
+    </section>
+
+    <section class="card">
+        <h2>💹 集中竞价交易 (2026年1月)</h2>
+        <table>
+            <thead><tr><th>交易类别（执行月）</th><th>交易电量（亿kWh）</th><th>交易均价（元/MWh）</th><th>占执行月总量</th></tr></thead>
+            <tbody>
+                <tr><td class="text-left">双边协商（多年/年度/多月/月度/月内）</td><td>48.36</td><td>335.34</td><td>42.01%</td></tr>
+                <tr><td class="text-left">集中竞价（年度+月度）</td><td>46.01</td><td>388.80</td><td>39.97%</td></tr>
+                <tr><td class="text-left">挂牌（年度）</td><td>18.15</td><td>320.35</td><td>15.77%</td></tr>
+                <tr><td class="text-left">融合交易净增量（月内）</td><td>2.60</td><td>323.60</td><td>2.26%</td></tr>
+                <tr><td class="text-left"><strong>执行月合计（1月）</strong></td><td><strong>115.12</strong></td><td><strong>356.52</strong></td><td><strong>100%</strong></td></tr>
+            </tbody>
+        </table>
+        <div class="chart-grid">
+            <div class="chart-box"><h3>省内中长期交易结构（执行月）</h3><canvas id="tradeMixChart"></canvas></div>
+            <div class="chart-box">
+                <h3>结算价格参考（1月）</h3>
+                <table>
+                    <thead><tr><th>主体</th><th>结算电量（亿kWh）</th><th>结算均价（元/MWh）</th></tr></thead>
+                    <tbody>
+                        <tr><td class="text-left">直接参与批发交易用户</td><td>2.74</td><td>322.88</td></tr>
+                        <tr><td class="text-left">售电公司（批发市场）</td><td>102.94</td><td>307.04</td></tr>
+                        <tr><td class="text-left">售电公司（零售市场）</td><td>102.94</td><td>306.35</td></tr>
+                        <tr><td class="text-left">零售用户</td><td>102.94</td><td>321.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3>分电源类型交易情况（执行月）</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>电源类型</th>
+                    <th>交易电量（亿kWh）</th>
+                    <th>交易均价（元/MWh）</th>
+                    <th>电量占比</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="text-left">常规火电</td><td>109.47</td><td>356.87</td><td>95.09%</td></tr>
+                <tr><td class="text-left">常规水电</td><td>4.53</td><td>322.77</td><td>3.94%</td></tr>
+                <tr><td class="text-left">常规风电</td><td>0.44</td><td>768.79</td><td>0.38%</td></tr>
+                <tr><td class="text-left">常规光伏</td><td>0.32</td><td>287.70</td><td>0.28%</td></tr>
+                <tr><td class="text-left">绿电（光伏）</td><td>0.28</td><td>211.78</td><td>0.24%</td></tr>
+                <tr><td class="text-left">绿电（风电）</td><td>0.08</td><td>331.00</td><td>0.07%</td></tr>
+                <tr><td class="text-left"><strong>合计</strong></td><td><strong>115.12</strong></td><td><strong>356.52</strong></td><td><strong>100%</strong></td></tr>
+            </tbody>
+        </table>
+        <div class="chart-box">
+            <h3>分电源类型交易电量占比（执行月）</h3>
+            <canvas id="powerTypeTradeMixChart"></canvas>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>⚡ 现货市场交易 (1月)</h2>
+        <h3>现货市场月度汇总（日前/实时）</h3>
+        <table>
+            <thead><tr><th>月份</th><th>市场类型</th><th>出清电量（亿kWh）</th><th>加权均价（元/MWh）</th></tr></thead>
+            <tbody>
+                <tr><td>2026年1月</td><td class="text-left">日前市场</td><td>178.73</td><td>281.47</td></tr>
+                <tr><td>2026年1月</td><td class="text-left">实时市场</td><td>183.38</td><td>271.27</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1月现货市场每日出清情况</h3>
+        <div class="chart-box daily-chart"><canvas id="dailyVolumeChart"></canvas><div class="note">实时出清电量（左轴）vs 日前出清电量（右轴）</div></div>
+
+        <h3>1月现货市场每日出清均价趋势</h3>
+        <div class="chart-box daily-chart"><canvas id="dailyPriceChart"></canvas><div class="note">日前出清均价 vs 实时出清均价</div></div>
+
+        <h3>1月现货市场每日明细表</h3>
+        <div class="data-table-wrapper">
+            <table id="dailySpotTable">
+                <thead><tr><th>日期</th><th>日前出清电量（亿kWh）</th><th>日前均价（元/MWh）</th><th>实时出清电量（亿kWh）</th><th>实时均价（元/MWh）</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h3>中长期分时曲线（24时段，执行月）</h3>
+        <div class="chart-box"><canvas id="midLong24hChart"></canvas><div class="note">来源：1月省内中长期批发侧分时段出清情况（24时段）</div></div>
+    </section>
+
+    <section class="card">
+        <h2>⚠️ 市场运行关注点</h2>
+        <table>
+            <thead><tr><th>关注点</th><th>披露信息</th><th>潜在影响</th></tr></thead>
+            <tbody>
+                <tr><td class="text-left">负荷波动</td><td>1月最大负荷4053万kW，最小2680万kW</td><td>寒潮阶段峰段电价与出清电量弹性增强</td></tr>
+                <tr><td class="text-left">市场主体注册</td><td>当月新注册449家，累计注册生效20911家</td><td>市场活跃度上升，竞争更充分</td></tr>
+                <tr><td class="text-left">市场建设</td><td>发布容量电价机制相关政策通知</td><td>中长期与现货报价行为将逐步受容量机制影响</td></tr>
+                <tr><td class="text-left">违规与干预</td><td>1月无政府认定违规、无市场干预</td><td>规则环境稳定</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer>数据来源：陕西电力市场信息披露报告（2026年1月）发布版。</footer>
+</div>
+
+<script>
+    const dailySpot = [
+        ["1月1日",6.25,418.51,6.37,434.57],["1月2日",5.92,324.43,6.45,406.34],["1月3日",6.57,374.10,6.70,467.80],
+        ["1月4日",6.39,350.15,6.39,374.75],["1月5日",6.25,358.50,6.34,377.29],["1月6日",6.03,356.73,5.88,326.34],
+        ["1月7日",6.01,373.19,5.84,347.75],["1月8日",6.31,321.80,6.11,299.04],["1月9日",5.91,235.27,5.40,175.19],
+        ["1月10日",5.76,201.19,5.52,181.72],["1月11日",5.83,234.89,5.67,231.46],["1月12日",5.81,239.27,5.44,153.78],
+        ["1月13日",5.88,324.33,5.59,249.74],["1月14日",5.71,308.68,5.50,271.51],["1月15日",5.75,286.88,5.44,225.81],
+        ["1月16日",5.76,276.67,5.63,234.68],["1月17日",5.20,50.53,4.93,60.81],["1月18日",5.74,196.43,5.90,243.87],
+        ["1月19日",6.58,357.41,6.59,375.73],["1月20日",6.76,385.62,6.15,275.57],["1月21日",6.54,329.23,6.03,299.82],
+        ["1月22日",6.38,332.34,6.31,315.00],["1月23日",6.41,308.63,6.61,328.69],["1月24日",5.80,100.04,5.56,54.31],
+        ["1月25日",6.04,190.35,6.18,227.41],["1月26日",6.39,262.36,6.40,276.42],["1月27日",6.41,282.70,6.48,309.79],
+        ["1月28日",6.33,181.20,6.32,230.23],["1月29日",6.33,251.80,6.26,238.78],["1月30日",6.58,241.60,6.49,220.69],
+        ["1月31日",6.23,222.61,6.46,244.05]
+    ];
+
+    const mid24hVolume = [4.86,5.07,4.86,4.74,4.71,4.86,4.62,5.09,4.69,4.10,4.04,3.94,3.78,3.69,3.71,3.93,4.44,5.29,5.92,5.93,5.73,5.87,5.79,5.47];
+    const mid24hPrice = [414.30,382.25,358.54,357.29,356.20,360.19,405.07,412.08,379.36,303.07,199.11,200.39,200.26,200.61,200.81,199.29,308.60,441.26,459.68,459.36,457.74,400.58,399.75,398.63];
+
+    // 电网与供需图
+    new Chart(document.getElementById('industryChart'), {
+        type: 'bar',
+        data: { labels: ['第一产业','第二产业','第三产业','城乡居民'], datasets: [{ label: '2026年1月', data: [2.07,151.59,56.79,44.98], backgroundColor: '#2c7da0' }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    new Chart(document.getElementById('capacityChart'), {
+        type: 'bar',
+        data: { labels: ['水电','火电','风电','太阳能','新型储能'], datasets: [{ label: '装机(万kW)', data: [506.27,6352.33,1739.73,4211.08,9.8], backgroundColor: '#2c7da0' }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    new Chart(document.getElementById('generationChart'), {
+        type: 'bar',
+        data: { labels: ['火电','风电','光伏','水电'], datasets: [{ label: '发电量(亿kWh)', data: [294.78,27.28,29.61,6.34], backgroundColor: '#2c7da0' }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 交易结构
+    new Chart(document.getElementById('tradeMixChart'), {
+        type: 'pie',
+        data: { labels: ['双边协商','集中竞价','挂牌','融合净增量'], datasets: [{ data: [48.36,46.01,18.15,2.60], backgroundColor: ['#2d7da1','#e67e22','#8e9aa0','#9b59b6'] }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    new Chart(document.getElementById('powerTypeTradeMixChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['常规火电','常规水电','常规风电','常规光伏','绿电（光伏）','绿电（风电）'],
+            datasets: [{
+                data: [109.47,4.53,0.44,0.32,0.28,0.08],
+                backgroundColor: ['#e67e22','#3498db','#2ecc71','#f1c40f','#9b59b6','#1abc9c']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 现货日明细表
+    document.querySelector('#dailySpotTable tbody').innerHTML = dailySpot.map(d => `<tr>
+        <td>${d[0]}</td><td>${d[1].toFixed(2)}</td><td>${d[2].toFixed(2)}</td><td>${d[3].toFixed(2)}</td><td>${d[4].toFixed(2)}</td>
+    </tr>`).join('');
+
+    const dayLabels = dailySpot.map(d => d[0].replace('月','-').replace('日',''));
+    const daVols = dailySpot.map(d => d[1]);
+    const daPrices = dailySpot.map(d => d[2]);
+    const rtVols = dailySpot.map(d => d[3]);
+    const rtPrices = dailySpot.map(d => d[4]);
+
+    new Chart(document.getElementById('dailyVolumeChart'), {
+        type: 'line',
+        data: { labels: dayLabels, datasets: [
+            { label: '实时出清电量(亿kWh)', data: rtVols, borderColor: '#e74c3c', yAxisID: 'y' },
+            { label: '日前出清电量(亿kWh)', data: daVols, borderColor: '#3498db', yAxisID: 'y1' }
+        ]},
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } } }
+        }
+    });
+    new Chart(document.getElementById('dailyPriceChart'), {
+        type: 'line',
+        data: { labels: dayLabels, datasets: [
+            { label: '日前均价(元/MWh)', data: daPrices, borderColor: '#3498db' },
+            { label: '实时均价(元/MWh)', data: rtPrices, borderColor: '#e74c3c' }
+        ]},
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('midLong24hChart'), {
+        type: 'line',
+        data: {
+            labels: Array.from({length:24}, (_,i)=>`时段${i+1}`),
+            datasets: [
+                { label: '中长期出清电量(亿kWh)', data: mid24hVolume, borderColor: '#2c7da0', yAxisID: 'y' },
+                { label: '中长期电价(元/MWh)', data: mid24hPrice, borderColor: '#e67e22', yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } } }
+        }
+    });
+</script>
+</body>
+</html>
