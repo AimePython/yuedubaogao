@@ -50,6 +50,12 @@
       "file": "reports/heilongjiang/黑龙江电力市场2026年1月市场运行分析报告.html",
       "label": "2026年1月"
     }
+  },
+  "gansu": {
+    "2026-01": {
+      "file": "reports/gansu/甘肃1月分析报告.html",
+      "label": "2026年1月"
+    }
   }
 }
 

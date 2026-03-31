@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>甘肃电力市场运行分析 · 2026年1月</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; background: #f0f4f8; color: #1a2c3e; padding: 1rem; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #2c7da0; padding-bottom: 0.75rem; }
+    .title-section h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #1e5f7a, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .title-section p { color: #2c5a6e; margin-top: 0.2rem; font-size: 0.82rem; }
+    .download-btn { background: #2c7da0; border: none; padding: 0.6rem 1.2rem; border-radius: 48px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .download-btn:hover { background: #1f5e7a; transform: translateY(-2px); }
+    .card { background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1rem 1.2rem; margin-bottom: 1.5rem; border: 1px solid #e2edf2; }
+    .card h2 { font-size: 1.3rem; font-weight: 600; border-left: 4px solid #2c7da0; padding-left: 0.8rem; margin-bottom: 1rem; color: #1e4a62; }
+    .card h3 { font-size: 1.05rem; margin: 0.9rem 0 0.5rem 0; color: #2c7da0; }
+    .insight-box { background: #eef3fa; padding: 0.8rem; border-radius: 16px; margin-bottom: 1rem; }
+    .insight-box p { margin: 0.5rem 0; line-height: 1.45; font-size: 0.86rem; }
+    .highlight { font-weight: bold; color: #d9534f; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.6rem; }
+    .stat-item { text-align: center; background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f2 100%); border-radius: 12px; padding: 0.8rem; border: 1px solid #b8d9e8; }
+    .stat-label { font-size: 0.75rem; color: #5f7f8c; margin-bottom: 0.3rem; }
+    .stat-value { font-size: 1.2rem; font-weight: 700; color: #2c7da0; }
+    .chart-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
+    @media (min-width: 900px) { .chart-container { grid-template-columns: 1fr 1fr; } }
+    .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; text-align: center; }
+    .chart-box canvas { max-height: 300px; width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
+    th, td { border: 1px solid #d4e2e9; padding: 0.45rem 0.35rem; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
+    th { background: #e9f2f7; font-weight: 600; color: #1a4c63; }
+    .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .note { font-size: 0.72rem; color: #5f7f8c; margin-top: 0.5rem; }
+    footer { text-align: center; margin-top: 1.5rem; font-size: 0.72rem; color: #5f7f8c; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title-section">
+      <h1>⚡ 甘肃电力市场运行分析 · 2026年1月</h1>
+      <p>依据《甘肃2026年1月信息披露报告》与现货数据文件整理</p>
+    </div>
+    <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
+  </div>
+
+  <div class="card">
+    <h2>📊 核心速览</h2>
+    <div class="insight-box">
+      <p><strong>电网与供需：</strong>1月全社会用电量 <span class="highlight">166.65 亿kWh</span>（同比+6.41%），省级结算口径上网电量 <span class="highlight">191.22 亿kWh</span>（同比+10.95%）。</p>
+      <p><strong>装机与结构：</strong>截至1月底全省装机 <span class="highlight">12482.67 万kW</span>（同比+23.95%），其中风电4100.10万kW、光伏3949.22万kW，新能源装机占比持续提升。</p>
+      <p><strong>结算与市场：</strong>用户侧现货结算电量 <span class="highlight">53.648 亿kWh</span>，结算现货均价 <span class="highlight">252.150 元/MWh</span>；中长期交易用户结算均价 <span class="highlight">257.662 元/MWh</span>。</p>
+      <p><strong>风险观察：</strong>1月未发现市场主体违规行为，未发生市场干预；2月预计全网供电能力可满足内供外送需求。</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-label">全社会用电量</div><div class="stat-value">166.65 亿kWh</div></div>
+      <div class="stat-item"><div class="stat-label">上网电量</div><div class="stat-value">191.22 亿kWh</div></div>
+      <div class="stat-item"><div class="stat-label">全省装机规模</div><div class="stat-value">12482.67 万kW</div></div>
+      <div class="stat-item"><div class="stat-label">现货结算均价</div><div class="stat-value">252.15 元/MWh</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏭 市场供需情况 & 关键指标月度对比</h2>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>指标</th><th>2026年1月</th><th>同比</th></tr></thead>
+        <tbody>
+          <tr><td>全社会用电量（亿kWh）</td><td>166.65</td><td>+6.41%</td></tr>
+          <tr><td>省级结算口径上网电量（亿kWh）</td><td>191.22</td><td>+10.95%</td></tr>
+          <tr><td>全省发电装机容量（万kW）</td><td>12482.67</td><td>+23.95%</td></tr>
+          <tr><td>发电利用小时（小时）</td><td>206</td><td>持平</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>⚙️ 装机容量结构（万kW）</h3>
+        <canvas id="capMixChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>🔌 上网电量结构（亿kWh）</h3>
+        <canvas id="genMixChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📑 交易组织与结算情况（2026年1月）</h2>
+    <h3>🧾 用户侧结算概览</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>项目</th><th>数据</th></tr></thead>
+        <tbody>
+          <tr><td>中长期交易用户数</td><td>6424 户</td></tr>
+          <tr><td>中长期合同电量</td><td>19.098 亿kWh</td></tr>
+          <tr><td>中长期结算电量</td><td>34.420 亿kWh</td></tr>
+          <tr><td>中长期结算均价</td><td>257.662 元/MWh</td></tr>
+          <tr><td>现货交易用户数</td><td>388 户</td></tr>
+          <tr><td>现货结算电量</td><td>53.648 亿kWh</td></tr>
+          <tr><td>现货结算均价</td><td>252.150 元/MWh</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>⚡ 发电侧结算概览</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>发电类型</th><th>结算电量（亿kWh）</th><th>平均执行电价（元/MWh）</th></tr></thead>
+        <tbody>
+          <tr><td>火电</td><td>89.62</td><td>361.187</td></tr>
+          <tr><td>水电</td><td>16.19</td><td>246.732</td></tr>
+          <tr><td>风电</td><td>48.32</td><td>159.760</td></tr>
+          <tr><td>光伏</td><td>26.51</td><td>81.383</td></tr>
+          <tr><td>风光光热一体化</td><td>9.88</td><td>112.706</td></tr>
+          <tr><td>其他</td><td>1.03</td><td>261.917</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ 现货市场交易（1月）</h2>
+    <div class="insight-box">
+      <p><strong>省内现货执行：</strong>发电侧执行现货正电量 <span class="highlight">73.05 亿kWh</span>，现货负电量 <span class="highlight">-48.56 亿kWh</span>，计量偏差修正电量 <span class="highlight">-0.044 亿kWh</span>。</p>
+      <p><strong>跨区跨省：</strong>1月跨区跨省售电量完成 <span class="highlight">99.14 亿kWh</span>（同比+79.18%），购电量完成 <span class="highlight">1.75 亿kWh</span>（同比-64.84%）。</p>
+    </div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>📈 1月跨区跨省净外送情况（亿kWh）</h3>
+        <canvas id="crossTradeChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>🧮 1月用户侧价格对比（元/MWh）</h3>
+        <canvas id="priceCompareChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>📉 日度出清均价趋势（日前/实时）</h3>
+        <canvas id="dailyPriceChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>📊 日度出清电量趋势（日前/实时）</h3>
+        <canvas id="dailyVolChart"></canvas>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <h3>📋 现货日度明细（1月）</h3>
+      <table id="dailyTable">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>日前电量 (MWh)</th>
+            <th>实时电量 (MWh)</th>
+            <th>日前均价 (元/MWh)</th>
+            <th>实时均价 (元/MWh)</th>
+            <th>价差(实时-日前)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🕒 分时曲线（24小时）- 真实数据</h2>
+    <div class="note">说明：本模块基于《甘肃1月现货数据.xlsx》96点数据聚合得到24点：电量按每4点求和，电价按每4点电量加权平均。</div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>⏱️ 日前/实时电价曲线（24小时）</h3>
+        <canvas id="hourlyPriceChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>⚡ 日前/实时电量曲线（24小时）</h3>
+        <canvas id="hourlyVolChart"></canvas>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <h3>📋 24点分时数据表（96点聚合）</h3>
+      <table id="hourlyTable">
+        <thead>
+          <tr>
+            <th>时段</th>
+            <th>日前电量 (MWh)</th>
+            <th>实时电量 (MWh)</th>
+            <th>日前电价 (元/MWh)</th>
+            <th>实时电价 (元/MWh)</th>
+            <th>价差(实时-日前)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-label">日前合计电量 (MWh)</div><div class="stat-value" id="daVolSum">-</div></div>
+      <div class="stat-item"><div class="stat-label">实时合计电量 (MWh)</div><div class="stat-value" id="rtVolSum">-</div></div>
+      <div class="stat-item"><div class="stat-label">日前加权均价 (元/MWh)</div><div class="stat-value" id="daWap">-</div></div>
+      <div class="stat-item"><div class="stat-label">实时加权均价 (元/MWh)</div><div class="stat-value" id="rtWap">-</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 市场运行关注点（2月展望）</h2>
+    <div class="insight-box">
+      <p>1）2月预计全网用电量约145亿kWh（同比+5.65%），最大负荷约2400万kW，供电总体充足。</p>
+      <p>2）外送计划维持高位，建议持续关注主要直流通道执行偏差与阻塞风险对冲费用变化。</p>
+      <p>3）新能源装机和出力占比较高，需关注风光波动对日前-实时价差与不平衡资金的影响。</p>
+    </div>
+  </div>
+
+  <footer>数据来源：甘肃电力市场信息披露文件（GS-08-05-09-202601）及项目内甘肃现货数据文件。</footer>
+</div>
+
+<script>
+  const capData = {
+    labels: ['水电', '火电', '风电', '光伏'],
+    values: [971.99, 3461.36, 4100.10, 3949.22]
+  };
+  const genData = {
+    labels: ['火电', '水电', '风电', '光伏', '其它', '一体化'],
+    values: [89.62, 16.19, 48.32, 26.51, 1.03, 9.88]
+  };
+
+  new Chart(document.getElementById('capMixChart'), {
+    type: 'doughnut',
+    data: { labels: capData.labels, datasets: [{ data: capData.values }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  new Chart(document.getElementById('genMixChart'), {
+    type: 'bar',
+    data: { labels: genData.labels, datasets: [{ label: '亿kWh', data: genData.values, backgroundColor: '#2c7da0' }] },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+
+  new Chart(document.getElementById('crossTradeChart'), {
+    type: 'bar',
+    data: {
+      labels: ['外送电量', '购电量', '净外送电量'],
+      datasets: [{ label: '亿kWh', data: [99.14, 1.75, 97.39], backgroundColor: ['#2c7da0', '#8fbcd4', '#1e5f7a'] }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+
+  new Chart(document.getElementById('priceCompareChart'), {
+    type: 'bar',
+    data: {
+      labels: ['中长期结算均价', '现货结算均价'],
+      datasets: [{ label: '元/MWh', data: [257.662, 252.150], backgroundColor: ['#2c7da0', '#e67e22'] }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: false } } }
+  });
+
+  const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+  const daySelectorWrap = document.createElement('div');
+  daySelectorWrap.className = 'note';
+  daySelectorWrap.style.marginBottom = '0.6rem';
+  daySelectorWrap.innerHTML = '选择日期：<select id="daySelect"></select>';
+  const curveCard = document.querySelector('h2').textContent.includes('分时曲线')
+    ? document.querySelector('h2').closest('.card')
+    : Array.from(document.querySelectorAll('.card')).find(c => c.querySelector('h2')?.textContent.includes('分时曲线'));
+  if (curveCard) curveCard.insertBefore(daySelectorWrap, curveCard.querySelector('.chart-container'));
+
+  function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
+  function weightedAvg(price, vol) {
+    const s = price.reduce((acc, p, i) => acc + p * vol[i], 0);
+    return vol.length ? (s / sum(vol)) : 0;
+  }
+
+  let hourlyPriceChart;
+  let hourlyVolChart;
+  let dailyPriceChart;
+  let dailyVolChart;
+
+  function makeLineChart(el, labels, ds1, ds2, c1, c2) {
+    return new Chart(el, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: ds1.name, data: ds1.data, borderColor: c1, backgroundColor: 'rgba(44,125,160,0.12)', tension: 0.28, pointRadius: 1.8 },
+          { label: ds2.name, data: ds2.data, borderColor: c2, backgroundColor: 'rgba(230,126,34,0.12)', tension: 0.28, pointRadius: 1.8 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    });
+  }
+
+  async function loadSpotXlsx() {
+    const res = await fetch('../../甘肃1月现货数据.xlsx', { cache: 'no-store' });
+    if (!res.ok) throw new Error('failed to load xlsx');
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { raw: true });
+  }
+
+  function formatDay(v) {
+    if (v instanceof Date) {
+      const y = v.getFullYear();
+      const m = String(v.getMonth() + 1).padStart(2, '0');
+      const d = String(v.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const s = String(v).trim();
+    return s.split(' ')[0];
+  }
+
+  function timeMinutes(t) {
+    const [h, m] = String(t).split(':').map(Number);
+    return (h === 24 ? 24 : h) * 60 + m;
+  }
+
+  function aggregateData(rows) {
+    const janRows = rows.filter(r => formatDay(r['日期']).startsWith('2026-01'));
+    const byDay = {};
+
+    janRows.forEach(r => {
+      const day = formatDay(r['日期']);
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push({
+        t: String(r['时段']),
+        daVol: Number(r['日前市场出清总电量（兆瓦时）'] || 0),
+        daPrice: Number(r['日前价格（元/MWh）'] || 0),
+        rtVol: Number(r['实时市场出清总电量（兆瓦时）'] || 0),
+        rtPrice: Number(r['实时价格（元/MWh）'] || 0)
+      });
+    });
+
+    const dayKeys = Object.keys(byDay).sort();
+    const day24 = {};
+    const monthBucket = Array.from({ length: 24 }, () => ({ daVol: 0, rtVol: 0, daPV: 0, rtPV: 0 }));
+    const dailyData = [];
+
+    dayKeys.forEach(day => {
+      const arr = byDay[day].sort((a, b) => timeMinutes(a.t) - timeMinutes(b.t));
+      const daVol = [], rtVol = [], daPrice = [], rtPrice = [];
+
+      for (let i = 0; i < 24; i++) {
+        const chunk = arr.slice(i * 4, (i + 1) * 4);
+        const dv = chunk.reduce((s, x) => s + x.daVol, 0);
+        const rv = chunk.reduce((s, x) => s + x.rtVol, 0);
+        const dpv = chunk.reduce((s, x) => s + x.daVol * x.daPrice, 0);
+        const rpv = chunk.reduce((s, x) => s + x.rtVol * x.rtPrice, 0);
+        daVol.push(dv);
+        rtVol.push(rv);
+        daPrice.push(dv ? dpv / dv : 0);
+        rtPrice.push(rv ? rpv / rv : 0);
+
+        monthBucket[i].daVol += dv;
+        monthBucket[i].rtVol += rv;
+        monthBucket[i].daPV += dpv;
+        monthBucket[i].rtPV += rpv;
+      }
+
+      const dayDaVol = sum(daVol);
+      const dayRtVol = sum(rtVol);
+      const dayDaAvg = weightedAvg(daPrice, daVol);
+      const dayRtAvg = weightedAvg(rtPrice, rtVol);
+      dailyData.push({
+        day,
+        daVolMWh: dayDaVol,
+        rtVolMWh: dayRtVol,
+        daAvg: dayDaAvg,
+        rtAvg: dayRtAvg,
+        spread: dayRtAvg - dayDaAvg
+      });
+
+      day24[day] = { daVol, rtVol, daPrice, rtPrice };
+    });
+
+    const month24 = {
+      daVol: monthBucket.map(x => x.daVol),
+      rtVol: monthBucket.map(x => x.rtVol),
+      daPrice: monthBucket.map(x => (x.daVol ? x.daPV / x.daVol : 0)),
+      rtPrice: monthBucket.map(x => (x.rtVol ? x.rtPV / x.rtVol : 0))
+    };
+
+    return { dayKeys, day24, dailyData, month24 };
+  }
+
+  function renderDailyTable(dailyData) {
+    const dailyTbody = document.querySelector('#dailyTable tbody');
+    dailyTbody.innerHTML = dailyData.map(d => `<tr><td>${d.day}</td><td>${d.daVolMWh.toFixed(2)}</td><td>${d.rtVolMWh.toFixed(2)}</td><td>${d.daAvg.toFixed(2)}</td><td>${d.rtAvg.toFixed(2)}</td><td>${d.spread.toFixed(2)}</td></tr>`).join('');
+  }
+
+  function renderHourlyTable(p) {
+    const tbody = document.querySelector('#hourlyTable tbody');
+    tbody.innerHTML = hours.map((h, i) => `<tr><td>${h}</td><td>${p.daVol[i].toFixed(2)}</td><td>${p.rtVol[i].toFixed(2)}</td><td>${p.daPrice[i].toFixed(2)}</td><td>${p.rtPrice[i].toFixed(2)}</td><td>${(p.rtPrice[i] - p.daPrice[i]).toFixed(2)}</td></tr>`).join('');
+  }
+
+  function updateTimeCurve(p) {
+    hourlyPriceChart.data.datasets[0].data = p.daPrice;
+    hourlyPriceChart.data.datasets[1].data = p.rtPrice;
+    hourlyPriceChart.update();
+
+    hourlyVolChart.data.datasets[0].data = p.daVol;
+    hourlyVolChart.data.datasets[1].data = p.rtVol;
+    hourlyVolChart.update();
+
+    renderHourlyTable(p);
+    document.getElementById('daVolSum').textContent = sum(p.daVol).toFixed(2);
+    document.getElementById('rtVolSum').textContent = sum(p.rtVol).toFixed(2);
+    document.getElementById('daWap').textContent = weightedAvg(p.daPrice, p.daVol).toFixed(2);
+    document.getElementById('rtWap').textContent = weightedAvg(p.rtPrice, p.rtVol).toFixed(2);
+  }
+
+  function showSpotLoadError(err) {
+    const msg = `现货数据加载失败：${err && err.message ? err.message : err}。请通过本地服务打开（如 python3 serve.py）或确认xlsx文件已随站点发布。`;
+    const dailyTbody = document.querySelector('#dailyTable tbody');
+    const hourlyTbody = document.querySelector('#hourlyTable tbody');
+    if (dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="6">${msg}</td></tr>`;
+    if (hourlyTbody) hourlyTbody.innerHTML = `<tr><td colspan="6">${msg}</td></tr>`;
+    document.getElementById('daVolSum').textContent = '-';
+    document.getElementById('rtVolSum').textContent = '-';
+    document.getElementById('daWap').textContent = '-';
+    document.getElementById('rtWap').textContent = '-';
+    console.error('Gansu spot data init failed:', err);
+  }
+
+  (async function initSpot() {
+    try {
+      const rows = await loadSpotXlsx();
+      const { dayKeys, day24, dailyData, month24 } = aggregateData(rows);
+
+      dailyPriceChart = makeLineChart(
+        document.getElementById('dailyPriceChart'),
+        dailyData.map(d => d.day.slice(5)),
+        { name: '日前均价', data: dailyData.map(d => d.daAvg) },
+        { name: '实时均价', data: dailyData.map(d => d.rtAvg) },
+        '#2c7da0', '#e67e22'
+      );
+      dailyVolChart = makeLineChart(
+        document.getElementById('dailyVolChart'),
+        dailyData.map(d => d.day.slice(5)),
+        { name: '日前电量(MWh)', data: dailyData.map(d => d.daVolMWh) },
+        { name: '实时电量(MWh)', data: dailyData.map(d => d.rtVolMWh) },
+        '#1e5f7a', '#f39c12'
+      );
+      renderDailyTable(dailyData);
+
+      hourlyPriceChart = makeLineChart(
+        document.getElementById('hourlyPriceChart'),
+        hours,
+        { name: '日前电价', data: month24.daPrice },
+        { name: '实时电价', data: month24.rtPrice },
+        '#2c7da0', '#e67e22'
+      );
+      hourlyVolChart = makeLineChart(
+        document.getElementById('hourlyVolChart'),
+        hours,
+        { name: '日前电量', data: month24.daVol },
+        { name: '实时电量', data: month24.rtVol },
+        '#1e5f7a', '#f39c12'
+      );
+
+      const sel = document.getElementById('daySelect');
+      sel.innerHTML = `<option value="__month__">全月加权（24点）</option>` + dayKeys.map(d => `<option value="${d}">${d}</option>`).join('');
+      sel.addEventListener('change', () => {
+        const day = sel.value;
+        updateTimeCurve(day === '__month__' ? month24 : day24[day]);
+      });
+
+      updateTimeCurve(month24);
+    } catch (err) {
+      showSpotLoadError(err);
+    }
+  })();
+</script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+  function tableToAoA(table){
+    const aoa = [];
+    table.querySelectorAll('tr').forEach(tr => {
+      const row = Array.from(tr.querySelectorAll('th,td')).map(cell => (cell.innerText || '').replace(/\s+/g, ' ').trim());
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+  function exportExcel(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const title = table.closest('.card')?.querySelector('h2')?.textContent || `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title, idx));
+      });
+    }
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `甘肃1月市场报告_${ts}.xlsx`);
+  }
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+</body>
+</html>
+
