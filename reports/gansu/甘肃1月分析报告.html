@@ -296,15 +296,37 @@
     return XLSX.utils.sheet_to_json(ws, { raw: true });
   }
 
+  function toYmd(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   function formatDay(v) {
-    if (v instanceof Date) {
-      const y = v.getFullYear();
-      const m = String(v.getMonth() + 1).padStart(2, '0');
-      const d = String(v.getDate()).padStart(2, '0');
+    if (v instanceof Date) return toYmd(v);
+
+    // Excel numeric date serial (1900 date system)
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      const ms = Math.round(v * 24 * 60 * 60 * 1000);
+      const d = new Date(excelEpoch.getTime() + ms);
+      if (!Number.isNaN(d.getTime())) return toYmd(d);
+    }
+
+    const s = String(v || '').trim().split(' ')[0];
+    if (!s) return '';
+
+    // Normalize "2026/1/1", "2026.1.1", "2026-1-1" -> "2026-01-01"
+    const match = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+    if (match) {
+      const y = match[1];
+      const m = String(Number(match[2])).padStart(2, '0');
+      const d = String(Number(match[3])).padStart(2, '0');
       return `${y}-${m}-${d}`;
     }
-    const s = String(v).trim();
-    return s.split(' ')[0];
+
+    return s.replace(/\//g, '-');
   }
 
   function timeMinutes(t) {
