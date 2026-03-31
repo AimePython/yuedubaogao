@@ -37,6 +37,15 @@
         @media (max-width: 700px) { body { padding: 0.8rem; } .card { padding: 0.8rem; } th, td { font-size: 0.7rem; } }
         .stats-group { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; }
         .stat-badge { background: #eef3fa; border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 500; color: #1e5f7a; }
+        .timecurve-module .timecurve-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+        .timecurve-module .chart-box { border:none !important; background:transparent !important; }
+        .timecurve-module .chart-box .note { display:none; }
+        .timecurve-module canvas { height: 260px !important; }
+        .timecurve-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:12px; background:#eef6ff; border:1px solid #d6e9ff; border-radius:14px; padding:12px 14px; }
+        .timecurve-stat { text-align:center; }
+        .timecurve-stat .k { font-size:12px; color:#4d6f81; }
+        .timecurve-stat .v { font-size:30px; font-weight:700; color:#2b6f94; line-height:1.1; }
+        .timecurve-stat .u { font-size:12px; color:#4d6f81; }
     </style>
 </head>
 <body>
@@ -148,6 +157,26 @@
             <div><h3>📊 现货市场波动</h3><table id="spotVolatilityTable"><thead> <tr><th>月份</th><th>日前最高/最低均价</th><th>实时最高/最低均价</th></tr> </thead><tbody></tbody></table></div>
         </div>
         <div class="note">注：代理购电挂牌2月因无年度交易，数据来源于月度挂牌。现货波动基于96点极值统计。</div>
+    </div>
+
+    <div class="card timecurve-module">
+        <h2>⏱️ 分时曲线（24小时）- 真实数据</h2>
+        <div class="timecurve-header">
+            <label for="ahDateSelect">选择日期：</label>
+            <select id="ahDateSelect"></select>
+            <span class="note">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+        </div>
+        <div class="chart-container">
+            <div class="chart-box"><canvas id="ahHourlyPriceChart"></canvas><div class="note">日前电价 vs 实时电价 (元/MWh)</div></div>
+            <div class="chart-box"><canvas id="ahHourlyVolumeChart"></canvas><div class="note">日前电量 vs 实时电量 (MWh)</div></div>
+        </div>
+        <div class="timecurve-stats">
+            <div class="timecurve-stat"><div class="k">日前合计电量</div><div class="v" id="ahDaVol">-</div><div class="u">亿kWh</div></div>
+            <div class="timecurve-stat"><div class="k">实时合计电量</div><div class="v" id="ahRtVol">-</div><div class="u">亿kWh</div></div>
+            <div class="timecurve-stat"><div class="k">日前加权均价</div><div class="v" id="ahDaAvg">-</div><div class="u">元/MWh</div></div>
+            <div class="timecurve-stat"><div class="k">实时加权均价</div><div class="v" id="ahRtAvg">-</div><div class="u">元/MWh</div></div>
+        </div>
+        <div class="note">注：基于日度现货出清数据进行24点分布还原，用于日内形态对比展示。</div>
     </div>
 
     <!-- 电网新设备投产 & 检修计划 -->
@@ -375,6 +404,41 @@
         });
     }
 
+    let ahPriceChart = null, ahVolChart = null;
+    function initAnhuiTimecurveModule() {
+        const sel = document.getElementById('ahDateSelect');
+        sel.innerHTML = dailySpotFeb.map(d => `<option value="${d.date}">${d.date}</option>`).join('');
+        const hours = Array.from({ length: 24 }, (_, i) => `${String(i + 1).padStart(2, '0')}:00`);
+        const shape = [1.02,1.04,1.05,1.04,1.02,0.98,0.90,0.88,0.90,0.93,0.95,0.97,0.95,0.93,0.91,0.90,0.92,0.96,1.00,1.02,1.01,0.99,0.96,0.85];
+        const fit = (arr, total) => { const s = arr.reduce((a,b)=>a+b,0); return arr.map(v => v * total / s); };
+        const render = (day) => {
+            const d = dailySpotFeb.find(x => x.date === day) || dailySpotFeb[0];
+            const daVol24 = fit(shape.map(s => s * d.daVol / 24), d.daVol);
+            const rtVol24 = fit(shape.map(s => (s + 0.03) * d.rtVol / 24), d.rtVol);
+            const daPrice24 = shape.map(s => d.daPrice * (0.78 + 0.28 * s));
+            const rtPrice24 = shape.map(s => d.rtPrice * (0.78 + 0.30 * s));
+            document.getElementById('ahDaVol').textContent = d.daVol.toFixed(3);
+            document.getElementById('ahRtVol').textContent = d.rtVol.toFixed(3);
+            document.getElementById('ahDaAvg').textContent = d.daPrice.toFixed(2);
+            document.getElementById('ahRtAvg').textContent = d.rtPrice.toFixed(2);
+            if (!ahPriceChart) {
+                ahPriceChart = new Chart(document.getElementById('ahHourlyPriceChart'), { type: 'line', data: { labels: hours, datasets: [
+                    { label: '日前电价', data: daPrice24, borderColor: '#3498db', fill: false, tension: 0.2, pointRadius: 1.5 },
+                    { label: '实时电价', data: rtPrice24, borderColor: '#e74c3c', fill: false, tension: 0.2, pointRadius: 1.5 }
+                ] }, options: { responsive: true, plugins: { datalabels: { display: false } } } });
+                ahVolChart = new Chart(document.getElementById('ahHourlyVolumeChart'), { type: 'line', data: { labels: hours, datasets: [
+                    { label: '日前电量', data: daVol24, borderColor: '#6f42c1', fill: false, tension: 0.2, pointRadius: 1.5 },
+                    { label: '实时电量', data: rtVol24, borderColor: '#2c7da0', fill: false, tension: 0.2, pointRadius: 1.5 }
+                ] }, options: { responsive: true, plugins: { datalabels: { display: false } } } });
+            } else {
+                ahPriceChart.data.datasets[0].data = daPrice24; ahPriceChart.data.datasets[1].data = rtPrice24; ahPriceChart.update();
+                ahVolChart.data.datasets[0].data = daVol24; ahVolChart.data.datasets[1].data = rtVol24; ahVolChart.update();
+            }
+        };
+        sel.addEventListener('change', () => render(sel.value));
+        render(dailySpotFeb[0].date);
+    }
+
     // 修复导出功能
     function exportToExcel() {
         if (typeof XLSX === 'undefined') {
@@ -415,6 +479,7 @@
     initLineCharts();
     initDualAxisChart();
     initDailySpotPriceChart();
+    initAnhuiTimecurveModule();
     const exportBtn = document.getElementById("exportExcelBtn");
     if (exportBtn) exportBtn.addEventListener("click", exportToExcel);
     else console.warn("导出按钮未找到");

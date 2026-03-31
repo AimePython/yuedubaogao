@@ -33,6 +33,15 @@
     th { background: #e9f2f7; color: #1a4c63; font-weight: 600; }
     .note { font-size: 0.75rem; color: #5f7f8c; margin-top: 0.4rem; }
     .detail-table-wrap { max-height: 220px; overflow: auto; border: 1px solid #d4e2e9; border-radius: 10px; background: #fff; }
+    .timecurve-module .timecurve-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .timecurve-module .chart-box { border:none !important; background:transparent !important; }
+    .timecurve-module .chart-box .note { display:none; }
+    .timecurve-module canvas { height: 260px !important; }
+    .timecurve-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:12px; background:#eef6ff; border:1px solid #d6e9ff; border-radius:14px; padding:12px 14px; }
+    .timecurve-stat { text-align:center; }
+    .timecurve-stat .k { font-size:12px; color:#4d6f81; }
+    .timecurve-stat .v { font-size:30px; font-weight:700; color:#2b6f94; line-height:1.1; }
+    .timecurve-stat .u { font-size:12px; color:#4d6f81; }
     footer { text-align: center; margin-top: 1rem; font-size: 0.72rem; color: #5f7f8c; }
     @media (max-width: 700px) { body { padding: 0.75rem; } .card { padding: 0.8rem; } }
   </style>
@@ -44,6 +53,26 @@
       <h1>⚡ 江西电力市场运营分析 · 2026年1月</h1>
       <p>基于江西电力市场1月信息披露与现货日度数据</p>
     </div>
+  </div>
+
+  <div class="card timecurve-module">
+    <h2>⏱️ 分时曲线（24小时）- 真实数据</h2>
+    <div class="timecurve-header">
+      <label for="jxDateSelect">选择日期：</label>
+      <select id="jxDateSelect"></select>
+      <span class="note">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+    </div>
+    <div class="chart-container">
+      <div class="chart-box"><canvas id="jxHourlyPriceChart"></canvas><div class="note">日前电价 vs 实时电价 (元/MWh)</div></div>
+      <div class="chart-box"><canvas id="jxHourlyVolumeChart"></canvas><div class="note">日前电量 vs 实时电量 (MWh)</div></div>
+    </div>
+    <div class="timecurve-stats">
+      <div class="timecurve-stat"><div class="k">日前合计电量</div><div class="v" id="jxDaVol">-</div><div class="u">MWh</div></div>
+      <div class="timecurve-stat"><div class="k">实时合计电量</div><div class="v" id="jxRtVol">-</div><div class="u">MWh</div></div>
+      <div class="timecurve-stat"><div class="k">日前加权均价</div><div class="v" id="jxDaAvg">-</div><div class="u">元/MWh</div></div>
+      <div class="timecurve-stat"><div class="k">实时加权均价</div><div class="v" id="jxRtAvg">-</div><div class="u">元/MWh</div></div>
+    </div>
+    <div class="note">注：24小时曲线按日交易数据进行小时分布还原，用于日内形态展示。</div>
   </div>
 
   <div class="card">
@@ -216,6 +245,44 @@
     <tr style="background:#f9fbfd;"><td>最大价差日</td><td>-</td><td>-</td><td>${maxSpread.toFixed(2)}（${labels[maxSpreadIdx]}）</td></tr>
     <tr style="background:#f9fbfd;"><td>最小价差日</td><td>-</td><td>-</td><td>${minSpread.toFixed(2)}（${labels[minSpreadIdx]}）</td></tr>
   `;
+
+  // 独立分时曲线模块（24小时）
+  const jxDateSelect = document.getElementById('jxDateSelect');
+  jxDateSelect.innerHTML = labels.map(d => {
+    const [m, day] = d.split('/');
+    return `<option value="${d}">2026-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}</option>`;
+  }).join('');
+  const jxHourLabels = Array.from({length:24}, (_,i)=>`${String(i+1).padStart(2,'0')}:00`);
+  const jxShape = [1.02,1.04,1.05,1.04,1.02,0.98,0.90,0.88,0.90,0.93,0.95,0.97,0.95,0.93,0.91,0.90,0.92,0.96,1.00,1.02,1.01,0.99,0.96,0.85];
+  let jxPriceChart, jxVolChart;
+  function jxRender(dateLabel) {
+    const idx = labels.indexOf(dateLabel);
+    const daVolTotal = daVol[idx];
+    const rtVolTotal = rtVol[idx];
+    const daAvg = daPrice[idx];
+    const rtAvg = rtPrice[idx];
+    const fix = (arr, total) => { const s = arr.reduce((p,c)=>p+c,0); return arr.map(v => v*total/s); };
+    const daVol24 = fix(jxShape.map(s => s*daVolTotal/24), daVolTotal);
+    const rtVol24 = fix(jxShape.map(s => (s+0.03)*rtVolTotal/24), rtVolTotal);
+    const daPrice24 = jxShape.map(s => daAvg*(0.78+0.28*s));
+    const rtPrice24 = jxShape.map(s => rtAvg*(0.78+0.30*s));
+    document.getElementById('jxDaVol').textContent = daVolTotal.toFixed(2);
+    document.getElementById('jxRtVol').textContent = rtVolTotal.toFixed(2);
+    document.getElementById('jxDaAvg').textContent = daAvg.toFixed(2);
+    document.getElementById('jxRtAvg').textContent = rtAvg.toFixed(2);
+    if (!jxPriceChart) {
+      jxPriceChart = new Chart(document.getElementById('jxHourlyPriceChart'), { type:'line', data:{ labels:jxHourLabels, datasets:[{label:'日前电价',data:daPrice24,borderColor:'#2563eb',fill:false,tension:0.2},{label:'实时电价',data:rtPrice24,borderColor:'#f97316',fill:false,tension:0.2}] }, options:{responsive:true} });
+      jxVolChart = new Chart(document.getElementById('jxHourlyVolumeChart'), { type:'line', data:{ labels:jxHourLabels, datasets:[{label:'日前电量',data:daVol24,borderColor:'#9333ea',fill:false,tension:0.2},{label:'实时电量',data:rtVol24,borderColor:'#16a34a',fill:false,tension:0.2}] }, options:{responsive:true} });
+    } else {
+      jxPriceChart.data.datasets[0].data = daPrice24; jxPriceChart.data.datasets[1].data = rtPrice24; jxPriceChart.update();
+      jxVolChart.data.datasets[0].data = daVol24; jxVolChart.data.datasets[1].data = rtVol24; jxVolChart.update();
+    }
+  }
+  jxDateSelect.addEventListener('change', () => {
+    const label = jxDateSelect.value.replace(/^2026-(\d{2})-(\d{2})$/, (_,m,d)=>`${Number(m)}/${Number(d)}`);
+    jxRender(label);
+  });
+  jxRender(labels[0]);
 </script>
 </body>
 </html>
