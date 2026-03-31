@@ -127,22 +127,6 @@
       </table>
     </div>
     <div class="note">注：数据来源《2026年01月黑龙江电力市场结算总体情况及分类构成情况》，单位为万千瓦时、元/兆瓦时。</div>
-    <div class="chart-container">
-      <div class="chart-box">
-        <h3>📈 1月每日平均电价趋势</h3>
-        <canvas id="dailyPriceChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>🕒 分时曲线（24小时）- 真实数据</h2>
-    <div class="chart-container">
-      <div class="chart-box">
-        <h3>⏱️ 1月24点分时均价曲线（96点→24点）</h3>
-        <canvas id="hourlyPriceChart"></canvas>
-      </div>
-    </div>
     <div class="overflow-x-auto">
       <h3>📋 24点分时电价数据表</h3>
       <table id="hourlyTable">
@@ -151,6 +135,20 @@
       </table>
     </div>
     <div class="note">说明：由96点每15分钟价格按小时聚合（每4点取算术平均）得到24点曲线，仅抓取日前平均电价与实时平均电价。</div>
+  </div>
+
+  <div class="card">
+    <h2>🕒 分时曲线（24小时）- 真实数据</h2>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>📈 1月每日平均电价趋势</h3>
+        <canvas id="dailyPriceChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>⏱️ 1月24点分时均价曲线（96点→24点）</h3>
+        <canvas id="hourlyPriceChart"></canvas>
+      </div>
+    </div>
   </div>
 
   <div class="card">
