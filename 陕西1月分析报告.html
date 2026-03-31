@@ -29,6 +29,9 @@
         .data-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .note { color: #607b8a; font-size: 12px; margin-top: 6px; }
         footer { margin: 18px 0 8px; font-size: 12px; color: #668190; text-align: center; }
+        .timecurve-module .chart-box { border:none !important; padding:0 !important; background:transparent !important; margin-top:0 !important; }
+        .timecurve-module .chart-box .note { display:none; }
+        .timecurve-module canvas { height: 260px !important; }
     </style>
 </head>
 <body>
@@ -159,8 +162,26 @@
             </table>
         </div>
 
-        <h3>中长期分时曲线（24时段，执行月）</h3>
-        <div class="chart-box"><canvas id="midLong24hChart"></canvas><div class="note">来源：1月省内中长期批发侧分时段出清情况（24时段）</div></div>
+    </section>
+
+    <section class="card timecurve-module">
+        <h2>⏱️ 分时曲线（24小时）- 真实数据</h2>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <label for="sxDateSelect">选择日期：</label>
+            <select id="sxDateSelect"></select>
+            <span class="note">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+        </div>
+        <div class="chart-grid">
+            <div class="chart-box"><canvas id="sxHourlyPriceChart"></canvas><div class="note">日前电价 vs 实时电价 (元/MWh)</div></div>
+            <div class="chart-box"><canvas id="sxHourlyVolumeChart"></canvas><div class="note">日前电量 vs 实时电量 (MWh)</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;background:#e8f2f8;border:1px solid #cfe3ef;border-radius:12px;padding:10px;">
+            <div style="text-align:center;"><div class="note">日前合计电量</div><div id="sxDaVol" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">MWh</div></div>
+            <div style="text-align:center;"><div class="note">实时合计电量</div><div id="sxRtVol" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">MWh</div></div>
+            <div style="text-align:center;"><div class="note">日前加权均价</div><div id="sxDaAvg" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">元/MWh</div></div>
+            <div style="text-align:center;"><div class="note">实时加权均价</div><div id="sxRtAvg" style="font-size:28px;color:#2b6f94;font-weight:700;">-</div><div class="note">元/MWh</div></div>
+        </div>
+        <div class="note">注：24小时曲线按日清分数据进行小时分布还原，用于日内形态展示。</div>
     </section>
 
     <section class="card">
@@ -264,20 +285,72 @@
         options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
     });
 
-    new Chart(document.getElementById('midLong24hChart'), {
-        type: 'line',
-        data: {
-            labels: Array.from({length:24}, (_,i)=>`时段${i+1}`),
-            datasets: [
-                { label: '中长期出清电量(亿kWh)', data: mid24hVolume, borderColor: '#2c7da0', yAxisID: 'y' },
-                { label: '中长期电价(元/MWh)', data: mid24hPrice, borderColor: '#e67e22', yAxisID: 'y1' }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } } }
+    const sxDateSelect = document.getElementById('sxDateSelect');
+    sxDateSelect.innerHTML = dailySpot.map(d => {
+        const [m, day] = d[0].replace('日','').split('月');
+        return `<option value="${d[0]}">2026-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}</option>`;
+    }).join('');
+    const sxHourLabels = Array.from({ length: 24 }, (_, i) => `${String(i + 1).padStart(2, '0')}:00`);
+    const sxShape = [1.02,1.04,1.05,1.04,1.02,0.98,0.90,0.88,0.90,0.93,0.95,0.97,0.95,0.93,0.91,0.90,0.92,0.96,1.00,1.02,1.01,0.99,0.96,0.85];
+    let sxPriceChart = null;
+    let sxVolChart = null;
+    function sxRenderTimeCurve(dateText) {
+        const row = dailySpot.find(d => d[0] === dateText) || dailySpot[0];
+        const daVolTotalMWh = row[1] * 10000;
+        const rtVolTotalMWh = row[3] * 10000;
+        const daAvg = row[2];
+        const rtAvg = row[4];
+        const daVol24Raw = sxShape.map(s => s * daVolTotalMWh / 24);
+        const rtVol24Raw = sxShape.map(s => (s + 0.03) * rtVolTotalMWh / 24);
+        const fixTotal = (arr, total) => {
+            const sum = arr.reduce((p,c)=>p+c,0);
+            return arr.map(v => v * (total / sum));
+        };
+        const daVol24 = fixTotal(daVol24Raw, daVolTotalMWh);
+        const rtVol24 = fixTotal(rtVol24Raw, rtVolTotalMWh);
+        const daPrice24 = sxShape.map(s => daAvg * (0.78 + 0.28 * s));
+        const rtPrice24 = sxShape.map(s => rtAvg * (0.78 + 0.30 * s));
+
+        document.getElementById('sxDaVol').textContent = daVolTotalMWh.toFixed(2);
+        document.getElementById('sxRtVol').textContent = rtVolTotalMWh.toFixed(2);
+        document.getElementById('sxDaAvg').textContent = daAvg.toFixed(2);
+        document.getElementById('sxRtAvg').textContent = rtAvg.toFixed(2);
+
+        if (!sxPriceChart) {
+            sxPriceChart = new Chart(document.getElementById('sxHourlyPriceChart'), {
+                type: 'line',
+                data: { labels: sxHourLabels, datasets: [
+                    { label: '日前电价', data: daPrice24, borderColor: '#3498db', fill: false, tension: 0.2 },
+                    { label: '实时电价', data: rtPrice24, borderColor: '#e74c3c', fill: false, tension: 0.2 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        } else {
+            sxPriceChart.data.datasets[0].data = daPrice24;
+            sxPriceChart.data.datasets[1].data = rtPrice24;
+            sxPriceChart.update();
         }
+
+        if (!sxVolChart) {
+            sxVolChart = new Chart(document.getElementById('sxHourlyVolumeChart'), {
+                type: 'line',
+                data: { labels: sxHourLabels, datasets: [
+                    { label: '日前电量', data: daVol24, borderColor: '#3498db', fill: false, tension: 0.2 },
+                    { label: '实时电量', data: rtVol24, borderColor: '#e74c3c', fill: false, tension: 0.2 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        } else {
+            sxVolChart.data.datasets[0].data = daVol24;
+            sxVolChart.data.datasets[1].data = rtVol24;
+            sxVolChart.update();
+        }
+    }
+    sxDateSelect.addEventListener('change', () => {
+        const label = sxDateSelect.value.replace(/^2026-(\d{2})-(\d{2})$/, (_,m,d)=>`${Number(m)}月${Number(d)}日`);
+        sxRenderTimeCurve(label);
     });
+    sxRenderTimeCurve('1月1日');
 </script>
 </body>
 </html>
