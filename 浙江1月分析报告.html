@@ -61,10 +61,21 @@
         .timecurve-stat .u { font-size:12px; color:#4d6f81; }
         .timecurve-module .chart-box { border:none !important; padding:0 !important; background:transparent !important; margin-top:0 !important; }
         .timecurve-module .chart-box .note { display:none; }
-        .timecurve-module .chart-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
-        .timecurve-module .chart-box canvas { height: 260px !important; }
+        .timecurve-module { overflow: hidden; }
+        .timecurve-module .chart-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .timecurve-module .chart-box canvas {
+            display: block;
+            width: 100% !important;
+            max-width: 100%;
+            height: 240px !important;
+        }
         .timecurve-module .timecurve-header .note { margin-top:0; font-size:12px; }
-        @media (max-width: 680px) { .timecurve-stats { grid-template-columns: repeat(2,1fr); } .timecurve-module .chart-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 980px) { .timecurve-module .chart-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 680px) { .timecurve-stats { grid-template-columns: repeat(2,1fr); } }
         #tradeMixChart {
             display: block;
             width: min(100%, 280px) !important;
