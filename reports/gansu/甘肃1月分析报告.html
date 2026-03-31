@@ -287,98 +287,16 @@
     });
   }
 
-  async function loadSpotXlsx() {
-    const res = await fetch('./data/甘肃1月现货数据.xlsx', { cache: 'no-store' });
-    if (!res.ok) throw new Error('failed to load xlsx');
-    const buf = await res.arrayBuffer();
-    const wb = XLSX.read(buf, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, { raw: true });
-  }
-
-  function formatDay(v) {
-    if (v instanceof Date) {
-      const y = v.getFullYear();
-      const m = String(v.getMonth() + 1).padStart(2, '0');
-      const d = String(v.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+  // 纯内嵌数据：避免依赖本地/线上 xlsx 拉取
+  const SPOT_EMBEDDED = {
+    dailyData: [{"day":"2026-01-01","daVolMWh":775248.49,"rtVolMWh":869948.36,"daAvg":312.76,"rtAvg":379.07,"spread":66.31},{"day":"2026-01-02","daVolMWh":774332.76,"rtVolMWh":847262.39,"daAvg":286.0,"rtAvg":316.05,"spread":30.05},{"day":"2026-01-03","daVolMWh":734381.39,"rtVolMWh":831726.32,"daAvg":339.72,"rtAvg":376.41,"spread":36.69},{"day":"2026-01-04","daVolMWh":754624.98,"rtVolMWh":845000.59,"daAvg":320.35,"rtAvg":365.56,"spread":45.21},{"day":"2026-01-05","daVolMWh":814871.5,"rtVolMWh":845378.1,"daAvg":326.98,"rtAvg":309.37,"spread":-17.61},{"day":"2026-01-06","daVolMWh":827597.56,"rtVolMWh":869974.4,"daAvg":316.06,"rtAvg":270.28,"spread":-45.78},{"day":"2026-01-07","daVolMWh":773250.25,"rtVolMWh":848569.19,"daAvg":251.34,"rtAvg":254.8,"spread":3.46},{"day":"2026-01-08","daVolMWh":803689.55,"rtVolMWh":862318.89,"daAvg":280.93,"rtAvg":207.09,"spread":-73.84},{"day":"2026-01-09","daVolMWh":791497.58,"rtVolMWh":854311.11,"daAvg":218.68,"rtAvg":174.01,"spread":-44.67},{"day":"2026-01-10","daVolMWh":751222.01,"rtVolMWh":824068.51,"daAvg":307.91,"rtAvg":304.4,"spread":-3.51},{"day":"2026-01-11","daVolMWh":760323.92,"rtVolMWh":842132.25,"daAvg":181.82,"rtAvg":182.53,"spread":0.71},{"day":"2026-01-12","daVolMWh":770196.01,"rtVolMWh":834285.41,"daAvg":207.51,"rtAvg":185.46,"spread":-22.05},{"day":"2026-01-13","daVolMWh":788169.4,"rtVolMWh":845755.71,"daAvg":223.06,"rtAvg":239.71,"spread":16.65},{"day":"2026-01-14","daVolMWh":800498.29,"rtVolMWh":843299.26,"daAvg":163.23,"rtAvg":150.7,"spread":-12.53},{"day":"2026-01-15","daVolMWh":754150.96,"rtVolMWh":814044.78,"daAvg":273.32,"rtAvg":258.51,"spread":-14.81},{"day":"2026-01-16","daVolMWh":752107.94,"rtVolMWh":818596.73,"daAvg":286.51,"rtAvg":237.14,"spread":-49.37},{"day":"2026-01-17","daVolMWh":781465.86,"rtVolMWh":831913.54,"daAvg":181.85,"rtAvg":77.54,"spread":-104.31},{"day":"2026-01-18","daVolMWh":766652.37,"rtVolMWh":888969.1,"daAvg":154.36,"rtAvg":240.59,"spread":86.23},{"day":"2026-01-19","daVolMWh":744024.94,"rtVolMWh":858997.64,"daAvg":222.32,"rtAvg":299.88,"spread":77.56},{"day":"2026-01-20","daVolMWh":762052.17,"rtVolMWh":839657.9,"daAvg":293.03,"rtAvg":308.84,"spread":15.81},{"day":"2026-01-21","daVolMWh":745125.14,"rtVolMWh":814292.12,"daAvg":342.74,"rtAvg":326.49,"spread":-16.25},{"day":"2026-01-22","daVolMWh":747695.05,"rtVolMWh":812763.61,"daAvg":324.36,"rtAvg":329.49,"spread":5.13},{"day":"2026-01-23","daVolMWh":752715.74,"rtVolMWh":814144.37,"daAvg":237.26,"rtAvg":248.4,"spread":11.14},{"day":"2026-01-24","daVolMWh":830090.54,"rtVolMWh":870629.67,"daAvg":158.46,"rtAvg":132.22,"spread":-26.24},{"day":"2026-01-25","daVolMWh":760399.96,"rtVolMWh":861256.09,"daAvg":228.58,"rtAvg":206.7,"spread":-21.88},{"day":"2026-01-26","daVolMWh":762435.95,"rtVolMWh":832522.96,"daAvg":299.9,"rtAvg":263.81,"spread":-36.09},{"day":"2026-01-27","daVolMWh":733513.71,"rtVolMWh":815390.38,"daAvg":315.04,"rtAvg":312.89,"spread":-2.15},{"day":"2026-01-28","daVolMWh":780271.74,"rtVolMWh":870786.77,"daAvg":214.37,"rtAvg":203.73,"spread":-10.64},{"day":"2026-01-29","daVolMWh":758989.0,"rtVolMWh":835598.98,"daAvg":304.05,"rtAvg":278.09,"spread":-25.96},{"day":"2026-01-30","daVolMWh":790484.7,"rtVolMWh":824478.46,"daAvg":325.44,"rtAvg":252.47,"spread":-72.97},{"day":"2026-01-31","daVolMWh":773449.06,"rtVolMWh":809720.03,"daAvg":326.81,"rtAvg":305.59,"spread":-21.22}],
+    month24: {
+      daVol: [952824.02,939987.81,928945.9,929701.09,927601.46,938448.14,968009.82,946026.03,957578.74,1005775.71,1082995.56,1084478.98,1060536.9,1046128.03,1035503.48,1012002.36,1008074.78,1038508.03,1038490.5,1041605.29,1030717.51,1004791.21,992053.81,944743.36],
+      rtVol: [1060445.62,1054258.07,1041347.12,1046686.45,1044775.94,1055858.53,1072471.85,1038691.27,1066634.99,1106636.95,1129446.09,1117844.68,1088584.75,1075579.4,1067643.06,1077009.3,1117205.16,1146939.54,1144536.93,1143306.47,1122258.52,1098942.01,1103578.83,1057112.09],
+      daPrice: [341.23,340.04,335.64,339.76,341.63,347.12,352.89,323.57,358.26,278.12,114.18,76.94,62.38,56.39,59.91,92.79,229.32,317.78,354.46,352.04,338.07,322.17,363.67,349.23],
+      rtPrice: [319.04,316.34,313.52,329.02,338.17,340.26,342.19,283.2,319.46,213.7,102.46,98.3,86.41,84.51,86.77,119.34,232.92,308.77,342.58,327.26,320.46,311.19,341.62,315.16]
     }
-    const s = String(v).trim();
-    return s.split(' ')[0];
-  }
-
-  function timeMinutes(t) {
-    const [h, m] = String(t).split(':').map(Number);
-    return (h === 24 ? 24 : h) * 60 + m;
-  }
-
-  function aggregateData(rows) {
-    const janRows = rows.filter(r => formatDay(r['日期']).startsWith('2026-01'));
-    const byDay = {};
-
-    janRows.forEach(r => {
-      const day = formatDay(r['日期']);
-      if (!byDay[day]) byDay[day] = [];
-      byDay[day].push({
-        t: String(r['时段']),
-        daVol: Number(r['日前市场出清总电量（兆瓦时）'] || 0),
-        daPrice: Number(r['日前价格（元/MWh）'] || 0),
-        rtVol: Number(r['实时市场出清总电量（兆瓦时）'] || 0),
-        rtPrice: Number(r['实时价格（元/MWh）'] || 0)
-      });
-    });
-
-    const dayKeys = Object.keys(byDay).sort();
-    const day24 = {};
-    const monthBucket = Array.from({ length: 24 }, () => ({ daVol: 0, rtVol: 0, daPV: 0, rtPV: 0 }));
-    const dailyData = [];
-
-    dayKeys.forEach(day => {
-      const arr = byDay[day].sort((a, b) => timeMinutes(a.t) - timeMinutes(b.t));
-      const daVol = [], rtVol = [], daPrice = [], rtPrice = [];
-
-      for (let i = 0; i < 24; i++) {
-        const chunk = arr.slice(i * 4, (i + 1) * 4);
-        const dv = chunk.reduce((s, x) => s + x.daVol, 0);
-        const rv = chunk.reduce((s, x) => s + x.rtVol, 0);
-        const dpv = chunk.reduce((s, x) => s + x.daVol * x.daPrice, 0);
-        const rpv = chunk.reduce((s, x) => s + x.rtVol * x.rtPrice, 0);
-        daVol.push(dv);
-        rtVol.push(rv);
-        daPrice.push(dv ? dpv / dv : 0);
-        rtPrice.push(rv ? rpv / rv : 0);
-
-        monthBucket[i].daVol += dv;
-        monthBucket[i].rtVol += rv;
-        monthBucket[i].daPV += dpv;
-        monthBucket[i].rtPV += rpv;
-      }
-
-      const dayDaVol = sum(daVol);
-      const dayRtVol = sum(rtVol);
-      const dayDaAvg = weightedAvg(daPrice, daVol);
-      const dayRtAvg = weightedAvg(rtPrice, rtVol);
-      dailyData.push({
-        day,
-        daVolMWh: dayDaVol,
-        rtVolMWh: dayRtVol,
-        daAvg: dayDaAvg,
-        rtAvg: dayRtAvg,
-        spread: dayRtAvg - dayDaAvg
-      });
-
-      day24[day] = { daVol, rtVol, daPrice, rtPrice };
-    });
-
-    const month24 = {
-      daVol: monthBucket.map(x => x.daVol),
-      rtVol: monthBucket.map(x => x.rtVol),
-      daPrice: monthBucket.map(x => (x.daVol ? x.daPV / x.daVol : 0)),
-      rtPrice: monthBucket.map(x => (x.rtVol ? x.rtPV / x.rtVol : 0))
-    };
-
-    return { dayKeys, day24, dailyData, month24 };
-  }
+  };
 
   function renderDailyTable(dailyData) {
     const dailyTbody = document.querySelector('#dailyTable tbody');
@@ -407,7 +325,7 @@
   }
 
   function showSpotLoadError(err) {
-    const msg = `现货数据加载失败：${err && err.message ? err.message : err}。请通过本地服务打开（如 python3 serve.py）或确认xlsx文件已随站点发布。`;
+    const msg = `现货数据加载失败：${err && err.message ? err.message : err}。`;
     const dailyTbody = document.querySelector('#dailyTable tbody');
     const hourlyTbody = document.querySelector('#hourlyTable tbody');
     if (dailyTbody) dailyTbody.innerHTML = `<tr><td colspan="6">${msg}</td></tr>`;
@@ -419,10 +337,10 @@
     console.error('Gansu spot data init failed:', err);
   }
 
-  (async function initSpot() {
+  (function initSpot() {
     try {
-      const rows = await loadSpotXlsx();
-      const { dayKeys, day24, dailyData, month24 } = aggregateData(rows);
+      const dailyData = SPOT_EMBEDDED.dailyData;
+      const month24 = SPOT_EMBEDDED.month24;
 
       dailyPriceChart = makeLineChart(
         document.getElementById('dailyPriceChart'),
@@ -456,11 +374,8 @@
       );
 
       const sel = document.getElementById('daySelect');
-      sel.innerHTML = `<option value="__month__">全月加权（24点）</option>` + dayKeys.map(d => `<option value="${d}">${d}</option>`).join('');
-      sel.addEventListener('change', () => {
-        const day = sel.value;
-        updateTimeCurve(day === '__month__' ? month24 : day24[day]);
-      });
+      sel.innerHTML = `<option value="__month__">全月加权（24点）</option>`;
+      sel.disabled = true;
 
       updateTimeCurve(month24);
     } catch (err) {
