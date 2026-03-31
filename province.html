@@ -280,8 +280,9 @@
             const file = (typeof entry === 'string') ? entry : entry?.file;
             const labelText = (typeof entry === 'string') ? ym : (entry?.label || ym);
             if (!file) return;
-
-            frame.src = safeEncodePath(file);
+            const sep = file.includes('?') ? '&' : '?';
+            // 防止 iframe 命中旧缓存，确保看到最新发布版本
+            frame.src = safeEncodePath(`${file}${sep}v=${Date.now()}`);
             meta.textContent = `当前选择：${labelText}（${ym}）`;
         }
 
