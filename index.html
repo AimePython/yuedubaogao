@@ -301,6 +301,7 @@
         const qaSources = document.getElementById('qaSources');
 
         let reports = {};
+        let qaCorpus = null;
 
         function hasReport(slug) {
             const p = reports?.[slug];
@@ -339,6 +340,103 @@
             });
         }
 
+        function qaTokenize(text) {
+            const tokens = (text.toLowerCase().match(/[\u4e00-\u9fff]{2,}|[a-z0-9]{2,}/g) || []);
+            return Array.from(new Set(tokens));
+        }
+
+        function stripHtml(html) {
+            return html
+                .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/&nbsp;|&#160;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function extractSnippet(text, question, maxLen = 220) {
+            const tokens = qaTokenize(question);
+            let pos = -1;
+            for (const tk of tokens) {
+                const i = text.toLowerCase().indexOf(tk);
+                if (i >= 0) {
+                    pos = i;
+                    break;
+                }
+            }
+            if (pos < 0) return text.slice(0, maxLen) + (text.length > maxLen ? '...' : '');
+            const start = Math.max(0, pos - Math.floor(maxLen / 3));
+            const end = Math.min(text.length, start + maxLen);
+            return (start > 0 ? '...' : '') + text.slice(start, end) + (end < text.length ? '...' : '');
+        }
+
+        async function buildQaCorpus() {
+            if (qaCorpus) return qaCorpus;
+            const docs = [];
+            const tasks = [];
+            Object.entries(reports || {}).forEach(([slug, monthMap]) => {
+                Object.values(monthMap || {}).forEach((entry) => {
+                    const file = typeof entry === 'string' ? entry : entry?.file;
+                    if (!file) return;
+                    tasks.push({ slug, file });
+                });
+            });
+            for (const t of tasks) {
+                try {
+                    const res = await fetch(encodeURI(t.file), { cache: 'no-store' });
+                    if (!res.ok) continue;
+                    const html = await res.text();
+                    const text = stripHtml(html);
+                    if (!text) continue;
+                    docs.push({
+                        slug: t.slug,
+                        file: t.file,
+                        text,
+                        tokens: qaTokenize(text)
+                    });
+                } catch (_) {
+                    // 忽略单文件失败，继续构建其余语料
+                }
+            }
+            qaCorpus = docs;
+            return qaCorpus;
+        }
+
+        async function fallbackAsk(question, province) {
+            const docs = await buildQaCorpus();
+            const scoped = province ? docs.filter((d) => d.slug === province) : docs;
+            const qTokens = new Set(qaTokenize(question));
+            const scored = scoped
+                .map((d) => {
+                    let score = 0;
+                    d.tokens.forEach((t) => {
+                        if (qTokens.has(t)) score += 1;
+                    });
+                    return { score, doc: d };
+                })
+                .filter((x) => x.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 3);
+
+            if (!scored.length) {
+                return {
+                    answer: '未在现有省份报告中检索到直接相关内容，请换个问法或指定省份。',
+                    sources: [],
+                    mode: 'retrieval-fallback'
+                };
+            }
+            const lines = ['当前为静态站点兜底检索回答（未连接后端 Agent）：'];
+            const sources = [];
+            scored.forEach(({ score, doc }) => {
+                const name = PROVINCES.find((p) => p.slug === doc.slug)?.name || doc.slug;
+                lines.push(`- ${name}（相关度 ${score}）：${extractSnippet(doc.text, question)}`);
+                sources.push({ province: name, file: doc.file });
+            });
+            return { answer: lines.join('\n'), sources, mode: 'retrieval-fallback' };
+        }
+
         async function askQuestion() {
             const question = (qaQuestion.value || '').trim();
             const province = (qaProvince.value || '').trim();
@@ -360,14 +458,18 @@
                 if (!res.ok) {
                     throw new Error(data.error || '请求失败');
                 }
-                qaAnswer.textContent = data.answer || '未获取到回答。';
+                qaAnswer.textContent = (data.mode === 'agent' ? '[Agent] ' : '') + (data.answer || '未获取到回答。');
                 const list = Array.isArray(data.sources) ? data.sources : [];
                 qaSources.innerHTML = list.length
                     ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
                     : '参考来源：无';
             } catch (err) {
-                qaAnswer.textContent = '问答失败：' + (err?.message || '未知错误');
-                qaSources.textContent = '';
+                const fallback = await fallbackAsk(question, province);
+                qaAnswer.textContent = fallback.answer;
+                const list = Array.isArray(fallback.sources) ? fallback.sources : [];
+                qaSources.innerHTML = list.length
+                    ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
+                    : '参考来源：无';
             } finally {
                 qaAskBtn.disabled = false;
             }
