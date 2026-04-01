@@ -19,8 +19,11 @@ import os
 import re
 import socketserver
 import subprocess
+import time
 import urllib.request
 import webbrowser
+from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -28,6 +31,8 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.getenv("PORT", "8080"))
 REPORTS_DIR = ROOT / "reports"
+LOG_DIR = ROOT / "logs"
+QUERY_LOG_PATH = LOG_DIR / "qa_queries.jsonl"
 
 
 def _load_dotenv(dotenv_path: Path) -> None:
@@ -54,6 +59,8 @@ LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.openai.com/v1").rstrip("/"
 LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
 CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*").strip() or "*"
+ENABLE_QUERY_LOG = os.getenv("ENABLE_QUERY_LOG", "true").strip().lower() in {"1", "true", "yes", "on"}
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 
 
 def _resolve_commit() -> str:
@@ -74,6 +81,65 @@ def _resolve_commit() -> str:
 
 
 APP_COMMIT = _resolve_commit()
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _append_query_log(item: dict) -> None:
+    if not ENABLE_QUERY_LOG:
+        return
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        with QUERY_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+    except OSError:
+        # 日志失败不应影响主流程
+        pass
+
+
+def _read_query_logs(limit: int = 2000) -> list[dict]:
+    if not QUERY_LOG_PATH.exists():
+        return []
+    try:
+        lines = QUERY_LOG_PATH.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return []
+    items: list[dict] = []
+    for line in lines[-limit:]:
+        try:
+            items.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return items
+
+
+def _build_log_stats(limit: int = 2000) -> dict:
+    items = _read_query_logs(limit=limit)
+    if not items:
+        return {
+            "total": 0,
+            "empty_results": 0,
+            "mode_distribution": {},
+            "intent_distribution": {},
+            "province_distribution": {},
+            "top_questions": [],
+        }
+    mode_counter = Counter((x.get("mode") or "unknown") for x in items)
+    intent_counter = Counter((x.get("intent") or "general") for x in items)
+    province_counter = Counter((x.get("province") or "unspecified") for x in items)
+    question_counter = Counter((x.get("question") or "").strip() for x in items if (x.get("question") or "").strip())
+    empty_results = sum(1 for x in items if x.get("empty_result"))
+    top_questions = [{"question": q, "count": c} for q, c in question_counter.most_common(20)]
+    return {
+        "total": len(items),
+        "empty_results": empty_results,
+        "mode_distribution": dict(mode_counter),
+        "intent_distribution": dict(intent_counter),
+        "province_distribution": dict(province_counter),
+        "top_questions": top_questions,
+    }
 
 PROVINCE_ALIASES: dict[str, str] = {
     "北京市": "beijing",
@@ -454,6 +520,23 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _is_admin_allowed(self, parsed) -> bool:
+        if not ADMIN_TOKEN:
+            return True
+        params = {}
+        try:
+            # keep dependency-light parsing
+            query = parsed.query or ""
+            for kv in query.split("&"):
+                if "=" in kv:
+                    k, v = kv.split("=", 1)
+                    params[k] = v
+        except Exception:
+            params = {}
+        token_from_query = params.get("token", "")
+        token_from_header = self.headers.get("X-Admin-Token", "")
+        return token_from_query == ADMIN_TOKEN or token_from_header == ADMIN_TOKEN
+
     def _ensure_corpus(self) -> list[dict]:
         if self.__class__._corpus_cache is None:
             self.__class__._corpus_cache = _build_corpus()
@@ -473,6 +556,12 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/version":
             self._send_json({"commit": APP_COMMIT})
+            return
+        if parsed.path == "/api/admin/stats":
+            if not self._is_admin_allowed(parsed):
+                self._send_json({"error": "unauthorized"}, status=401)
+                return
+            self._send_json(_build_log_stats())
             return
         super().do_GET()
 
@@ -500,6 +589,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
         if not province:
             province = _detect_province_from_question(question)
         intent = _detect_intent(question)
+        started = time.time()
 
         if not question:
             self._send_json({"error": "question 不能为空"}, status=400)
@@ -512,7 +602,20 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
         docs = self._ensure_corpus()
         top_docs = _search_relevant_docs(docs, question, province, top_k=4)
         if not top_docs:
-            self._send_json({"answer": _fallback_answer(question, top_docs), "sources": [], "mode": "retrieval"})
+            answer = _fallback_answer(question, top_docs)
+            self._send_json({"answer": answer, "sources": [], "mode": "retrieval"})
+            _append_query_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "province": province,
+                    "intent": intent,
+                    "mode": "retrieval",
+                    "empty_result": True,
+                    "sources_count": 0,
+                    "latency_ms": int((time.time() - started) * 1000),
+                }
+            )
             return
 
         context = _build_agent_context(question, top_docs)
@@ -524,6 +627,18 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
         for _, doc in top_docs:
             sources.append({"province": doc["province"], "file": doc["path"]})
         self._send_json({"answer": answer, "sources": sources, "mode": mode})
+        _append_query_log(
+            {
+                "ts": _utc_now_iso(),
+                "question": question,
+                "province": province,
+                "intent": intent,
+                "mode": mode,
+                "empty_result": False,
+                "sources_count": len(sources),
+                "latency_ms": int((time.time() - started) * 1000),
+            }
+        )
 
 
 def main() -> None:
