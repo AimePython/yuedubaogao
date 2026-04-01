@@ -81,6 +81,66 @@
             color: var(--muted);
             margin-bottom: 1rem;
         }
+        .ai-card {
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+        .ai-card h2 {
+            font-size: 1.05rem;
+            margin-bottom: 0.35rem;
+        }
+        .ai-row {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.65rem;
+            margin-bottom: 0.65rem;
+        }
+        .ai-row input, .ai-row select {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.92rem;
+            background: #fff;
+            color: var(--text);
+        }
+        .ai-row input {
+            flex: 1;
+            min-width: 260px;
+        }
+        .ai-row button {
+            border: 0;
+            border-radius: 10px;
+            padding: 0.65rem 0.95rem;
+            font-size: 0.92rem;
+            font-weight: 600;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+        }
+        .ai-row button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .ai-answer {
+            white-space: pre-wrap;
+            line-height: 1.65;
+            background: #f8fbfd;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.8rem;
+            min-height: 72px;
+            font-size: 0.92rem;
+        }
+        .ai-sources {
+            margin-top: 0.6rem;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -173,6 +233,19 @@
             <label for="q">搜索省、自治区、直辖市或关键词</label>
             <input id="q" type="search" placeholder="例如：山东、新疆、内蒙古…" autocomplete="off" enterkeyhint="search">
         </div>
+        <section class="ai-card">
+            <h2>AI 智能问答</h2>
+            <p class="hint">问题会从各省报告 HTML 中检索后回答，可选择省份缩小范围。</p>
+            <div class="ai-row">
+                <select id="qaProvince">
+                    <option value="">全部省份</option>
+                </select>
+                <input id="qaQuestion" type="search" placeholder="例如：甘肃1月出清电量变化趋势是什么？" autocomplete="off">
+                <button id="qaAskBtn" type="button">提问</button>
+            </div>
+            <div class="ai-answer" id="qaAnswer">等待提问…</div>
+            <div class="ai-sources" id="qaSources"></div>
+        </section>
         <p class="hint" id="countHint">共 31 个省级行政区</p>
 
         <div class="grid" id="grid" aria-live="polite"></div>
@@ -221,6 +294,11 @@
         const q = document.getElementById('q');
         const empty = document.getElementById('empty');
         const countHint = document.getElementById('countHint');
+        const qaProvince = document.getElementById('qaProvince');
+        const qaQuestion = document.getElementById('qaQuestion');
+        const qaAskBtn = document.getElementById('qaAskBtn');
+        const qaAnswer = document.getElementById('qaAnswer');
+        const qaSources = document.getElementById('qaSources');
 
         let reports = {};
 
@@ -252,6 +330,49 @@
                 term ? '当前筛选：' + visible + ' / 31 个行政区' : '共 31 个省级行政区';
         }
 
+        function initQaProvinceOptions() {
+            PROVINCES.forEach((p) => {
+                const opt = document.createElement('option');
+                opt.value = p.slug;
+                opt.textContent = p.name;
+                qaProvince.appendChild(opt);
+            });
+        }
+
+        async function askQuestion() {
+            const question = (qaQuestion.value || '').trim();
+            const province = (qaProvince.value || '').trim();
+            if (!question) {
+                qaAnswer.textContent = '请先输入问题。';
+                qaSources.textContent = '';
+                return;
+            }
+            qaAskBtn.disabled = true;
+            qaAnswer.textContent = '正在检索报告，请稍候…';
+            qaSources.textContent = '';
+            try {
+                const res = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, province })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || '请求失败');
+                }
+                qaAnswer.textContent = data.answer || '未获取到回答。';
+                const list = Array.isArray(data.sources) ? data.sources : [];
+                qaSources.innerHTML = list.length
+                    ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
+                    : '参考来源：无';
+            } catch (err) {
+                qaAnswer.textContent = '问答失败：' + (err?.message || '未知错误');
+                qaSources.textContent = '';
+            } finally {
+                qaAskBtn.disabled = false;
+            }
+        }
+
         async function init() {
             try {
                 const res = await fetch('reports.json', { cache: 'no-store' });
@@ -265,6 +386,11 @@
         }
 
         q.addEventListener('input', render);
+        qaAskBtn.addEventListener('click', askQuestion);
+        qaQuestion.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') askQuestion();
+        });
+        initQaProvinceOptions();
         init();
     </script>
 </body>
