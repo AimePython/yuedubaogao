@@ -372,6 +372,32 @@
             return (start > 0 ? '...' : '') + text.slice(start, end) + (end < text.length ? '...' : '');
         }
 
+        function splitSentences(text) {
+            return text
+                .split(/[。！？；\n]/)
+                .map((s) => s.trim())
+                .filter(Boolean);
+        }
+
+        function isMostlyNumeric(sentence) {
+            const compact = sentence.replace(/\s+/g, '');
+            if (!compact) return true;
+            const numericLike = (compact.match(/[0-9.%\-+]/g) || []).length;
+            return numericLike / compact.length > 0.45;
+        }
+
+        function scoreSentence(sentence, qTokens) {
+            const lower = sentence.toLowerCase();
+            let score = 0;
+            qTokens.forEach((t) => {
+                if (lower.includes(t)) score += 2;
+            });
+            if (/(同比|环比|增长|下降|上升|峰|谷|最高|最低|负荷|电量|价格)/.test(sentence)) score += 2;
+            if (sentence.length >= 18 && sentence.length <= 160) score += 1;
+            if (isMostlyNumeric(sentence)) score -= 2;
+            return score;
+        }
+
         async function buildQaCorpus() {
             if (qaCorpus) return qaCorpus;
             const docs = [];
@@ -394,7 +420,8 @@
                         slug: t.slug,
                         file: t.file,
                         text,
-                        tokens: qaTokenize(text)
+                        tokens: qaTokenize(text),
+                        sentences: splitSentences(text)
                     });
                 } catch (_) {
                     // 忽略单文件失败，继续构建其余语料
@@ -408,7 +435,7 @@
             const docs = await buildQaCorpus();
             const scoped = province ? docs.filter((d) => d.slug === province) : docs;
             const qTokens = new Set(qaTokenize(question));
-            const scored = scoped
+            const scoredDocs = scoped
                 .map((d) => {
                     let score = 0;
                     d.tokens.forEach((t) => {
@@ -420,21 +447,64 @@
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 3);
 
-            if (!scored.length) {
+            if (!scoredDocs.length) {
                 return {
                     answer: '未在现有省份报告中检索到直接相关内容，请换个问法或指定省份。',
                     sources: [],
                     mode: 'retrieval-fallback'
                 };
             }
+
+            const candidateFacts = [];
+            scoredDocs.forEach(({ doc }) => {
+                (doc.sentences || []).forEach((s) => {
+                    const score = scoreSentence(s, qTokens);
+                    if (score > 0) candidateFacts.push({ score, sentence: s, doc });
+                });
+            });
+            candidateFacts.sort((a, b) => b.score - a.score);
+
+            const picked = [];
+            const seen = new Set();
+            for (const c of candidateFacts) {
+                if (picked.length >= 3) break;
+                const key = c.sentence.slice(0, 36);
+                if (seen.has(key)) continue;
+                seen.add(key);
+                picked.push(c);
+            }
+
             const lines = ['当前为静态站点兜底检索回答（未连接后端 Agent）：'];
             const sources = [];
-            scored.forEach(({ score, doc }) => {
-                const name = PROVINCES.find((p) => p.slug === doc.slug)?.name || doc.slug;
-                lines.push(`- ${name}（相关度 ${score}）：${extractSnippet(doc.text, question)}`);
-                sources.push({ province: name, file: doc.file });
+            if (picked.length) {
+                picked.forEach(({ sentence, doc }) => {
+                    const name = PROVINCES.find((p) => p.slug === doc.slug)?.name || doc.slug;
+                    lines.push(`- ${sentence}`);
+                    sources.push({ province: name, file: doc.file });
+                });
+            } else {
+                scoredDocs.forEach(({ score, doc }) => {
+                    const name = PROVINCES.find((p) => p.slug === doc.slug)?.name || doc.slug;
+                    lines.push(`- ${name}（相关度 ${score}）：${extractSnippet(doc.text, question)}`);
+                    sources.push({ province: name, file: doc.file });
+                });
+            }
+
+            // 去重来源
+            const dedup = [];
+            const srcSeen = new Set();
+            sources.forEach((s) => {
+                const k = `${s.province}|${s.file}`;
+                if (!srcSeen.has(k)) {
+                    srcSeen.add(k);
+                    dedup.push(s);
+                }
             });
-            return { answer: lines.join('\n'), sources, mode: 'retrieval-fallback' };
+            if (!picked.length) {
+                return { answer: lines.join('\n'), sources: dedup, mode: 'retrieval-fallback' };
+            }
+            lines.push('（以上为与问题最相关的报告原文句子提取）');
+            return { answer: lines.join('\n'), sources: dedup, mode: 'retrieval-fallback' };
         }
 
         async function askQuestion() {
