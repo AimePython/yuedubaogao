@@ -18,6 +18,7 @@ import json
 import os
 import re
 import socketserver
+import subprocess
 import urllib.request
 import webbrowser
 from pathlib import Path
@@ -55,6 +56,98 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
 CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*").strip() or "*"
 
 
+def _resolve_commit() -> str:
+    # Render usually provides this variable for deployed revisions.
+    env_commit = os.getenv("RENDER_GIT_COMMIT", "").strip()
+    if env_commit:
+        return env_commit
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(ROOT),
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        return commit or "unknown"
+    except Exception:
+        return "unknown"
+
+
+APP_COMMIT = _resolve_commit()
+
+PROVINCE_ALIASES: dict[str, str] = {
+    "北京市": "beijing",
+    "北京": "beijing",
+    "天津市": "tianjin",
+    "天津": "tianjin",
+    "河北省": "hebei",
+    "河北": "hebei",
+    "山西省": "shanxi",
+    "山西": "shanxi",
+    "内蒙古自治区": "neimenggu",
+    "内蒙古": "neimenggu",
+    "辽宁省": "liaoning",
+    "辽宁": "liaoning",
+    "吉林省": "jilin",
+    "吉林": "jilin",
+    "黑龙江省": "heilongjiang",
+    "黑龙江": "heilongjiang",
+    "上海市": "shanghai",
+    "上海": "shanghai",
+    "江苏省": "jiangsu",
+    "江苏": "jiangsu",
+    "浙江省": "zhejiang",
+    "浙江": "zhejiang",
+    "安徽省": "anhui",
+    "安徽": "anhui",
+    "福建省": "fujian",
+    "福建": "fujian",
+    "江西省": "jiangxi",
+    "江西": "jiangxi",
+    "山东省": "shandong",
+    "山东": "shandong",
+    "河南省": "henan",
+    "河南": "henan",
+    "湖北省": "hubei",
+    "湖北": "hubei",
+    "湖南省": "hunan",
+    "湖南": "hunan",
+    "广东省": "guangdong",
+    "广东": "guangdong",
+    "广西壮族自治区": "guangxi",
+    "广西": "guangxi",
+    "海南省": "hainan",
+    "海南": "hainan",
+    "重庆市": "chongqing",
+    "重庆": "chongqing",
+    "四川省": "sichuan",
+    "四川": "sichuan",
+    "贵州省": "guizhou",
+    "贵州": "guizhou",
+    "云南省": "yunnan",
+    "云南": "yunnan",
+    "西藏自治区": "xizang",
+    "西藏": "xizang",
+    "陕西省": "shanxi1",
+    "陕西": "shanxi1",
+    "甘肃省": "gansu",
+    "甘肃": "gansu",
+    "青海省": "qinghai",
+    "青海": "qinghai",
+    "宁夏回族自治区": "ningxia",
+    "宁夏": "ningxia",
+    "新疆维吾尔自治区": "xinjiang",
+    "新疆": "xinjiang",
+}
+
+QUERY_SYNONYMS: dict[str, list[str]] = {
+    "现货价差": ["价差", "峰谷", "峰谷价差", "分时价差", "现货"],
+    "最低价格": ["最低", "低谷", "低价", "最低价", "最低时段"],
+    "倒挂": ["倒挂", "高于", "低于", "中长期", "现货"],
+    "供需关系": ["供需", "平衡", "偏紧", "偏松", "外送", "负荷"],
+}
+
+
 def _strip_html(html: str) -> str:
     html = re.sub(r"<script[\s\S]*?</script>", " ", html, flags=re.IGNORECASE)
     html = re.sub(r"<style[\s\S]*?</style>", " ", html, flags=re.IGNORECASE)
@@ -67,6 +160,54 @@ def _strip_html(html: str) -> str:
 
 def _tokenize(text: str) -> list[str]:
     return re.findall(r"[\u4e00-\u9fff]{2,}|[a-zA-Z0-9]{2,}", text.lower())
+
+
+def _split_sentences(text: str) -> list[str]:
+    sentences = re.split(r"[。！？；\n]+", text)
+    out: list[str] = []
+    for raw in sentences:
+        s = raw.strip()
+        if not s:
+            continue
+        if len(s) < 8 or len(s) > 180:
+            continue
+        zh_chars = len(re.findall(r"[\u4e00-\u9fff]", s))
+        if zh_chars / max(len(s), 1) < 0.2:
+            continue
+        # 过滤明显表头/图例拼接噪声
+        if re.search(r"(月份\s+类型\s+发电量|24小时|条形图|展示所选日期|注：)", s):
+            continue
+        out.append(s)
+    return out
+
+
+def _detect_province_from_question(question: str) -> str:
+    q = question.strip()
+    for name, slug in PROVINCE_ALIASES.items():
+        if name in q:
+            return slug
+    return ""
+
+
+def _detect_intent(question: str) -> str:
+    q = question
+    if "价差" in q:
+        return "spot_spread"
+    if "最低" in q or "比较低" in q or "低谷" in q:
+        return "spot_low_time"
+    if "倒挂" in q or ("现货" in q and "中长期" in q and ("高于" in q or "低于" in q or "关系" in q)):
+        return "price_inversion"
+    if "供需" in q or "供需关系" in q:
+        return "supply_demand"
+    return "general"
+
+
+def _expand_query_tokens(question: str) -> set[str]:
+    tokens = set(_tokenize(question))
+    for key, words in QUERY_SYNONYMS.items():
+        if key in question or any(w in question for w in words):
+            tokens.update(words)
+    return {t.lower() for t in tokens}
 
 
 def _build_corpus() -> list[dict]:
@@ -87,6 +228,7 @@ def _build_corpus() -> list[dict]:
                 "province": html_path.parent.name,
                 "text": text,
                 "tokens": set(_tokenize(text)),
+                "sentences": _split_sentences(text),
             }
         )
     return docs
@@ -112,7 +254,7 @@ def _extract_snippet(text: str, question: str, max_len: int = 220) -> str:
 
 
 def _search_relevant_docs(docs: list[dict], question: str, province: str, top_k: int = 4) -> list[tuple[int, dict]]:
-    q_tokens = set(_tokenize(question))
+    q_tokens = _expand_query_tokens(question)
     scoped_docs = docs
     if province:
         scoped_docs = [d for d in docs if d["province"].lower() == province]
@@ -144,6 +286,90 @@ def _fallback_answer(question: str, top_docs: list[tuple[int, dict]]) -> str:
     return "\n".join(lines)
 
 
+def _extract_metric_sentences(sentences: list[str], intent: str) -> list[str]:
+    if intent == "spot_spread":
+        pats = [r"价差", r"峰谷", r"现货", r"分时", r"峰时", r"谷时"]
+    elif intent == "spot_low_time":
+        pats = [r"最低", r"低谷", r"低价", r"谷段", r"时段", r"时"]
+    elif intent == "price_inversion":
+        pats = [r"中长期", r"现货", r"倒挂", r"高于", r"低于", r"均价"]
+    elif intent == "supply_demand":
+        pats = [r"供需", r"平衡", r"偏紧", r"偏松", r"外送", r"负荷", r"备用"]
+    else:
+        pats = [r"现货", r"中长期", r"供需", r"价格"]
+    reg = re.compile("|".join(pats))
+    ranked = [s for s in sentences if reg.search(s) and len(s) >= 8]
+    return ranked[:6]
+
+
+def _build_structured_answer(question: str, top_docs: list[tuple[int, dict]], intent: str) -> str:
+    if not top_docs:
+        return _fallback_answer(question, top_docs)
+    doc = top_docs[0][1]
+    sentences = doc.get("sentences", [])
+    key_sents = _extract_metric_sentences(sentences, intent)
+    if not key_sents:
+        return _fallback_answer(question, top_docs)
+
+    text = doc.get("text", "")
+    lines: list[str] = []
+
+    if intent == "spot_spread":
+        spread_sents = [s for s in key_sents if ("价差" in s or "峰谷" in s)]
+        lines.append("现货价差结论（基于报告原文）")
+        if spread_sents:
+            lines.append(f"- {spread_sents[0]}")
+        else:
+            lines.append("- 报告未直接给出“现货价差”统一口径，以下提供可反映价差特征的原文依据。")
+            for s in key_sents[:2]:
+                lines.append(f"- {s}")
+        return "\n".join(lines)
+
+    if intent == "spot_low_time":
+        low_time_sents = [s for s in sentences if re.search(r"(最低|低谷|谷段|时段|点|小时)", s)]
+        lines.append("现货低价时段结论（基于报告原文）")
+        if low_time_sents:
+            lines.append(f"- {low_time_sents[0]}")
+        else:
+            lines.append("- 报告中未明确写出最低价对应具体时段，建议结合分时曲线进一步确认。")
+            for s in key_sents[:2]:
+                lines.append(f"- {s}")
+        return "\n".join(lines)
+
+    if intent == "price_inversion":
+        spot_vals = re.findall(r"(?:现货|实时|日前)[^。；]{0,20}(?:均价|价格)[^0-9]{0,8}([0-9]+(?:\.[0-9]+)?)", text)
+        mid_vals = re.findall(r"(?:中长期)[^。；]{0,20}(?:均价|价格)[^0-9]{0,8}([0-9]+(?:\.[0-9]+)?)", text)
+        lines.append("现货与中长期价格关系（基于报告原文）")
+        if spot_vals and mid_vals:
+            try:
+                spot = float(spot_vals[0])
+                mid = float(mid_vals[0])
+                judge = "存在倒挂（现货高于中长期）" if spot > mid else "未出现倒挂（现货不高于中长期）"
+                lines.append(f"- 判断：{judge}。现货约 {spot:.2f} 元/MWh，中长期约 {mid:.2f} 元/MWh。")
+            except ValueError:
+                pass
+        for s in key_sents[:2]:
+            lines.append(f"- {s}")
+        return "\n".join(lines)
+
+    if intent == "supply_demand":
+        sd_sents = [s for s in sentences if re.search(r"(供需|平衡|偏紧|偏松|外送|负荷|备用)", s)]
+        lines.append("供需关系结论（基于报告原文）")
+        if sd_sents:
+            lines.append(f"- {sd_sents[0]}")
+            for s in sd_sents[1:3]:
+                lines.append(f"- {s}")
+        else:
+            for s in key_sents[:3]:
+                lines.append(f"- {s}")
+        return "\n".join(lines)
+
+    lines.append("检索结论（基于报告原文）")
+    for s in key_sents[:3]:
+        lines.append(f"- {s}")
+    return "\n".join(lines)
+
+
 def _build_agent_context(question: str, top_docs: list[tuple[int, dict]]) -> str:
     chunks: list[str] = []
     for idx, (_, doc) in enumerate(top_docs, start=1):
@@ -166,7 +392,8 @@ def _call_llm_answer(question: str, context: str) -> str | None:
                 "content": (
                     "你是电力市场报告问答助手。"
                     "只能基于给定资料回答，不确定就明确说资料不足。"
-                    "回答使用中文，先给结论，再给2-4条依据。"
+                    "回答使用中文，按以下结构回答："
+                    "1) 结论；2) 关键依据(2-4条)；3) 若问题涉及最低时段/倒挂/供需，请明确指出对应判断。"
                 ),
             },
             {
@@ -244,6 +471,9 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                 }
             )
             return
+        if parsed.path == "/api/version":
+            self._send_json({"commit": APP_COMMIT})
+            return
         super().do_GET()
 
     def do_OPTIONS(self) -> None:
@@ -267,6 +497,9 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
         question = (payload.get("question") or "").strip()
         province = (payload.get("province") or "").strip().lower()
+        if not province:
+            province = _detect_province_from_question(question)
+        intent = _detect_intent(question)
 
         if not question:
             self._send_json({"error": "question 不能为空"}, status=400)
@@ -284,7 +517,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
         context = _build_agent_context(question, top_docs)
         agent_answer = _call_llm_answer(question, context)
-        answer = agent_answer or _fallback_answer(question, top_docs)
+        answer = agent_answer or _build_structured_answer(question, top_docs, intent)
         mode = "agent" if agent_answer else "retrieval"
 
         sources = []
