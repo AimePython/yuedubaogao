@@ -141,6 +141,30 @@
             font-size: 0.82rem;
             color: var(--muted);
         }
+        .ai-feedback {
+            margin-top: 0.55rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .ai-feedback button {
+            border: 1px solid #d7e4ec;
+            background: #fff;
+            color: #35576a;
+            border-radius: 10px;
+            padding: 0.45rem 0.7rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .ai-feedback button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .ai-feedback-status {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -245,6 +269,10 @@
             </div>
             <div class="ai-answer" id="qaAnswer">等待提问…</div>
             <div class="ai-sources" id="qaSources"></div>
+            <div class="ai-feedback">
+                <button id="qaBadBtn" type="button" disabled>这条回答不对</button>
+                <span class="ai-feedback-status" id="qaFeedbackStatus"></span>
+            </div>
         </section>
         <p class="hint" id="countHint">共 31 个省级行政区</p>
 
@@ -299,6 +327,8 @@
         const qaAskBtn = document.getElementById('qaAskBtn');
         const qaAnswer = document.getElementById('qaAnswer');
         const qaSources = document.getElementById('qaSources');
+        const qaBadBtn = document.getElementById('qaBadBtn');
+        const qaFeedbackStatus = document.getElementById('qaFeedbackStatus');
 
         // 方案B: 前端静态托管 + 后端独立部署（可通过全局变量或 URL 参数覆盖）
         const API_BASE =
@@ -308,6 +338,16 @@
 
         let reports = {};
         let qaCorpus = null;
+        let lastQAContext = null;
+
+        function getSessionId() {
+            const key = 'qa_session_id';
+            const old = localStorage.getItem(key);
+            if (old) return old;
+            const sid = 's-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+            localStorage.setItem(key, sid);
+            return sid;
+        }
 
         function apiUrl(path) {
             const base = (API_BASE || '').trim();
@@ -560,13 +600,17 @@
             if (!question) {
                 qaAnswer.textContent = '请先输入问题。';
                 qaSources.textContent = '';
+                qaBadBtn.disabled = true;
+                qaFeedbackStatus.textContent = '';
                 return;
             }
             qaAskBtn.disabled = true;
+            qaBadBtn.disabled = true;
             qaAnswer.textContent = '正在检索报告，请稍候…';
             qaSources.textContent = '';
+            qaFeedbackStatus.textContent = '';
             try {
-                const res = await postAskWithRetry({ question, province }, 1);
+                const res = await postAskWithRetry({ question, province, session_id: getSessionId() }, 1);
                 const data = await res.json();
                 if (!res.ok) {
                     throw new Error(data.error || '请求失败');
@@ -576,6 +620,13 @@
                 qaSources.innerHTML = list.length
                     ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
                     : '参考来源：无';
+                lastQAContext = {
+                    question,
+                    province,
+                    answer: qaAnswer.textContent,
+                    mode: data.mode || ''
+                };
+                qaBadBtn.disabled = false;
             } catch (err) {
                 const fallback = await fallbackAsk(question, province);
                 qaAnswer.textContent = fallback.answer;
@@ -583,8 +634,45 @@
                 qaSources.innerHTML = list.length
                     ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
                     : '参考来源：无';
+                lastQAContext = {
+                    question,
+                    province,
+                    answer: qaAnswer.textContent,
+                    mode: fallback.mode || 'retrieval-fallback'
+                };
+                qaBadBtn.disabled = false;
             } finally {
                 qaAskBtn.disabled = false;
+            }
+        }
+
+        async function sendBadFeedback() {
+            if (!lastQAContext) return;
+            qaBadBtn.disabled = true;
+            qaFeedbackStatus.textContent = '正在提交纠错反馈…';
+            try {
+                const payload = {
+                    question: lastQAContext.question,
+                    province: lastQAContext.province || '',
+                    is_correct: false,
+                    comment: '用户点击“这条回答不对”',
+                    expected_answer: ''
+                };
+                const res = await fetchWithTimeout(
+                    apiUrl('/api/feedback'),
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    },
+                    20000
+                );
+                if (!res.ok) throw new Error('反馈接口失败');
+                qaFeedbackStatus.textContent = '已记录纠错反馈，后续会优先优化这类问题。';
+            } catch (e) {
+                qaFeedbackStatus.textContent = '反馈提交失败，请稍后重试。';
+                qaBadBtn.disabled = false;
+                return;
             }
         }
 
@@ -602,6 +690,7 @@
 
         q.addEventListener('input', render);
         qaAskBtn.addEventListener('click', askQuestion);
+        qaBadBtn.addEventListener('click', sendBadFeedback);
         qaQuestion.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') askQuestion();
         });

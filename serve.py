@@ -33,6 +33,7 @@ PORT = int(os.getenv("PORT", "8080"))
 REPORTS_DIR = ROOT / "reports"
 LOG_DIR = ROOT / "logs"
 QUERY_LOG_PATH = LOG_DIR / "qa_queries.jsonl"
+FEEDBACK_LOG_PATH = LOG_DIR / "qa_feedback.jsonl"
 
 
 def _load_dotenv(dotenv_path: Path) -> None:
@@ -61,6 +62,7 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
 CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*").strip() or "*"
 ENABLE_QUERY_LOG = os.getenv("ENABLE_QUERY_LOG", "true").strip().lower() in {"1", "true", "yes", "on"}
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
+SESSION_MAX_TURNS = int(os.getenv("SESSION_MAX_TURNS", "3"))
 
 
 def _resolve_commit() -> str:
@@ -81,6 +83,7 @@ def _resolve_commit() -> str:
 
 
 APP_COMMIT = _resolve_commit()
+SESSION_STORE: dict[str, list[str]] = {}
 
 
 def _utc_now_iso() -> str:
@@ -96,6 +99,17 @@ def _append_query_log(item: dict) -> None:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
     except OSError:
         # 日志失败不应影响主流程
+        pass
+
+
+def _append_feedback_log(item: dict) -> None:
+    if not ENABLE_QUERY_LOG:
+        return
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        with FEEDBACK_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+    except OSError:
         pass
 
 
@@ -115,12 +129,31 @@ def _read_query_logs(limit: int = 2000) -> list[dict]:
     return items
 
 
+def _read_feedback_logs(limit: int = 2000) -> list[dict]:
+    if not FEEDBACK_LOG_PATH.exists():
+        return []
+    try:
+        lines = FEEDBACK_LOG_PATH.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return []
+    items: list[dict] = []
+    for line in lines[-limit:]:
+        try:
+            items.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return items
+
+
 def _build_log_stats(limit: int = 2000) -> dict:
     items = _read_query_logs(limit=limit)
+    feedback_items = _read_feedback_logs(limit=limit)
     if not items:
         return {
             "total": 0,
             "empty_results": 0,
+            "feedback_total": len(feedback_items),
+            "feedback_incorrect": sum(1 for x in feedback_items if x.get("is_correct") is False),
             "mode_distribution": {},
             "intent_distribution": {},
             "province_distribution": {},
@@ -135,11 +168,68 @@ def _build_log_stats(limit: int = 2000) -> dict:
     return {
         "total": len(items),
         "empty_results": empty_results,
+        "feedback_total": len(feedback_items),
+        "feedback_incorrect": sum(1 for x in feedback_items if x.get("is_correct") is False),
         "mode_distribution": dict(mode_counter),
         "intent_distribution": dict(intent_counter),
         "province_distribution": dict(province_counter),
         "top_questions": top_questions,
     }
+
+
+def _normalize_session_id(raw: str) -> str:
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    # 限制长度，避免异常输入占用内存
+    return s[:64]
+
+
+def _build_question_with_memory(question: str, session_id: str) -> str:
+    if not session_id:
+        return question
+    history = SESSION_STORE.get(session_id, [])
+    if not history:
+        return question
+    return " ".join(history[-SESSION_MAX_TURNS:] + [question]).strip()
+
+
+def _update_session_memory(session_id: str, question: str) -> None:
+    if not session_id:
+        return
+    history = SESSION_STORE.get(session_id, [])
+    history.append(question.strip())
+    SESSION_STORE[session_id] = history[-SESSION_MAX_TURNS:]
+
+
+def _find_feedback_hint(question: str, province: str, intent: str) -> str:
+    items = _read_feedback_logs(limit=300)
+    if not items:
+        return ""
+    q_tokens = set(_tokenize(question))
+    best_score = 0
+    best_hint = ""
+    for item in items:
+        if item.get("is_correct") is not False:
+            continue
+        if province and item.get("province") and item.get("province") != province:
+            continue
+        if intent and item.get("intent") and item.get("intent") != intent:
+            continue
+        old_q = (item.get("question") or "").strip()
+        if not old_q:
+            continue
+        overlap = len(q_tokens & set(_tokenize(old_q)))
+        if overlap <= best_score:
+            continue
+        expected = (item.get("expected_answer") or item.get("comment") or "").strip()
+        if not expected:
+            continue
+        best_score = overlap
+        best_hint = expected
+    if best_score >= 2:
+        return best_hint[:300]
+    return ""
 
 PROVINCE_ALIASES: dict[str, str] = {
     "北京市": "beijing",
@@ -447,7 +537,7 @@ def _build_agent_context(question: str, top_docs: list[tuple[int, dict]]) -> str
     return "\n\n".join(chunks)
 
 
-def _call_llm_answer(question: str, context: str) -> str | None:
+def _call_llm_answer(question: str, context: str, feedback_hint: str = "") -> str | None:
     if not LLM_API_KEY:
         return None
     payload = {
@@ -464,7 +554,11 @@ def _call_llm_answer(question: str, context: str) -> str | None:
             },
             {
                 "role": "user",
-                "content": f"问题：{question}\n\n可用资料：\n{context}",
+                "content": (
+                    f"问题：{question}\n\n"
+                    + (f"历史纠错提示：{feedback_hint}\n\n" if feedback_hint else "")
+                    + f"可用资料：\n{context}"
+                ),
             },
         ],
         "temperature": 0.2,
@@ -572,7 +666,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path != "/api/ask":
+        if parsed.path not in {"/api/ask", "/api/feedback"}:
             self.send_error(404, "Not Found")
             return
 
@@ -584,30 +678,62 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json({"error": "请求体必须是 JSON"}, status=400)
             return
 
+        if parsed.path == "/api/feedback":
+            question = (payload.get("question") or "").strip()
+            province = (payload.get("province") or "").strip().lower()
+            intent = (payload.get("intent") or "").strip() or _detect_intent(question)
+            is_correct = payload.get("is_correct")
+            comment = (payload.get("comment") or "").strip()
+            expected_answer = (payload.get("expected_answer") or "").strip()
+            if not question:
+                self._send_json({"error": "question 不能为空"}, status=400)
+                return
+            if is_correct not in {True, False}:
+                self._send_json({"error": "is_correct 必须是 true/false"}, status=400)
+                return
+            _append_feedback_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "province": province,
+                    "intent": intent,
+                    "is_correct": is_correct,
+                    "comment": comment,
+                    "expected_answer": expected_answer,
+                }
+            )
+            self._send_json({"ok": True})
+            return
+
         question = (payload.get("question") or "").strip()
+        session_id = _normalize_session_id(payload.get("session_id") or "")
         province = (payload.get("province") or "").strip().lower()
+        question_for_retrieval = _build_question_with_memory(question, session_id)
         if not province:
-            province = _detect_province_from_question(question)
-        intent = _detect_intent(question)
+            province = _detect_province_from_question(question_for_retrieval)
+        intent = _detect_intent(question_for_retrieval)
+        feedback_hint = _find_feedback_hint(question_for_retrieval, province, intent)
         started = time.time()
 
         if not question:
             self._send_json({"error": "question 不能为空"}, status=400)
             return
 
-        if not _tokenize(question):
+        if not _tokenize(question_for_retrieval):
             self._send_json({"answer": "问题过短，请补充关键词后重试。", "sources": []})
             return
 
         docs = self._ensure_corpus()
-        top_docs = _search_relevant_docs(docs, question, province, top_k=4)
+        top_docs = _search_relevant_docs(docs, question_for_retrieval, province, top_k=4)
         if not top_docs:
             answer = _fallback_answer(question, top_docs)
             self._send_json({"answer": answer, "sources": [], "mode": "retrieval"})
+            _update_session_memory(session_id, question)
             _append_query_log(
                 {
                     "ts": _utc_now_iso(),
                     "question": question,
+                    "session_id": session_id,
                     "province": province,
                     "intent": intent,
                     "mode": "retrieval",
@@ -618,8 +744,8 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             )
             return
 
-        context = _build_agent_context(question, top_docs)
-        agent_answer = _call_llm_answer(question, context)
+        context = _build_agent_context(question_for_retrieval, top_docs)
+        agent_answer = _call_llm_answer(question, context, feedback_hint=feedback_hint)
         answer = agent_answer or _build_structured_answer(question, top_docs, intent)
         mode = "agent" if agent_answer else "retrieval"
 
@@ -627,10 +753,12 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
         for _, doc in top_docs:
             sources.append({"province": doc["province"], "file": doc["path"]})
         self._send_json({"answer": answer, "sources": sources, "mode": mode})
+        _update_session_memory(session_id, question)
         _append_query_log(
             {
                 "ts": _utc_now_iso(),
                 "question": question,
+                "session_id": session_id,
                 "province": province,
                 "intent": intent,
                 "mode": mode,
