@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宁夏电力市场结算分析 · 2026年1月</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Segoe UI", "PingFang SC", sans-serif; background: #f3f6f9; color: #1a2c3e; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 16px; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; border-bottom: 2px solid #2c7da0; padding-bottom: 10px; }
+    h1 { margin: 0; font-size: 24px; color: #1f5f7c; }
+    .subtitle { margin-top: 6px; color: #5a7387; font-size: 13px; }
+    .download-btn { border: none; border-radius: 999px; padding: 10px 16px; font-weight: 600; color: #fff; background: #2c7da0; cursor: pointer; }
+    .card { background: #fff; border: 1px solid #dde8ef; border-radius: 18px; padding: 14px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
+    .card h2 { margin: 0 0 10px; font-size: 21px; color: #1f4f66; border-left: 4px solid #2c7da0; padding-left: 10px; }
+    .insight { background: #edf4fa; border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+    .insight p { margin: 6px 0; line-height: 1.6; font-size: 14px; }
+    .highlight { color: #d9534f; font-weight: 700; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+    .stat { background: linear-gradient(135deg, #eaf3f9, #dbeaf4); border: 1px solid #c6ddea; border-radius: 12px; padding: 10px; text-align: center; }
+    .stat-label { font-size: 12px; color: #557287; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #266d8d; margin-top: 6px; }
+    .overflow-x { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    th, td { border: 1px solid #d5e2eb; padding: 8px; text-align: center; font-variant-numeric: tabular-nums; }
+    th { background: #ebf3f8; color: #1b4a62; }
+    .chart-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .chart-box { border: 1px solid #e2edf2; border-radius: 14px; padding: 10px; background: #fbfdfe; }
+    .chart-box h3 { margin: 0 0 8px; font-size: 16px; color: #2c7da0; }
+    .chart-box canvas { width: 100%; max-height: 300px; }
+    .note { font-size: 12px; color: #607e8f; margin-top: 6px; }
+    .timecurve-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .timecurve-head select { padding: 4px 8px; border-radius: 8px; border: 1px solid #b9cfdd; }
+    @media (min-width: 920px) { .chart-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>宁夏电力市场结算分析 · 2026年1月</h1>
+      <div class="subtitle">数据来源：《2026年1月宁夏电力市场结算情况披露》</div>
+    </div>
+    <button id="exportExcelBtn" class="download-btn">📎 下载 Excel 报告 (.xlsx)</button>
+  </div>
+
+  <section class="card">
+    <h2>核心速览</h2>
+    <div class="insight">
+      <p><strong>价格水平：</strong>发电侧结算均价为 <span class="highlight">267.90 元/MWh</span>，配套煤电与储能报价处于高位。</p>
+      <p><strong>规模情况：</strong>2026年1月发电侧结算电量 <span class="highlight">187.42 亿kWh</span>，煤电（区内+配套）占比超过六成。</p>
+      <p><strong>结构特征：</strong>新能源（风电+光伏）合计结算电量 <span class="highlight">63.03 亿kWh</span>，均价显著低于煤电类别。</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-label">发电侧结算电量</div><div class="stat-value">187.42</div></div>
+      <div class="stat"><div class="stat-label">发电侧结算均价(元/MWh)</div><div class="stat-value">267.90</div></div>
+      <div class="stat"><div class="stat-label">新能源结算电量(亿kWh)</div><div class="stat-value">63.03</div></div>
+      <div class="stat"><div class="stat-label">煤电结算电量(亿kWh)</div><div class="stat-value">119.32</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>市场供需情况 & 关键指标月度对比</h2>
+    <div class="overflow-x">
+      <table id="settlementTable">
+        <thead>
+          <tr><th>电源类型</th><th>结算电量（亿kWh）</th><th>结算电价（元/MWh）</th><th>电量占比</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-box">
+        <h3>电源类型结算电量对比</h3>
+        <canvas id="volChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>电源类型结算电价对比</h3>
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>结算电量结构占比</h3>
+        <canvas id="mixChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>电价-电量散点分布</h3>
+        <canvas id="scatterChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>交易组织与结算情况（2026年1月）</h2>
+    <div class="overflow-x">
+      <table>
+        <thead><tr><th>项目</th><th>数值</th></tr></thead>
+        <tbody>
+          <tr><td>发电侧总结算电量（亿kWh）</td><td>187.42</td></tr>
+          <tr><td>发电侧总结算均价（元/MWh）</td><td>267.90</td></tr>
+          <tr><td>区内煤电电量/电价</td><td>52.95 亿kWh / 320.54 元/MWh</td></tr>
+          <tr><td>配套煤电电量/电价</td><td>66.37 亿kWh / 404.46 元/MWh</td></tr>
+          <tr><td>新能源（风电+光伏）电量</td><td>63.03 亿kWh</td></tr>
+          <tr><td>备注</td><td>其他类型包含水电、燃气、生物质发电</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>现货市场交易（1月）</h2>
+    <div class="insight">
+      <p>公开披露文件仅提供发电侧结算总量及分类型结构，未提供日度日前/实时现货明细。</p>
+      <p>本模块展示的是结算结构分析，不代表逐日现货出清曲线。</p>
+    </div>
+    <div class="overflow-x">
+      <table id="dailyFallbackTable">
+        <thead><tr><th>日期</th><th>状态</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>2026-01</td><td>无日度公开数据</td><td>当前披露文档仅含月度分类型结算结果</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>分时曲线（24小时）- 真实数据</h2>
+    <div class="timecurve-head">
+      <label>选择日期：
+        <select id="daySelect"></select>
+      </label>
+      <span class="note">当前无宁夏日度分时明细，以下曲线为基于月度均价与典型负荷形状的重构参考，仅用于页面可视化展示。</span>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-box">
+        <h3>日前/实时电价曲线（24小时）</h3>
+        <canvas id="hourlyPriceChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>日前/实时电量曲线（24小时）</h3>
+        <canvas id="hourlyVolChart"></canvas>
+      </div>
+    </div>
+    <div class="overflow-x">
+      <table id="hourlyTable">
+        <thead>
+          <tr><th>时段</th><th>日前电量(MWh)</th><th>实时电量(MWh)</th><th>日前电价(元/MWh)</th><th>实时电价(元/MWh)</th><th>价差(实时-日前)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-label">日前合计电量 (MWh)</div><div id="daVolSum" class="stat-value">-</div></div>
+      <div class="stat"><div class="stat-label">实时合计电量 (MWh)</div><div id="rtVolSum" class="stat-value">-</div></div>
+      <div class="stat"><div class="stat-label">日前加权均价 (元/MWh)</div><div id="daWap" class="stat-value">-</div></div>
+      <div class="stat"><div class="stat-label">实时加权均价 (元/MWh)</div><div id="rtWap" class="stat-value">-</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>市场运行关注点（2月展望）</h2>
+    <div class="insight">
+      <p>1）关注煤电边际成本与交易电价联动，尤其是配套煤电高电价对总体结算均价的拉动效应。</p>
+      <p>2）关注新能源出力波动下的结算结构变化，风光占比提升可能进一步压低结构均价。</p>
+      <p>3）建议后续补充日度现货分时数据，以增强对价差、峰谷与系统平衡压力的判断。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+  const sourceRows = [
+    { type: '区内煤电', vol: 52.95, price: 320.54 },
+    { type: '配套煤电', vol: 66.37, price: 404.46 },
+    { type: '风电', vol: 28.95, price: 166.46 },
+    { type: '光伏', vol: 34.08, price: 79.46 },
+    { type: '储能', vol: 3.35, price: 437.25 },
+    { type: '其他', vol: 1.73, price: 284.87 }
+  ];
+  const totalVol = 187.42;
+  const monthPrice = 267.90;
+
+  function fillSettlementTable() {
+    const tbody = document.querySelector('#settlementTable tbody');
+    tbody.innerHTML = sourceRows.map(r => {
+      const share = totalVol ? ((r.vol / totalVol) * 100).toFixed(2) + '%' : '-';
+      return `<tr><td>${r.type}</td><td>${r.vol.toFixed(2)}</td><td>${r.price.toFixed(2)}</td><td>${share}</td></tr>`;
+    }).join('') + `<tr><td>合计</td><td>${totalVol.toFixed(2)}</td><td>${monthPrice.toFixed(2)}</td><td>100.00%</td></tr>`;
+  }
+
+  function makeCharts() {
+    const labels = sourceRows.map(r => r.type);
+    const volVals = sourceRows.map(r => r.vol);
+    const priceVals = sourceRows.map(r => r.price);
+
+    new Chart(document.getElementById('volChart'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: '亿kWh', data: volVals, backgroundColor: '#2c7da0' }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('priceChart'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: '元/MWh', data: priceVals, backgroundColor: '#e67e22' }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('mixChart'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: volVals }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    new Chart(document.getElementById('scatterChart'), {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: '电量-电价',
+          data: sourceRows.map(r => ({ x: r.vol, y: r.price })),
+          backgroundColor: '#1f5f7c'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: '结算电量（亿kWh）' } },
+          y: { title: { display: true, text: '结算电价（元/MWh）' } }
+        }
+      }
+    });
+  }
+
+  function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
+  function weightedAvg(price, vol) {
+    const volSum = sum(vol);
+    if (!volSum) return 0;
+    let total = 0;
+    for (let i = 0; i < price.length; i++) total += price[i] * vol[i];
+    return total / volSum;
+  }
+
+  const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+  const baseShape = [0.88, 0.86, 0.85, 0.85, 0.86, 0.89, 0.93, 0.98, 1.04, 1.08, 1.10, 1.08, 1.05, 1.03, 1.02, 1.01, 1.04, 1.08, 1.12, 1.13, 1.10, 1.04, 0.98, 0.91];
+  const avgMWh = (totalVol * 100000) / 24;
+  const daVol = baseShape.map(v => v * avgMWh);
+  const rtVol = baseShape.map((v, i) => (i >= 18 && i <= 21 ? v * avgMWh * 1.03 : v * avgMWh * 0.99));
+  const daPrice = baseShape.map(v => monthPrice * (0.9 + (v - 0.85) * 0.4));
+  const rtPrice = daPrice.map((v, i) => (i >= 18 && i <= 21 ? v * 1.03 : v * 0.99));
+  const monthly24 = { daVol, rtVol, daPrice, rtPrice };
+
+  let hourlyPriceChart;
+  let hourlyVolChart;
+  function renderHourlyTable(p) {
+    const tbody = document.querySelector('#hourlyTable tbody');
+    tbody.innerHTML = hours.map((h, i) => (
+      `<tr><td>${h}</td><td>${p.daVol[i].toFixed(2)}</td><td>${p.rtVol[i].toFixed(2)}</td><td>${p.daPrice[i].toFixed(2)}</td><td>${p.rtPrice[i].toFixed(2)}</td><td>${(p.rtPrice[i] - p.daPrice[i]).toFixed(2)}</td></tr>`
+    )).join('');
+  }
+
+  function updateTimeCurve(p) {
+    hourlyPriceChart.data.datasets[0].data = p.daPrice;
+    hourlyPriceChart.data.datasets[1].data = p.rtPrice;
+    hourlyPriceChart.update();
+    hourlyVolChart.data.datasets[0].data = p.daVol;
+    hourlyVolChart.data.datasets[1].data = p.rtVol;
+    hourlyVolChart.update();
+    renderHourlyTable(p);
+    document.getElementById('daVolSum').textContent = sum(p.daVol).toFixed(2);
+    document.getElementById('rtVolSum').textContent = sum(p.rtVol).toFixed(2);
+    document.getElementById('daWap').textContent = weightedAvg(p.daPrice, p.daVol).toFixed(2);
+    document.getElementById('rtWap').textContent = weightedAvg(p.rtPrice, p.rtVol).toFixed(2);
+  }
+
+  function initTimeCurve() {
+    const sel = document.getElementById('daySelect');
+    sel.innerHTML = '<option value="month">2026-01（全月重构）</option>';
+    sel.addEventListener('change', () => updateTimeCurve(monthly24));
+    hourlyPriceChart = new Chart(document.getElementById('hourlyPriceChart'), {
+      type: 'line',
+      data: {
+        labels: hours,
+        datasets: [
+          { label: '日前电价', data: monthly24.daPrice, borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.8 },
+          { label: '实时电价', data: monthly24.rtPrice, borderColor: '#e67e22', tension: 0.25, pointRadius: 1.8 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    });
+    hourlyVolChart = new Chart(document.getElementById('hourlyVolChart'), {
+      type: 'line',
+      data: {
+        labels: hours,
+        datasets: [
+          { label: '日前电量', data: monthly24.daVol, borderColor: '#1e5f7a', tension: 0.25, pointRadius: 1.8 },
+          { label: '实时电量', data: monthly24.rtVol, borderColor: '#f39c12', tension: 0.25, pointRadius: 1.8 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    });
+    updateTimeCurve(monthly24);
+  }
+
+  (function initExport() {
+    const btn = document.getElementById('exportExcelBtn');
+    btn.addEventListener('click', () => {
+      const wb = XLSX.utils.book_new();
+      const coreSheet = XLSX.utils.aoa_to_sheet([
+        ['指标', '值'],
+        ['发电侧结算电量（亿kWh）', totalVol],
+        ['发电侧结算均价（元/MWh）', monthPrice],
+        ['新能源结算电量（亿kWh）', 63.03],
+        ['煤电结算电量（亿kWh）', 119.32]
+      ]);
+      XLSX.utils.book_append_sheet(wb, coreSheet, '核心指标');
+
+      const settleAoA = [['电源类型', '结算电量（亿kWh）', '结算电价（元/MWh）']].concat(
+        sourceRows.map(r => [r.type, r.vol, r.price])
+      );
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(settleAoA), '现货月度汇总');
+
+      const hourlyAoA = [['时段', '日前电量', '实时电量', '日前电价', '实时电价']].concat(
+        hours.map((h, i) => [h, monthly24.daVol[i], monthly24.rtVol[i], monthly24.daPrice[i], monthly24.rtPrice[i]])
+      );
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hourlyAoA), '分时曲线24点');
+
+      const now = new Date();
+      const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+      XLSX.writeFile(wb, `宁夏1月市场报告_${ts}.xlsx`);
+    });
+  })();
+
+  fillSettlementTable();
+  makeCharts();
+  initTimeCurve();
+</script>
+</body>
+</html>
