@@ -15,8 +15,10 @@ from __future__ import annotations
 
 import http.server
 import json
+import os
 import re
 import socketserver
+import urllib.request
 import webbrowser
 from pathlib import Path
 from urllib.parse import urlparse
@@ -25,6 +27,31 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent
 PORT = 8080
 REPORTS_DIR = ROOT / "reports"
+
+
+def _load_dotenv(dotenv_path: Path) -> None:
+    if not dotenv_path.exists():
+        return
+    try:
+        content = dotenv_path.read_text(encoding="utf-8")
+    except OSError:
+        return
+    for line in content.splitlines():
+        s = line.strip()
+        if not s or s.startswith("#") or "=" not in s:
+            continue
+        key, value = s.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv(ROOT / ".env")
+
+LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.openai.com/v1").rstrip("/")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
 
 
 def _strip_html(html: str) -> str:
@@ -83,6 +110,84 @@ def _extract_snippet(text: str, question: str, max_len: int = 220) -> str:
     return snippet
 
 
+def _search_relevant_docs(docs: list[dict], question: str, province: str, top_k: int = 4) -> list[tuple[int, dict]]:
+    q_tokens = set(_tokenize(question))
+    if not q_tokens:
+        return []
+    scoped_docs = docs
+    if province:
+        scoped_docs = [d for d in docs if d["province"].lower() == province]
+    scored: list[tuple[int, dict]] = []
+    for d in scoped_docs:
+        overlap = len(q_tokens & d["tokens"])
+        if overlap > 0:
+            scored.append((overlap, d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return scored[:top_k]
+
+
+def _fallback_answer(question: str, top_docs: list[tuple[int, dict]]) -> str:
+    if not top_docs:
+        return "未在现有省份报告中检索到直接相关内容，请换个问法或指定省份。"
+    lines = ["已从省级报告中检索到以下内容："]
+    for score, doc in top_docs:
+        lines.append(f"- {doc['province']}（相关度 {score}）：{_extract_snippet(doc['text'], question)}")
+    return "\n".join(lines)
+
+
+def _build_agent_context(question: str, top_docs: list[tuple[int, dict]]) -> str:
+    chunks: list[str] = []
+    for idx, (_, doc) in enumerate(top_docs, start=1):
+        chunks.append(
+            f"[文档{idx}] 省份: {doc['province']}\n"
+            f"路径: {doc['path']}\n"
+            f"片段: {_extract_snippet(doc['text'], question, max_len=420)}"
+        )
+    return "\n\n".join(chunks)
+
+
+def _call_llm_answer(question: str, context: str) -> str | None:
+    if not LLM_API_KEY:
+        return None
+    payload = {
+        "model": LLM_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "你是电力市场报告问答助手。"
+                    "只能基于给定资料回答，不确定就明确说资料不足。"
+                    "回答使用中文，先给结论，再给2-4条依据。"
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"问题：{question}\n\n可用资料：\n{context}",
+            },
+        ],
+        "temperature": 0.2,
+    }
+    req = urllib.request.Request(
+        url=f"{LLM_API_BASE}/chat/completions",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {LLM_API_KEY}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            raw = resp.read().decode("utf-8", errors="ignore")
+            data = json.loads(raw)
+    except Exception:
+        return None
+    try:
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception:
+        return None
+
+
 class SiteHandler(http.server.SimpleHTTPRequestHandler):
     """固定网站根目录为脚本所在文件夹，并为文本类资源标注 UTF-8。"""
 
@@ -114,7 +219,14 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
-            self._send_json({"ok": True, "reports": len(self._ensure_corpus())})
+            self._send_json(
+                {
+                    "ok": True,
+                    "reports": len(self._ensure_corpus()),
+                    "agent_enabled": bool(LLM_API_KEY),
+                    "llm_model": LLM_MODEL if LLM_API_KEY else None,
+                }
+            )
             return
         super().do_GET()
 
@@ -139,40 +251,25 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json({"error": "question 不能为空"}, status=400)
             return
 
-        q_tokens = set(_tokenize(question))
-        if not q_tokens:
+        if not _tokenize(question):
             self._send_json({"answer": "问题过短，请补充关键词后重试。", "sources": []})
             return
 
         docs = self._ensure_corpus()
-        if province:
-            docs = [d for d in docs if d["province"].lower() == province]
-
-        scored: list[tuple[int, dict]] = []
-        for d in docs:
-            overlap = len(q_tokens & d["tokens"])
-            if overlap > 0:
-                scored.append((overlap, d))
-        scored.sort(key=lambda x: x[0], reverse=True)
-
-        if not scored:
-            self._send_json(
-                {
-                    "answer": "未在现有省份报告中检索到直接相关内容，请换个问法或指定省份。",
-                    "sources": [],
-                }
-            )
+        top_docs = _search_relevant_docs(docs, question, province, top_k=4)
+        if not top_docs:
+            self._send_json({"answer": _fallback_answer(question, top_docs), "sources": [], "mode": "retrieval"})
             return
 
-        top = scored[:3]
-        snippets = []
-        sources = []
-        for score, doc in top:
-            snippets.append(f"- {doc['province']}（相关度 {score}）：{_extract_snippet(doc['text'], question)}")
-            sources.append({"province": doc["province"], "file": doc["path"]})
+        context = _build_agent_context(question, top_docs)
+        agent_answer = _call_llm_answer(question, context)
+        answer = agent_answer or _fallback_answer(question, top_docs)
+        mode = "agent" if agent_answer else "retrieval"
 
-        answer = "已从省级报告中检索到以下内容：\n" + "\n".join(snippets)
-        self._send_json({"answer": answer, "sources": sources})
+        sources = []
+        for _, doc in top_docs:
+            sources.append({"province": doc["province"], "file": doc["path"]})
+        self._send_json({"answer": answer, "sources": sources, "mode": mode})
 
 
 def main() -> None:
