@@ -113,18 +113,26 @@ def _extract_snippet(text: str, question: str, max_len: int = 220) -> str:
 
 def _search_relevant_docs(docs: list[dict], question: str, province: str, top_k: int = 4) -> list[tuple[int, dict]]:
     q_tokens = set(_tokenize(question))
-    if not q_tokens:
-        return []
     scoped_docs = docs
     if province:
         scoped_docs = [d for d in docs if d["province"].lower() == province]
+    if not scoped_docs:
+        return []
+    if not q_tokens:
+        # 已指定省份但问题过短时，仍返回该省报告供后续兜底回答
+        return [(0, d) for d in scoped_docs[:top_k]]
     scored: list[tuple[int, dict]] = []
     for d in scoped_docs:
         overlap = len(q_tokens & d["tokens"])
         if overlap > 0:
             scored.append((overlap, d))
     scored.sort(key=lambda x: x[0], reverse=True)
-    return scored[:top_k]
+    if scored:
+        return scored[:top_k]
+    if province:
+        # 指定省份但未命中关键词时，退化到“按省份直取”避免空答案
+        return [(0, d) for d in scoped_docs[:top_k]]
+    return []
 
 
 def _fallback_answer(question: str, top_docs: list[tuple[int, dict]]) -> str:
