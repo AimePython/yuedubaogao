@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 
 # 网站根目录 = 本脚本所在文件夹
 ROOT = Path(__file__).resolve().parent
-PORT = 8080
+PORT = int(os.getenv("PORT", "8080"))
 REPORTS_DIR = ROOT / "reports"
 
 
@@ -52,6 +52,7 @@ _load_dotenv(ROOT / ".env")
 LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.openai.com/v1").rstrip("/")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
+CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*").strip() or "*"
 
 
 def _strip_html(html: str) -> str:
@@ -203,9 +204,16 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
     _corpus_cache: list[dict] | None = None
 
+    def _set_cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", CORS_ALLOW_ORIGIN)
+        self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Max-Age", "86400")
+
     def _send_json(self, payload: dict, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
+        self._set_cors_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -229,6 +237,11 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             )
             return
         super().do_GET()
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self._set_cors_headers()
+        self.end_headers()
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)

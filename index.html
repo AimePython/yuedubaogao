@@ -300,8 +300,20 @@
         const qaAnswer = document.getElementById('qaAnswer');
         const qaSources = document.getElementById('qaSources');
 
+        // 方案B: 前端静态托管 + 后端独立部署（可通过全局变量或 URL 参数覆盖）
+        const API_BASE =
+            new URLSearchParams(window.location.search).get('api_base') ||
+            window.__QA_API_BASE__ ||
+            'https://yuedubaogao.onrender.com';
+
         let reports = {};
         let qaCorpus = null;
+
+        function apiUrl(path) {
+            const base = (API_BASE || '').trim();
+            if (!base) return path; // 本地同源
+            return base.replace(/\/+$/, '') + path;
+        }
 
         function hasReport(slug) {
             const p = reports?.[slug];
@@ -519,7 +531,7 @@
             qaAnswer.textContent = '正在检索报告，请稍候…';
             qaSources.textContent = '';
             try {
-                const res = await fetch('/api/ask', {
+                const res = await fetch(apiUrl('/api/ask'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question, province })
