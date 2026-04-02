@@ -63,6 +63,37 @@ CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*").strip() or "*"
 ENABLE_QUERY_LOG = os.getenv("ENABLE_QUERY_LOG", "true").strip().lower() in {"1", "true", "yes", "on"}
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 SESSION_MAX_TURNS = int(os.getenv("SESSION_MAX_TURNS", "3"))
+ENABLE_TOOL_AGENT = os.getenv("ENABLE_TOOL_AGENT", "true").strip().lower() in {"1", "true", "yes", "on"}
+TOOL_AGENT_MAX_ROUNDS = int(os.getenv("TOOL_AGENT_MAX_ROUNDS", "5"))
+
+# OpenAI 兼容 Function Calling：最小工具集
+REPORT_AGENT_TOOLS: list[dict] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_reports",
+            "description": (
+                "在已上线的省级电力市场报告（HTML 解析后的文本）中检索与问题相关的原文片段。"
+                "必须先调用本工具获取依据，再回答用户。province 为可选省份 slug（小写英文，如 gansu、shandong）；"
+                "不传则在全国报告中检索。"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "检索用语，尽量包含省份、月份、电价/电量/供需等关键词",
+                    },
+                    "province": {
+                        "type": "string",
+                        "description": "可选。省份目录名 slug，如 gansu、shandong、zhejiang",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    }
+]
 
 
 def _resolve_commit() -> str:
@@ -435,8 +466,8 @@ def _search_relevant_docs(docs: list[dict], question: str, province: str, top_k:
 
 def _fallback_answer(question: str, top_docs: list[tuple[int, dict]]) -> str:
     if not top_docs:
-        return "未在现有省份报告中检索到直接相关内容，请换个问法或指定省份。"
-    lines = ["已从省级报告中检索到以下内容："]
+        return "未在已收录的省级报告中检索到直接相关表述，可尝试换一种问法或指定省份后再问。"
+    lines = ["根据当前检索，与问题相关的报告片段如下（建议点开来源全文核对）："]
     for score, doc in top_docs:
         lines.append(f"- {doc['province']}（相关度 {score}）：{_extract_snippet(doc['text'], question)}")
     return "\n".join(lines)
@@ -472,7 +503,7 @@ def _build_structured_answer(question: str, top_docs: list[tuple[int, dict]], in
 
     if intent == "spot_spread":
         spread_sents = [s for s in key_sents if ("价差" in s or "峰谷" in s)]
-        lines.append("现货价差结论（基于报告原文）")
+        lines.append("简要结论：现货价差（以下句子摘自报告原文）")
         if spread_sents:
             lines.append(f"- {spread_sents[0]}")
         else:
@@ -483,7 +514,7 @@ def _build_structured_answer(question: str, top_docs: list[tuple[int, dict]], in
 
     if intent == "spot_low_time":
         low_time_sents = [s for s in sentences if re.search(r"(最低|低谷|谷段|时段|点|小时)", s)]
-        lines.append("现货低价时段结论（基于报告原文）")
+        lines.append("简要结论：现货低价时段（以下句子摘自报告原文）")
         if low_time_sents:
             lines.append(f"- {low_time_sents[0]}")
         else:
@@ -495,7 +526,7 @@ def _build_structured_answer(question: str, top_docs: list[tuple[int, dict]], in
     if intent == "price_inversion":
         spot_vals = re.findall(r"(?:现货|实时|日前)[^。；]{0,20}(?:均价|价格)[^0-9]{0,8}([0-9]+(?:\.[0-9]+)?)", text)
         mid_vals = re.findall(r"(?:中长期)[^。；]{0,20}(?:均价|价格)[^0-9]{0,8}([0-9]+(?:\.[0-9]+)?)", text)
-        lines.append("现货与中长期价格关系（基于报告原文）")
+        lines.append("简要结论：现货与中长期价格关系（以下摘自报告原文）")
         if spot_vals and mid_vals:
             try:
                 spot = float(spot_vals[0])
@@ -510,7 +541,7 @@ def _build_structured_answer(question: str, top_docs: list[tuple[int, dict]], in
 
     if intent == "supply_demand":
         sd_sents = [s for s in sentences if re.search(r"(供需|平衡|偏紧|偏松|外送|负荷|备用)", s)]
-        lines.append("供需关系结论（基于报告原文）")
+        lines.append("简要结论：供需关系（以下句子摘自报告原文）")
         if sd_sents:
             lines.append(f"- {sd_sents[0]}")
             for s in sd_sents[1:3]:
@@ -520,7 +551,7 @@ def _build_structured_answer(question: str, top_docs: list[tuple[int, dict]], in
                 lines.append(f"- {s}")
         return "\n".join(lines)
 
-    lines.append("检索结论（基于报告原文）")
+    lines.append("简要结论（以下句子摘自报告原文）")
     for s in key_sents[:3]:
         lines.append(f"- {s}")
     return "\n".join(lines)
@@ -537,6 +568,227 @@ def _build_agent_context(question: str, top_docs: list[tuple[int, dict]]) -> str
     return "\n\n".join(chunks)
 
 
+# 表达气质参考 DeepSeek 类对话：先结论、再分点、纯文本、少套话
+LLM_PERSONA_STYLE = (
+    "表达风格：语气理性、简洁，像 DeepSeek 常见回答那样先给出 1～2 句核心结论，再用「1.」「2.」分点展开依据与数据；避免套话、堆砌感叹词和表情符号。"
+    "段落之间可空一行，便于扫读；仅用纯文本与中文标点，不要使用 Markdown 标题/代码块或 LaTeX。"
+    "可用「根据检索到的报告片段」「综合来看」等自然衔接；除非确实无资料可答，否则不要输出「作为人工智能」类免责声明。"
+)
+
+# 更准、更敢用：与模型约束、数值对齐、证据强度
+LLM_SYSTEM_TRUST_RULES = (
+    "严格规则："
+    "1) 所有具体数字、日期、电价/电量/装机等量化表述必须能在「可用资料」或工具 hits 的 snippet 中找到依据；找不到就写「资料片段中未出现该数值，需查看完整报告」。"
+    "2) 禁止推测、禁止用常识补全报告中没有的内容。"
+    "3) 每条结论尽量标注依据来自哪条 path（报告文件路径）。"
+    "4) 若资料不足以回答问题，直接说明不足，不要编造。"
+)
+
+AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0.15"))
+
+
+def _grounding_corpus_from_docs(top_docs: list[tuple[int, dict]], max_chars: int = 14000) -> str:
+    """拼接用于数值校验的原文池（截取控制长度）。"""
+    parts: list[str] = []
+    n = 0
+    for _, doc in top_docs:
+        t = doc.get("text") or ""
+        chunk = t[:4500]
+        parts.append(chunk)
+        n += len(chunk)
+        if n >= max_chars:
+            break
+    return "\n".join(parts)
+
+
+def _find_ungrounded_numbers(answer: str, corpus: str) -> list[str]:
+    """找出回答中出现、但在原文池中未逐字出现的数字串（启发式，减少幻觉）。"""
+    if not answer or not corpus:
+        return []
+    clean = answer.split("【可信度说明】")[0].split("【说明】")[0]
+    corpus_compact = re.sub(r"\s+", "", corpus)
+    # 匹配小数与整数（至少两位数字，避免误伤「3条」等）
+    pattern = re.compile(r"\d+(?:\.\d+)?")
+    bad: list[str] = []
+    seen: set[str] = set()
+    for m in pattern.finditer(clean):
+        s = m.group()
+        if len(re.sub(r"\D", "", s)) < 2:
+            continue
+        if s in seen:
+            continue
+        seen.add(s)
+        if s in corpus or s in corpus_compact:
+            continue
+        bad.append(s)
+        if len(bad) >= 12:
+            break
+    return bad
+
+
+def _evidence_strength(top_docs: list[tuple[int, dict]]) -> str:
+    if not top_docs:
+        return "none"
+    scores = [s for s, _ in top_docs]
+    mx = max(scores)
+    if mx == 0:
+        return "low"
+    if mx >= 3:
+        return "high"
+    return "medium"
+
+
+def _augment_answer_for_trust(answer: str, top_docs: list[tuple[int, dict]]) -> tuple[str, dict]:
+    """
+    在回答后附加可信度说明，并返回 trust 元数据供前端展示。
+    """
+    corpus = _grounding_corpus_from_docs(top_docs)
+    evidence = _evidence_strength(top_docs)
+    ungrounded = _find_ungrounded_numbers(answer, corpus)
+    numeric = "ok" if not ungrounded else "check_needed"
+    trust: dict = {
+        "evidence_strength": evidence,
+        "numeric_grounding": numeric,
+    }
+    notes: list[str] = []
+    if evidence == "low":
+        notes.append("当前检索与问题关键词匹配偏弱，结论仅作导读，请务必对照下方「参考来源」打开原文核对。")
+    if ungrounded:
+        preview = "、".join(ungrounded[:5])
+        if len(ungrounded) > 5:
+            preview += " 等"
+        notes.append(
+            f"模型回答中的部分数值（{preview}）未在给定原文摘录中逐字命中，可能存在转述或幻觉，请以报告原文为准。"
+        )
+    if notes:
+        trust["notes"] = notes
+        answer = answer.rstrip() + "\n\n【可信度说明】" + " ".join(notes)
+    return answer, trust
+
+
+def _post_chat_completions(body: dict) -> dict | None:
+    """POST /chat/completions，返回完整 JSON；失败返回 None。"""
+    req = urllib.request.Request(
+        url=f"{LLM_API_BASE}/chat/completions",
+        data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {LLM_API_KEY}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            return json.loads(resp.read().decode("utf-8", errors="ignore"))
+    except Exception:
+        return None
+
+
+def _tool_search_reports_impl(
+    docs: list[dict], query: str, province: str, top_k: int = 4
+) -> tuple[str, list[tuple[int, dict]]]:
+    top_k = max(1, min(top_k, 6))
+    top = _search_relevant_docs(docs, query, province, top_k=top_k)
+    hits: list[dict] = []
+    for score, doc in top:
+        hits.append(
+            {
+                "province": doc["province"],
+                "path": doc["path"],
+                "relevance": score,
+                "snippet": _extract_snippet(doc["text"], query, max_len=520),
+            }
+        )
+    return json.dumps({"hits": hits}, ensure_ascii=False), top
+
+
+def _run_tool_agent(
+    question: str,
+    feedback_hint: str,
+    docs: list[dict],
+    default_province: str,
+) -> tuple[str | None, str, list[tuple[int, dict]]]:
+    """
+    最小 Tool Agent：多轮调用 search_reports，再输出最终回答。
+    返回 (answer, mode, top_docs_for_sources)；失败时 answer 为 None。
+    """
+    if not LLM_API_KEY:
+        return None, "", []
+
+    system = (
+        "你是专注中国电力市场「省级分析报告」的解读助手，面向从业者用中文答疑。"
+        "工作方式：必须先调用工具 search_reports 拉取报告原文片段，最终回答仅允许基于工具返回的 hits 里 snippet 中的内容；hits 为空时坦诚说明未命中、勿编造数字。"
+        "最终成文：段首给简短结论，再分点列依据（每条注明 path），所引数字须与 snippet 可核对。"
+        + LLM_PERSONA_STYLE
+        + LLM_SYSTEM_TRUST_RULES
+    )
+    user_content = f"用户问题：{question}\n"
+    if feedback_hint:
+        user_content += f"历史纠错提示：{feedback_hint}\n"
+
+    messages: list[dict] = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user_content},
+    ]
+    last_top_docs: list[tuple[int, dict]] = []
+    rounds = 0
+
+    while rounds < TOOL_AGENT_MAX_ROUNDS:
+        rounds += 1
+        body = {
+            "model": LLM_MODEL,
+            "messages": messages,
+            "tools": REPORT_AGENT_TOOLS,
+            "tool_choice": "auto",
+            "temperature": AGENT_TEMPERATURE,
+        }
+        data = _post_chat_completions(body)
+        if not data:
+            return None, "", last_top_docs
+        try:
+            msg = data["choices"][0]["message"]
+        except (KeyError, IndexError, TypeError):
+            return None, "", last_top_docs
+
+        tool_calls = msg.get("tool_calls")
+        content = (msg.get("content") or "").strip()
+
+        if tool_calls:
+            assistant_msg: dict = {"role": "assistant", "content": msg.get("content")}
+            assistant_msg["tool_calls"] = tool_calls
+            messages.append(assistant_msg)
+
+            for tc in tool_calls:
+                fn = tc.get("function") or {}
+                name = fn.get("name", "")
+                args_raw = fn.get("arguments") or "{}"
+                tc_id = tc.get("id") or ""
+                try:
+                    args = json.loads(args_raw) if isinstance(args_raw, str) else (args_raw or {})
+                except json.JSONDecodeError:
+                    args = {}
+                if name == "search_reports":
+                    q = (args.get("query") or question).strip()
+                    prov = (args.get("province") or default_province or "").strip().lower()
+                    payload_json, top = _tool_search_reports_impl(docs, q, prov, top_k=4)
+                    last_top_docs = top
+                else:
+                    payload_json = json.dumps({"error": "unknown_tool", "name": name}, ensure_ascii=False)
+                messages.append({"role": "tool", "tool_call_id": tc_id, "content": payload_json})
+            continue
+
+        if content:
+            return content, "tool-agent", last_top_docs if last_top_docs else []
+
+    # 轮次用尽：用最后一次检索结果做单次补答
+    if last_top_docs:
+        ctx = _build_agent_context(question, last_top_docs)
+        ans = _call_llm_answer(question, ctx, feedback_hint=feedback_hint)
+        if ans:
+            return ans, "agent", last_top_docs
+    return None, "", last_top_docs
+
+
 def _call_llm_answer(question: str, context: str, feedback_hint: str = "") -> str | None:
     if not LLM_API_KEY:
         return None
@@ -546,10 +798,11 @@ def _call_llm_answer(question: str, context: str, feedback_hint: str = "") -> st
             {
                 "role": "system",
                 "content": (
-                    "你是电力市场报告问答助手。"
-                    "只能基于给定资料回答，不确定就明确说资料不足。"
-                    "回答使用中文，按以下结构回答："
-                    "1) 结论；2) 关键依据(2-4条)；3) 若问题涉及最低时段/倒挂/供需，请明确指出对应判断。"
+                    "你是专注中国电力市场省级报告解读的助手，仅用中文作答。"
+                    "只能依据下方「可用资料」回答；证据不足时直接说明缺口，勿臆测或外推。"
+                    "成文顺序：先 1～2 句简要结论，再分点列出 2～4 条关键依据（每条注明 path）；若问题涉及最低电价时段、现货与中长期倒挂或供需松紧，结论段须点明判断。"
+                    + LLM_PERSONA_STYLE
+                    + LLM_SYSTEM_TRUST_RULES
                 ),
             },
             {
@@ -561,7 +814,7 @@ def _call_llm_answer(question: str, context: str, feedback_hint: str = "") -> st
                 ),
             },
         ],
-        "temperature": 0.2,
+        "temperature": AGENT_TEMPERATURE,
     }
     req = urllib.request.Request(
         url=f"{LLM_API_BASE}/chat/completions",
@@ -644,6 +897,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                     "ok": True,
                     "reports": len(self._ensure_corpus()),
                     "agent_enabled": bool(LLM_API_KEY),
+                    "tool_agent_enabled": bool(LLM_API_KEY and ENABLE_TOOL_AGENT),
                     "llm_model": LLM_MODEL if LLM_API_KEY else None,
                 }
             )
@@ -720,14 +974,36 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if not _tokenize(question_for_retrieval):
-            self._send_json({"answer": "问题过短，请补充关键词后重试。", "sources": []})
+            self._send_json(
+                {
+                    "answer": "问题过短，请补充关键词后重试。",
+                    "sources": [],
+                    "mode": "validation",
+                    "trust": {
+                        "evidence_strength": "none",
+                        "numeric_grounding": "n/a",
+                        "notes": ["未执行检索与数值校验。"],
+                    },
+                }
+            )
             return
 
         docs = self._ensure_corpus()
         top_docs = _search_relevant_docs(docs, question_for_retrieval, province, top_k=4)
         if not top_docs:
             answer = _fallback_answer(question, top_docs)
-            self._send_json({"answer": answer, "sources": [], "mode": "retrieval"})
+            self._send_json(
+                {
+                    "answer": answer,
+                    "sources": [],
+                    "mode": "retrieval",
+                    "trust": {
+                        "evidence_strength": "none",
+                        "numeric_grounding": "n/a",
+                        "notes": ["未在已索引报告中检索到匹配片段，回答为提示性文案，无报告依据。"],
+                    },
+                }
+            )
             _update_session_memory(session_id, question)
             _append_query_log(
                 {
@@ -744,15 +1020,30 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             )
             return
 
-        context = _build_agent_context(question_for_retrieval, top_docs)
-        agent_answer = _call_llm_answer(question, context, feedback_hint=feedback_hint)
-        answer = agent_answer or _build_structured_answer(question, top_docs, intent)
-        mode = "agent" if agent_answer else "retrieval"
+        tool_answer: str | None = None
+        tool_mode = ""
+        tool_top_docs: list[tuple[int, dict]] = []
+        if LLM_API_KEY and ENABLE_TOOL_AGENT:
+            tool_answer, tool_mode, tool_top_docs = _run_tool_agent(
+                question, feedback_hint, docs, province
+            )
+
+        if tool_answer:
+            answer = tool_answer
+            mode = tool_mode or "tool-agent"
+            src_docs = tool_top_docs if tool_top_docs else top_docs
+        else:
+            context = _build_agent_context(question_for_retrieval, top_docs)
+            agent_answer = _call_llm_answer(question, context, feedback_hint=feedback_hint)
+            answer = agent_answer or _build_structured_answer(question, top_docs, intent)
+            mode = "agent" if agent_answer else "retrieval"
+            src_docs = top_docs
 
         sources = []
-        for _, doc in top_docs:
+        for _, doc in src_docs:
             sources.append({"province": doc["province"], "file": doc["path"]})
-        self._send_json({"answer": answer, "sources": sources, "mode": mode})
+        answer, trust_meta = _augment_answer_for_trust(answer, src_docs)
+        self._send_json({"answer": answer, "sources": sources, "mode": mode, "trust": trust_meta})
         _update_session_memory(session_id, question)
         _append_query_log(
             {

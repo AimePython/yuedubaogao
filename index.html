@@ -141,6 +141,16 @@
             font-size: 0.82rem;
             color: var(--muted);
         }
+        .ai-trust {
+            margin-top: 0.45rem;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            color: #5a6570;
+            padding: 0.45rem 0.65rem;
+            background: #f3f6f8;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
         .ai-feedback {
             margin-top: 0.55rem;
             display: flex;
@@ -259,7 +269,7 @@
         </div>
         <section class="ai-card">
             <h2>AI 智能问答</h2>
-            <p class="hint">问题会从各省报告 HTML 中检索后回答，可选择省份缩小范围。</p>
+            <p class="hint">基于各省报告原文检索与解读：先给简要结论、再分点列依据；可选省份缩小范围。</p>
             <div class="ai-row">
                 <select id="qaProvince">
                     <option value="">全部省份</option>
@@ -269,6 +279,7 @@
             </div>
             <div class="ai-answer" id="qaAnswer">等待提问…</div>
             <div class="ai-sources" id="qaSources"></div>
+            <div class="ai-trust" id="qaTrust" hidden></div>
             <div class="ai-feedback">
                 <button id="qaBadBtn" type="button" disabled>这条回答不对</button>
                 <span class="ai-feedback-status" id="qaFeedbackStatus"></span>
@@ -327,6 +338,7 @@
         const qaAskBtn = document.getElementById('qaAskBtn');
         const qaAnswer = document.getElementById('qaAnswer');
         const qaSources = document.getElementById('qaSources');
+        const qaTrust = document.getElementById('qaTrust');
         const qaBadBtn = document.getElementById('qaBadBtn');
         const qaFeedbackStatus = document.getElementById('qaFeedbackStatus');
 
@@ -347,6 +359,32 @@
             const sid = 's-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
             localStorage.setItem(key, sid);
             return sid;
+        }
+
+        function setTrustUI(trust, fallbackHint) {
+            if (!qaTrust) return;
+            if (fallbackHint) {
+                qaTrust.hidden = false;
+                qaTrust.textContent = fallbackHint;
+                return;
+            }
+            if (!trust || typeof trust !== 'object') {
+                qaTrust.hidden = true;
+                qaTrust.textContent = '';
+                return;
+            }
+            const parts = [];
+            if (trust.evidence_strength) parts.push(`证据强度：${trust.evidence_strength}`);
+            if (trust.numeric_grounding) parts.push(`数值对齐：${trust.numeric_grounding}`);
+            if (Array.isArray(trust.notes) && trust.notes.length) parts.push(...trust.notes);
+            const text = parts.filter(Boolean).join(' · ');
+            if (!text) {
+                qaTrust.hidden = true;
+                qaTrust.textContent = '';
+                return;
+            }
+            qaTrust.hidden = false;
+            qaTrust.textContent = text;
         }
 
         function apiUrl(path) {
@@ -561,7 +599,7 @@
                 picked.push(c);
             }
 
-            const lines = ['当前为静态站点兜底检索回答（未连接后端 Agent）：'];
+            const lines = ['当前为静态站点兜底检索（未连接后端智能解读）：'];
             const sources = [];
             if (picked.length) {
                 picked.forEach(({ sentence, doc }) => {
@@ -600,6 +638,7 @@
             if (!question) {
                 qaAnswer.textContent = '请先输入问题。';
                 qaSources.textContent = '';
+                setTrustUI(null, '');
                 qaBadBtn.disabled = true;
                 qaFeedbackStatus.textContent = '';
                 return;
@@ -608,6 +647,7 @@
             qaBadBtn.disabled = true;
             qaAnswer.textContent = '正在检索报告，请稍候…';
             qaSources.textContent = '';
+            setTrustUI(null, '');
             qaFeedbackStatus.textContent = '';
             try {
                 const res = await postAskWithRetry({ question, province, session_id: getSessionId() }, 1);
@@ -615,11 +655,12 @@
                 if (!res.ok) {
                     throw new Error(data.error || '请求失败');
                 }
-                qaAnswer.textContent = (data.mode === 'agent' ? '[Agent] ' : '') + (data.answer || '未获取到回答。');
+                qaAnswer.textContent = data.answer || '未获取到回答。';
                 const list = Array.isArray(data.sources) ? data.sources : [];
                 qaSources.innerHTML = list.length
                     ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
                     : '参考来源：无';
+                setTrustUI(data.trust, '');
                 lastQAContext = {
                     question,
                     province,
@@ -634,6 +675,10 @@
                 qaSources.innerHTML = list.length
                     ? '参考来源：' + list.map((s) => `<a href="${encodeURI(s.file)}" target="_blank" rel="noopener">${s.province}</a>`).join(' · ')
                     : '参考来源：无';
+                setTrustUI(
+                    null,
+                    '离线检索模式：未经过服务端数值对齐与可信度标注，请以报告原文为准。'
+                );
                 lastQAContext = {
                     question,
                     province,
