@@ -4,3 +4,6 @@ __pycache__/
 .env.*
 !.env.example
 
+# Cursor agent skills — keep local, do not publish to GitHub
+skills/**/SKILL.md
+
