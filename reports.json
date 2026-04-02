@@ -13,6 +13,10 @@
     "2026-01": {
       "file": "reports/anhui/安徽1月分析报告.html",
       "label": "2026年1月"
+    },
+    "2026-02": {
+      "file": "reports/anhui/安徽2月分析报告.html",
+      "label": "2026年2月"
     }
   },
   "henan": {
