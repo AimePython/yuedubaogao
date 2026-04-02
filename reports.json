@@ -62,6 +62,12 @@
       "file": "reports/ningxia/宁夏1月分析报告.html",
       "label": "2026年1月"
     }
+  },
+  "liaoning": {
+    "2026-01": {
+      "file": "reports/liaoning/辽宁电力市场2026年1月全景分析报告.html",
+      "label": "2026年1月"
+    }
   }
 }
 
