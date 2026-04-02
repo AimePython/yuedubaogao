@@ -37,6 +37,10 @@
     "2026-01": {
       "file": "reports/zhejiang/浙江1月分析报告.html",
       "label": "2026年1月"
+    },
+    "2026-02": {
+      "file": "reports/zhejiang/浙江2月分析报告.html",
+      "label": "2026年2月"
     }
   },
   "shanxi1": {
