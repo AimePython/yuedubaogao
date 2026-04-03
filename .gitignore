@@ -6,3 +6,6 @@ __pycache__/
 
 # 本地说明稿，不提交远程
 guides/**/private-notes.md
+
+# one-off repo maintenance scripts
+.filter-repo-msg-callback.py
