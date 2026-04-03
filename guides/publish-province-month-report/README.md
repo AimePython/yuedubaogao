@@ -11,7 +11,7 @@
 
 ## 适用场景
 
-当你有以下需求时使用本 SKILL：
+在以下场景可参考本目录说明：
 
 - 新增某省某月报告（例如：河南 `2026-03`）
 - 重发某省某月报告（同一个 `YYYY-MM`，更换为新 HTML）
@@ -22,9 +22,9 @@
 ## 目录结构
 
 ```text
-skills/
+guides/
 └── publish-province-month-report/
-    ├── SKILL.md
+    ├── private-notes.md   （仅本地，见 .gitignore）
     └── README.md
 ```
 

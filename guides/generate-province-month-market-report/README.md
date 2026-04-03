@@ -1,6 +1,6 @@
 ## Generate Province Month Market Report
 
-This folder contains the Cursor Skill used to consistently generate **province monthly market insight HTML** pages.
+This folder documents conventions for consistently generating **province monthly market insight HTML** pages in this repo.
 
 Default section naming convention follows Jiangsu template: `江苏1月市场经营分析报告_完整版.html`.
 
