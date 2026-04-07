@@ -41,6 +41,16 @@
       "label": "2026年1月"
     }
   },
+  "hebei": {
+    "2026-01": {
+      "file": "reports/hebei/河北1月市场运营分析报告.html",
+      "label": "2026年1月"
+    },
+    "2026-02": {
+      "file": "reports/hebei/河北2月市场运营分析报告.html",
+      "label": "2026年2月"
+    }
+  },
   "zhejiang": {
     "2026-01": {
       "file": "reports/zhejiang/浙江1月分析报告.html",
