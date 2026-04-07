@@ -1,4 +1,6 @@
-.DS_Store
+﻿.DS_Store
+# macOS AppleDouble 元数据（勿提交）
+**/._*
 __pycache__/
 .env
 .env.*
