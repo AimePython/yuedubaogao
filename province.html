@@ -292,7 +292,7 @@
             months.forEach((m) => {
                 const opt = document.createElement('option');
                 opt.value = m;
-                opt.textContent = `${m}月`;
+                opt.textContent = `${parseInt(m, 10)}月`;
                 monthSelect.appendChild(opt);
             });
             monthSelect.value = months[0] || '';
