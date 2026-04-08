@@ -81,6 +81,10 @@
     "2026-01": {
       "file": "reports/gansu/甘肃1月分析报告.html",
       "label": "2026年1月"
+    },
+    "2026-02": {
+      "file": "reports/gansu/甘肃2月分析报告.html",
+      "label": "2026年2月"
     }
   },
   "ningxia": {

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>甘肃电力市场运行分析 · 2026年2月</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; background: #f0f4f8; color: #1a2c3e; padding: 1rem; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #2c7da0; padding-bottom: 0.75rem; }
+    .title-section h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #1e5f7a, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .title-section p { color: #2c5a6e; margin-top: 0.2rem; font-size: 0.82rem; }
+    .download-btn { background: #2c7da0; border: none; padding: 0.6rem 1.2rem; border-radius: 48px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .download-btn:hover { background: #1f5e7a; transform: translateY(-2px); }
+    .card { background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1rem 1.2rem; margin-bottom: 1.5rem; border: 1px solid #e2edf2; }
+    .card h2 { font-size: 1.3rem; font-weight: 600; border-left: 4px solid #2c7da0; padding-left: 0.8rem; margin-bottom: 1rem; color: #1e4a62; }
+    .card h3 { font-size: 1.05rem; margin: 0.9rem 0 0.5rem 0; color: #2c7da0; }
+    .insight-box { background: #eef3fa; padding: 0.8rem; border-radius: 16px; margin-bottom: 1rem; }
+    .insight-box p { margin: 0.5rem 0; line-height: 1.45; font-size: 0.86rem; }
+    .highlight { font-weight: bold; color: #d9534f; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.6rem; }
+    .stat-item { text-align: center; background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f2 100%); border-radius: 12px; padding: 0.8rem; border: 1px solid #b8d9e8; }
+    .stat-label { font-size: 0.75rem; color: #5f7f8c; margin-bottom: 0.3rem; }
+    .stat-value { font-size: 1.2rem; font-weight: 700; color: #2c7da0; }
+    .chart-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
+    @media (min-width: 900px) { .chart-container { grid-template-columns: 1fr 1fr; } }
+    .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; text-align: center; }
+    .chart-box canvas { max-height: 320px; width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
+    th, td { border: 1px solid #d4e2e9; padding: 0.45rem 0.35rem; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
+    th { background: #e9f2f7; font-weight: 600; color: #1a4c63; }
+    .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .note { font-size: 0.72rem; color: #5f7f8c; margin-top: 0.5rem; }
+    footer { text-align: center; margin-top: 1.5rem; font-size: 0.72rem; color: #5f7f8c; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title-section">
+      <h1>⚡ 甘肃电力市场运行分析 · 2026年2月</h1>
+      <p>基于甘肃现货日度明细（日前/实时）自动汇总；其余指标以公开披露补充为准</p>
+    </div>
+    <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
+  </div>
+
+  <div class="card">
+    <h2>📊 核心速览</h2>
+    <div class="insight-box">
+      <p><strong>现货规模：</strong>2月日前市场出清总电量约 <span class="highlight" id="kpiDaYI">-</span> 亿kWh，实时市场出清总电量约 <span class="highlight" id="kpiRtYI">-</span> 亿kWh。</p>
+      <p><strong>环比变化：</strong>相较1月（同口径CSV汇总），日前变化 <span class="highlight" id="kpiDaMoM">-</span>，实时变化 <span class="highlight" id="kpiRtMoM">-</span>。</p>
+      <p><strong>价格口径说明：</strong>当前已上传数据为电量明细CSV，不含日前/实时电价列；本报告价格相关图表保留结构并标注“待补充”。</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-label">2月日前电量</div><div class="stat-value" id="statDaYI">-</div></div>
+      <div class="stat-item"><div class="stat-label">2月实时电量</div><div class="stat-value" id="statRtYI">-</div></div>
+      <div class="stat-item"><div class="stat-label">日前环比</div><div class="stat-value" id="statDaMoM">-</div></div>
+      <div class="stat-item"><div class="stat-label">实时环比</div><div class="stat-value" id="statRtMoM">-</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏭 市场供需情况 & 关键指标月度对比</h2>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>指标</th><th>2026年1月</th><th>2026年2月</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>日前出清电量（亿kWh）</td><td id="cmpDaJan">-</td><td id="cmpDaFeb">-</td><td>来源：项目内日前CSV（MWh→亿kWh）</td></tr>
+          <tr><td>实时出清电量（亿kWh）</td><td id="cmpRtJan">-</td><td id="cmpRtFeb">-</td><td>来源：项目内实时CSV（MWh→亿kWh）</td></tr>
+          <tr><td>日前/实时均价（元/MWh）</td><td>-</td><td>-</td><td>2月价格明细未随本次数据包上传</td></tr>
+          <tr><td>其它供需指标</td><td>见1月月报</td><td>待补充</td><td>补齐2月信息披露PDF后更新</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📑 交易组织与结算情况（2026年2月）</h2>
+    <div class="insight-box">
+      <p>本版先基于已上传现货出清电量明细完成现货模块。中长期交易分品类、用户侧结算均价、发电侧分类型电价等需以2月信息披露表补齐后更新。</p>
+      <p class="note">为避免误导，暂不沿用1月披露值填充2月结算数据。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ 现货市场交易（2月）</h2>
+
+    <h3>现货市场月度汇总（日前/实时）</h3>
+    <div class="overflow-x-auto">
+      <table id="spotMonthlyTable">
+        <thead>
+          <tr><th>月份</th><th>市场类型</th><th>出清电量（亿kWh）</th><th>加权均价（元/MWh）</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>📊 2月日度出清电量（日前/实时）</h3>
+        <canvas id="dailyVolChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>📉 2月日度出清均价趋势（日前/实时）</h3>
+        <canvas id="dailyPriceChart"></canvas>
+        <div class="note">2月价格明细未随本批数据上传，图中仅保留结构（空值）。</div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <h3>📋 现货日度明细（2月）</h3>
+      <table id="dailyTable">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>日前电量（亿kWh）</th>
+            <th>实时电量（亿kWh）</th>
+            <th>日前均价（元/MWh）</th>
+            <th>实时均价（元/MWh）</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🕒 分时曲线（24小时）- 真实数据</h2>
+    <div class="note">说明：2月日前/实时电量源自96点CSV并聚合至24点；价格字段待补充。</div>
+    <div class="note" style="margin-bottom: 0.6rem;">选择日期：<select id="daySelect"></select></div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>⏱️ 日前/实时电量曲线（24小时）</h3>
+        <canvas id="hourlyVolChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>🧮 当日汇总统计</h3>
+        <div class="stats-grid">
+          <div class="stat-item"><div class="stat-label">日前合计电量（MWh）</div><div class="stat-value" id="daVolSum">-</div></div>
+          <div class="stat-item"><div class="stat-label">实时合计电量（MWh）</div><div class="stat-value" id="rtVolSum">-</div></div>
+          <div class="stat-item"><div class="stat-label">日前加权均价（元/MWh）</div><div class="stat-value">待补充</div></div>
+          <div class="stat-item"><div class="stat-label">实时加权均价（元/MWh）</div><div class="stat-value">待补充</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 市场运行关注点（3月展望）</h2>
+    <div class="insight-box">
+      <p>1）2月日前与实时电量均较1月回落，建议跟踪3月复工后负荷恢复节奏与新能源出力变化。</p>
+      <p>2）补齐2月价格明细后，应重点复盘峰谷价差变化及实时偏差成本。</p>
+      <p>3）中长期与结算模块建议在披露PDF落地后再统一更新，保证口径一致。</p>
+    </div>
+  </div>
+
+  <footer>数据来源：指标数据明细-甘肃_日前/实时市场出清总电量（2026-01-01~2026-02-28）.csv。说明：本版为2月现货电量快速版，价格与结算项待补充。</footer>
+</div>
+
+<script>
+  const period24 = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+  let dailyVolChart = null;
+  let dailyPriceChart = null;
+  let hourlyVolChart = null;
+
+  const toPct = (x) => (x >= 0 ? `+${x.toFixed(2)}%` : `${x.toFixed(2)}%`);
+
+  function makeLineChart(el, labels, datasets) {
+    return new Chart(el, {
+      type: 'line',
+      data: { labels, datasets },
+      options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    });
+  }
+
+  function renderMonthlyTable(data) {
+    const tb = document.querySelector('#spotMonthlyTable tbody');
+    const h = data.history && data.history[0] ? data.history[0] : null;
+    tb.innerHTML = `
+      ${h ? `<tr><td>${h.month}</td><td>日前市场</td><td>${Number(h.daVolYI).toFixed(3)}</td><td>-</td></tr>
+            <tr><td>${h.month}</td><td>实时市场</td><td>${Number(h.rtVolYI).toFixed(3)}</td><td>-</td></tr>` : ''}
+      <tr><td>${data.monthSummary.label}</td><td>日前市场</td><td>${Number(data.monthSummary.daVolYI).toFixed(3)}</td><td>-</td></tr>
+      <tr><td>${data.monthSummary.label}</td><td>实时市场</td><td>${Number(data.monthSummary.rtVolYI).toFixed(3)}</td><td>-</td></tr>
+    `;
+  }
+
+  function renderKpi(data) {
+    const jan = data.history[0];
+    const feb = data.monthSummary;
+    const daMom = (feb.daVolYI - jan.daVolYI) / jan.daVolYI * 100;
+    const rtMom = (feb.rtVolYI - jan.rtVolYI) / jan.rtVolYI * 100;
+    document.getElementById('kpiDaYI').textContent = Number(feb.daVolYI).toFixed(3);
+    document.getElementById('kpiRtYI').textContent = Number(feb.rtVolYI).toFixed(3);
+    document.getElementById('kpiDaMoM').textContent = toPct(daMom);
+    document.getElementById('kpiRtMoM').textContent = toPct(rtMom);
+    document.getElementById('statDaYI').textContent = `${Number(feb.daVolYI).toFixed(3)} 亿kWh`;
+    document.getElementById('statRtYI').textContent = `${Number(feb.rtVolYI).toFixed(3)} 亿kWh`;
+    document.getElementById('statDaMoM').textContent = toPct(daMom);
+    document.getElementById('statRtMoM').textContent = toPct(rtMom);
+    document.getElementById('cmpDaJan').textContent = Number(jan.daVolYI).toFixed(3);
+    document.getElementById('cmpDaFeb').textContent = Number(feb.daVolYI).toFixed(3);
+    document.getElementById('cmpRtJan').textContent = Number(jan.rtVolYI).toFixed(3);
+    document.getElementById('cmpRtFeb').textContent = Number(feb.rtVolYI).toFixed(3);
+  }
+
+  function renderDaily(data) {
+    const days = data.days;
+    const labels = days.map(x => x.date.slice(5));
+    const da = days.map(x => x.daTotalYI);
+    const rt = days.map(x => x.rtTotalYI);
+    dailyVolChart = makeLineChart(document.getElementById('dailyVolChart'), labels, [
+      { label: '日前电量（亿kWh）', data: da, borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.5 },
+      { label: '实时电量（亿kWh）', data: rt, borderColor: '#e67e22', tension: 0.25, pointRadius: 1.5 }
+    ]);
+    dailyPriceChart = makeLineChart(document.getElementById('dailyPriceChart'), labels, [
+      { label: '日前均价（元/MWh）', data: labels.map(() => null), borderColor: '#2c7da0' },
+      { label: '实时均价（元/MWh）', data: labels.map(() => null), borderColor: '#e67e22' }
+    ]);
+    const tb = document.querySelector('#dailyTable tbody');
+    tb.innerHTML = days.map(d => `<tr>
+      <td>${d.date}</td>
+      <td>${Number(d.daTotalYI).toFixed(4)}</td>
+      <td>${Number(d.rtTotalYI).toFixed(4)}</td>
+      <td>-</td><td>-</td>
+    </tr>`).join('');
+  }
+
+  function updateHourly(dayData) {
+    const da = dayData.daVol24MWh;
+    const rt = dayData.rtVol24MWh;
+    if (!hourlyVolChart) {
+      hourlyVolChart = makeLineChart(document.getElementById('hourlyVolChart'), period24, [
+        { label: '日前电量（MWh）', data: da, borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.5 },
+        { label: '实时电量（MWh）', data: rt, borderColor: '#e67e22', tension: 0.25, pointRadius: 1.5 }
+      ]);
+    } else {
+      hourlyVolChart.data.datasets[0].data = da;
+      hourlyVolChart.data.datasets[1].data = rt;
+      hourlyVolChart.update();
+    }
+    const sum = (arr) => arr.reduce((a, b) => a + Number(b || 0), 0);
+    document.getElementById('daVolSum').textContent = sum(da).toFixed(2);
+    document.getElementById('rtVolSum').textContent = sum(rt).toFixed(2);
+  }
+
+  async function init() {
+    const res = await fetch('./_gansu_202602_spot_embedded.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('spot embedded json 加载失败');
+    const data = await res.json();
+    renderMonthlyTable(data);
+    renderKpi(data);
+    renderDaily(data);
+    const sel = document.getElementById('daySelect');
+    sel.innerHTML = `<option value="__month__">全月汇总（24点）</option>` + data.days.map(d => `<option value="${d.date}">${d.date}</option>`).join('');
+    const dayMap = Object.fromEntries(data.days.map(d => [d.date, d]));
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      if (v === '__month__') {
+        updateHourly(data.month24);
+      } else {
+        updateHourly(dayMap[v]);
+      }
+    });
+    updateHourly(data.month24);
+  }
+
+  init().catch(err => {
+    console.error(err);
+    document.querySelector('#dailyTable tbody').innerHTML = `<tr><td colspan="5">${String(err.message || err)}</td></tr>`;
+  });
+</script>
+
+<script>
+(function () {
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+  function sanitizeSheetName(name, idx) {
+    const n = (name || `表${idx + 1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx + 1}`).slice(0, 31);
+  }
+  function tableToAoA(table) {
+    const aoa = [];
+    table.querySelectorAll('tr').forEach(tr => {
+      const row = Array.from(tr.querySelectorAll('th,td')).map(cell => (cell.innerText || '').replace(/\s+/g, ' ').trim());
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+  function exportExcel() {
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const title = table.closest('.card')?.querySelector('h2')?.textContent || `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), sanitizeSheetName(title, idx));
+      });
+    }
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `甘肃2月市场报告_${ts}.xlsx`);
+  }
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+</body>
+</html>
