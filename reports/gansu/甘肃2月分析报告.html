@@ -134,6 +134,10 @@
     <div class="note" style="margin-bottom: 0.6rem;">选择日期：<select id="daySelect"></select></div>
     <div class="chart-container">
       <div class="chart-box">
+        <h3>🪙 日前/实时电价曲线（24小时）</h3>
+        <canvas id="hourlyPriceChart"></canvas>
+      </div>
+      <div class="chart-box">
         <h3>⏱️ 日前/实时电量曲线（24小时）</h3>
         <canvas id="hourlyVolChart"></canvas>
       </div>
@@ -165,6 +169,7 @@
   const period24 = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
   let dailyVolChart = null;
   let dailyPriceChart = null;
+  let hourlyPriceChart = null;
   let hourlyVolChart = null;
 
   const toPct = (x) => (x >= 0 ? `+${x.toFixed(2)}%` : `${x.toFixed(2)}%`);
@@ -241,6 +246,16 @@
     const rt = dayData.rtVol24MWh;
     const dap = dayData.daPrice24;
     const rtp = dayData.rtPrice24;
+    if (!hourlyPriceChart) {
+      hourlyPriceChart = makeLineChart(document.getElementById('hourlyPriceChart'), period24, [
+        { label: '日前电价（元/MWh）', data: dap, borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.5 },
+        { label: '实时电价（元/MWh）', data: rtp, borderColor: '#e67e22', tension: 0.25, pointRadius: 1.5 }
+      ]);
+    } else {
+      hourlyPriceChart.data.datasets[0].data = dap;
+      hourlyPriceChart.data.datasets[1].data = rtp;
+      hourlyPriceChart.update();
+    }
     if (!hourlyVolChart) {
       hourlyVolChart = makeLineChart(document.getElementById('hourlyVolChart'), period24, [
         { label: '日前电量（MWh）', data: da, borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.5 },
