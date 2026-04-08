@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 CANON = ROOT / "江西电力市场2026年2月市场运营分析报告.html"
+PAGES_ALIAS = ROOT / "jiangxi_2026-02.html"  # ASCII 路径，供 GitHub Pages / province.html 引用
 OUT = ROOT / "dataflow" / "output" / "江西2月市场运营分析报告.html"
 SKILL = Path(r"c:\Users\wenjiel\Desktop\本家\江西\市场运营分析报告\dataflow\output\江西2月市场运营分析报告.html")
 INBOX_SRC = Path(r"c:\Users\wenjiel\Desktop\市场洞察网站\江西\2月")
@@ -16,7 +17,9 @@ def main():
         raise SystemExit(f"Missing {CANON}")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(CANON, OUT)
+    shutil.copy2(CANON, PAGES_ALIAS)
     print("Copied ->", OUT)
+    print("Copied ->", PAGES_ALIAS)
     if SKILL.parent.is_dir():
         shutil.copy2(CANON, SKILL)
         print("Copied ->", SKILL)

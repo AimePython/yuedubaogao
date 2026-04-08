@@ -19,6 +19,7 @@ $rel = @(
     'reports/jiangxi/_jx_jan2026_spot.json',
     'reports/jiangxi/江西电力市场2026年1月市场运营分析报告.html',
     'reports/jiangxi/江西电力市场2026年2月市场运营分析报告.html',
+    'reports/jiangxi/jiangxi_2026-02.html',
     'reports/jiangxi/dataflow/output/江西1月市场运营分析报告.html',
     'reports/jiangxi/dataflow/output/江西2月市场运营分析报告.html',
     'reports/jiangxi/dataflow/processed/2026-01-meta.json',
