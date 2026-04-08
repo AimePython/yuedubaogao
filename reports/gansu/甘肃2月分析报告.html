@@ -29,12 +29,25 @@
     @media (min-width: 900px) { .chart-container { grid-template-columns: 1fr 1fr; } }
     .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; text-align: center; }
     .chart-box canvas { max-height: 320px; width: 100%; }
+    .timecurve-stats-box { grid-column: 1 / -1; }
+    .timecurve-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      gap: 0.8rem;
+      margin-top: 0.6rem;
+    }
     table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
     th, td { border: 1px solid #d4e2e9; padding: 0.45rem 0.35rem; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
     th { background: #e9f2f7; font-weight: 600; color: #1a4c63; }
     .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .note { font-size: 0.72rem; color: #5f7f8c; margin-top: 0.5rem; }
     footer { text-align: center; margin-top: 1.5rem; font-size: 0.72rem; color: #5f7f8c; }
+    @media (max-width: 900px) {
+      .timecurve-stats-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .timecurve-stats-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -141,9 +154,9 @@
         <h3>⏱️ 日前/实时电量曲线（24小时）</h3>
         <canvas id="hourlyVolChart"></canvas>
       </div>
-      <div class="chart-box">
+      <div class="chart-box timecurve-stats-box">
         <h3>🧮 当日汇总统计</h3>
-        <div class="stats-grid">
+        <div class="timecurve-stats-grid">
           <div class="stat-item"><div class="stat-label">日前合计电量（MWh）</div><div class="stat-value" id="daVolSum">-</div></div>
           <div class="stat-item"><div class="stat-label">实时合计电量（MWh）</div><div class="stat-value" id="rtVolSum">-</div></div>
           <div class="stat-item"><div class="stat-label">日前加权均价（元/MWh）</div><div class="stat-value" id="daWap">-</div></div>
