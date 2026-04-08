@@ -29,12 +29,68 @@
     @media (min-width: 900px) { .chart-container { grid-template-columns: 1fr 1fr; } }
     .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; text-align: center; }
     .chart-box canvas { max-height: 320px; width: 100%; }
-    .timecurve-stats-box { grid-column: 1 / -1; }
+    .timecurve-module .timecurve-head {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
+      font-size: 0.8rem;
+      color: #4f6f7f;
+    }
+    .timecurve-module .timecurve-head select {
+      min-width: 132px;
+      height: 28px;
+      border-radius: 14px;
+      border: 1px solid #2c7da0;
+      background: #fff;
+      color: #1e4a62;
+      padding: 0 0.6rem;
+      font-size: 0.78rem;
+      outline: none;
+    }
+    .timecurve-module .chart-box h3 { margin-top: 0.2rem; }
+    .timecurve-module .chart-box .note { margin-top: 0.25rem; }
+    .timecurve-stats-strip {
+      grid-column: 1 / -1;
+      background: #cfe4f0;
+      border: 1px solid #9fc8de;
+      border-radius: 10px;
+      padding: 0.6rem 0.8rem 0.55rem;
+      margin-top: 0.15rem;
+    }
+    .timecurve-stats-title {
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e4a62;
+      margin-bottom: 0.35rem;
+    }
     .timecurve-stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(170px, 1fr));
-      gap: 0.8rem;
-      margin-top: 0.6rem;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 0.6rem;
+      align-items: end;
+      text-align: center;
+    }
+    .timecurve-stat .k {
+      font-size: 0.72rem;
+      color: #4e7183;
+      margin-bottom: 0.12rem;
+    }
+    .timecurve-stat .v {
+      font-size: 1.85rem;
+      line-height: 1.05;
+      font-weight: 700;
+      color: #1f6f95;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.2px;
+    }
+    .timecurve-stat .u {
+      font-size: 0.72rem;
+      color: #4e7183;
+      margin-left: 2px;
+      font-weight: 600;
     }
     table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
     th, td { border: 1px solid #d4e2e9; padding: 0.45rem 0.35rem; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
@@ -141,29 +197,35 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card timecurve-module">
     <h2>🕒 分时曲线（24小时）- 真实数据</h2>
-    <div class="note">说明：2月日前/实时电量与价格均源自《甘肃2月现货数据.xlsx》96点明细并聚合至24点。</div>
-    <div class="note" style="margin-bottom: 0.6rem;">选择日期：<select id="daySelect"></select></div>
+    <div class="timecurve-head">
+      <span>选择日期：</span>
+      <select id="daySelect"></select>
+      <span class="note" style="margin-top:0;">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+    </div>
     <div class="chart-container">
       <div class="chart-box">
         <h3>🪙 日前/实时电价曲线（24小时）</h3>
         <canvas id="hourlyPriceChart"></canvas>
+        <div class="note">日前电价 vs 实时电价 (元/MWh)</div>
       </div>
       <div class="chart-box">
         <h3>⏱️ 日前/实时电量曲线（24小时）</h3>
         <canvas id="hourlyVolChart"></canvas>
+        <div class="note">日前电量 vs 实时电量 (MWh)</div>
       </div>
-      <div class="chart-box timecurve-stats-box">
-        <h3>🧮 当日汇总统计</h3>
+      <div class="timecurve-stats-strip">
+        <div class="timecurve-stats-title">📊 当日汇总统计</div>
         <div class="timecurve-stats-grid">
-          <div class="stat-item"><div class="stat-label">日前合计电量（MWh）</div><div class="stat-value" id="daVolSum">-</div></div>
-          <div class="stat-item"><div class="stat-label">实时合计电量（MWh）</div><div class="stat-value" id="rtVolSum">-</div></div>
-          <div class="stat-item"><div class="stat-label">日前加权均价（元/MWh）</div><div class="stat-value" id="daWap">-</div></div>
-          <div class="stat-item"><div class="stat-label">实时加权均价（元/MWh）</div><div class="stat-value" id="rtWap">-</div></div>
+          <div class="timecurve-stat"><div class="k">日前合计电量</div><div class="v" id="daVolSum">-</div><span class="u">MWh</span></div>
+          <div class="timecurve-stat"><div class="k">实时合计电量</div><div class="v" id="rtVolSum">-</div><span class="u">MWh</span></div>
+          <div class="timecurve-stat"><div class="k">日前加权均价</div><div class="v" id="daWap">-</div><span class="u">元/MWh</span></div>
+          <div class="timecurve-stat"><div class="k">实时加权均价</div><div class="v" id="rtWap">-</div><span class="u">元/MWh</span></div>
         </div>
       </div>
     </div>
+    <div class="note">注：电量数据为每小时真实交易数据，电价为对应时段报价加权结果。数据来源：甘肃2月现货数据.xlsx。</div>
   </div>
 
   <div class="card">
