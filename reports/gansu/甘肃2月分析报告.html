@@ -51,8 +51,8 @@
     <h2>📊 核心速览</h2>
     <div class="insight-box">
       <p><strong>现货规模：</strong>2月日前市场出清总电量约 <span class="highlight" id="kpiDaYI">-</span> 亿kWh，实时市场出清总电量约 <span class="highlight" id="kpiRtYI">-</span> 亿kWh。</p>
-      <p><strong>环比变化：</strong>相较1月（同口径CSV汇总），日前变化 <span class="highlight" id="kpiDaMoM">-</span>，实时变化 <span class="highlight" id="kpiRtMoM">-</span>。</p>
-      <p><strong>价格口径说明：</strong>当前已上传数据为电量明细CSV，不含日前/实时电价列；本报告价格相关图表保留结构并标注“待补充”。</p>
+      <p><strong>环比变化：</strong>相较1月，日前变化 <span class="highlight" id="kpiDaMoM">-</span>，实时变化 <span class="highlight" id="kpiRtMoM">-</span>。</p>
+      <p><strong>价格特征：</strong>2月日前加权均价约 <span class="highlight" id="kpiDaAvg">-</span> 元/MWh，实时加权均价约 <span class="highlight" id="kpiRtAvg">-</span> 元/MWh。</p>
     </div>
     <div class="stats-grid">
       <div class="stat-item"><div class="stat-label">2月日前电量</div><div class="stat-value" id="statDaYI">-</div></div>
@@ -70,7 +70,8 @@
         <tbody>
           <tr><td>日前出清电量（亿kWh）</td><td id="cmpDaJan">-</td><td id="cmpDaFeb">-</td><td>来源：项目内日前CSV（MWh→亿kWh）</td></tr>
           <tr><td>实时出清电量（亿kWh）</td><td id="cmpRtJan">-</td><td id="cmpRtFeb">-</td><td>来源：项目内实时CSV（MWh→亿kWh）</td></tr>
-          <tr><td>日前/实时均价（元/MWh）</td><td>-</td><td>-</td><td>2月价格明细未随本次数据包上传</td></tr>
+          <tr><td>日前加权均价（元/MWh）</td><td id="cmpDaAvgJan">-</td><td id="cmpDaAvgFeb">-</td><td>来源：甘肃2月现货数据.xlsx（全月电量加权）</td></tr>
+          <tr><td>实时加权均价（元/MWh）</td><td id="cmpRtAvgJan">-</td><td id="cmpRtAvgFeb">-</td><td>来源：甘肃2月现货数据.xlsx（全月电量加权）</td></tr>
           <tr><td>其它供需指标</td><td>见1月月报</td><td>待补充</td><td>补齐2月信息披露PDF后更新</td></tr>
         </tbody>
       </table>
@@ -106,7 +107,7 @@
       <div class="chart-box">
         <h3>📉 2月日度出清均价趋势（日前/实时）</h3>
         <canvas id="dailyPriceChart"></canvas>
-        <div class="note">2月价格明细未随本批数据上传，图中仅保留结构（空值）。</div>
+        <div class="note">基于2月日度96点明细聚合后的日均价（电量加权）</div>
       </div>
     </div>
 
@@ -129,7 +130,7 @@
 
   <div class="card">
     <h2>🕒 分时曲线（24小时）- 真实数据</h2>
-    <div class="note">说明：2月日前/实时电量源自96点CSV并聚合至24点；价格字段待补充。</div>
+    <div class="note">说明：2月日前/实时电量与价格均源自《甘肃2月现货数据.xlsx》96点明细并聚合至24点。</div>
     <div class="note" style="margin-bottom: 0.6rem;">选择日期：<select id="daySelect"></select></div>
     <div class="chart-container">
       <div class="chart-box">
@@ -141,8 +142,8 @@
         <div class="stats-grid">
           <div class="stat-item"><div class="stat-label">日前合计电量（MWh）</div><div class="stat-value" id="daVolSum">-</div></div>
           <div class="stat-item"><div class="stat-label">实时合计电量（MWh）</div><div class="stat-value" id="rtVolSum">-</div></div>
-          <div class="stat-item"><div class="stat-label">日前加权均价（元/MWh）</div><div class="stat-value">待补充</div></div>
-          <div class="stat-item"><div class="stat-label">实时加权均价（元/MWh）</div><div class="stat-value">待补充</div></div>
+          <div class="stat-item"><div class="stat-label">日前加权均价（元/MWh）</div><div class="stat-value" id="daWap">-</div></div>
+          <div class="stat-item"><div class="stat-label">实时加权均价（元/MWh）</div><div class="stat-value" id="rtWap">-</div></div>
         </div>
       </div>
     </div>
@@ -157,7 +158,7 @@
     </div>
   </div>
 
-  <footer>数据来源：指标数据明细-甘肃_日前/实时市场出清总电量（2026-01-01~2026-02-28）.csv。说明：本版为2月现货电量快速版，价格与结算项待补充。</footer>
+  <footer>数据来源：甘肃2月现货数据.xlsx（含日前/实时电量与价格96点明细，报告内聚合为24点与日度/月度汇总）。</footer>
 </div>
 
 <script>
@@ -180,10 +181,10 @@
     const tb = document.querySelector('#spotMonthlyTable tbody');
     const h = data.history && data.history[0] ? data.history[0] : null;
     tb.innerHTML = `
-      ${h ? `<tr><td>${h.month}</td><td>日前市场</td><td>${Number(h.daVolYI).toFixed(3)}</td><td>-</td></tr>
-            <tr><td>${h.month}</td><td>实时市场</td><td>${Number(h.rtVolYI).toFixed(3)}</td><td>-</td></tr>` : ''}
-      <tr><td>${data.monthSummary.label}</td><td>日前市场</td><td>${Number(data.monthSummary.daVolYI).toFixed(3)}</td><td>-</td></tr>
-      <tr><td>${data.monthSummary.label}</td><td>实时市场</td><td>${Number(data.monthSummary.rtVolYI).toFixed(3)}</td><td>-</td></tr>
+      ${h ? `<tr><td>${h.month}</td><td>日前市场</td><td>${Number(h.daVolYI).toFixed(3)}</td><td>${Number(h.daAvg).toFixed(3)}</td></tr>
+            <tr><td>${h.month}</td><td>实时市场</td><td>${Number(h.rtVolYI).toFixed(3)}</td><td>${Number(h.rtAvg).toFixed(3)}</td></tr>` : ''}
+      <tr><td>${data.monthSummary.label}</td><td>日前市场</td><td>${Number(data.monthSummary.daVolYI).toFixed(3)}</td><td>${Number(data.monthSummary.daAvg).toFixed(3)}</td></tr>
+      <tr><td>${data.monthSummary.label}</td><td>实时市场</td><td>${Number(data.monthSummary.rtVolYI).toFixed(3)}</td><td>${Number(data.monthSummary.rtAvg).toFixed(3)}</td></tr>
     `;
   }
 
@@ -194,6 +195,8 @@
     const rtMom = (feb.rtVolYI - jan.rtVolYI) / jan.rtVolYI * 100;
     document.getElementById('kpiDaYI').textContent = Number(feb.daVolYI).toFixed(3);
     document.getElementById('kpiRtYI').textContent = Number(feb.rtVolYI).toFixed(3);
+    document.getElementById('kpiDaAvg').textContent = Number(feb.daAvg).toFixed(3);
+    document.getElementById('kpiRtAvg').textContent = Number(feb.rtAvg).toFixed(3);
     document.getElementById('kpiDaMoM').textContent = toPct(daMom);
     document.getElementById('kpiRtMoM').textContent = toPct(rtMom);
     document.getElementById('statDaYI').textContent = `${Number(feb.daVolYI).toFixed(3)} 亿kWh`;
@@ -204,6 +207,10 @@
     document.getElementById('cmpDaFeb').textContent = Number(feb.daVolYI).toFixed(3);
     document.getElementById('cmpRtJan').textContent = Number(jan.rtVolYI).toFixed(3);
     document.getElementById('cmpRtFeb').textContent = Number(feb.rtVolYI).toFixed(3);
+    document.getElementById('cmpDaAvgJan').textContent = Number(jan.daAvg).toFixed(3);
+    document.getElementById('cmpDaAvgFeb').textContent = Number(feb.daAvg).toFixed(3);
+    document.getElementById('cmpRtAvgJan').textContent = Number(jan.rtAvg).toFixed(3);
+    document.getElementById('cmpRtAvgFeb').textContent = Number(feb.rtAvg).toFixed(3);
   }
 
   function renderDaily(data) {
@@ -216,21 +223,24 @@
       { label: '实时电量（亿kWh）', data: rt, borderColor: '#e67e22', tension: 0.25, pointRadius: 1.5 }
     ]);
     dailyPriceChart = makeLineChart(document.getElementById('dailyPriceChart'), labels, [
-      { label: '日前均价（元/MWh）', data: labels.map(() => null), borderColor: '#2c7da0' },
-      { label: '实时均价（元/MWh）', data: labels.map(() => null), borderColor: '#e67e22' }
+      { label: '日前均价（元/MWh）', data: days.map(x => x.daAvg), borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.5 },
+      { label: '实时均价（元/MWh）', data: days.map(x => x.rtAvg), borderColor: '#e67e22', tension: 0.25, pointRadius: 1.5 }
     ]);
     const tb = document.querySelector('#dailyTable tbody');
     tb.innerHTML = days.map(d => `<tr>
       <td>${d.date}</td>
       <td>${Number(d.daTotalYI).toFixed(4)}</td>
       <td>${Number(d.rtTotalYI).toFixed(4)}</td>
-      <td>-</td><td>-</td>
+      <td>${Number(d.daAvg).toFixed(3)}</td>
+      <td>${Number(d.rtAvg).toFixed(3)}</td>
     </tr>`).join('');
   }
 
   function updateHourly(dayData) {
     const da = dayData.daVol24MWh;
     const rt = dayData.rtVol24MWh;
+    const dap = dayData.daPrice24;
+    const rtp = dayData.rtPrice24;
     if (!hourlyVolChart) {
       hourlyVolChart = makeLineChart(document.getElementById('hourlyVolChart'), period24, [
         { label: '日前电量（MWh）', data: da, borderColor: '#2c7da0', tension: 0.25, pointRadius: 1.5 },
@@ -242,8 +252,17 @@
       hourlyVolChart.update();
     }
     const sum = (arr) => arr.reduce((a, b) => a + Number(b || 0), 0);
+    const wavg = (p, v) => {
+      const den = sum(v);
+      if (!den) return 0;
+      let num = 0;
+      for (let i = 0; i < p.length; i++) num += Number(p[i] || 0) * Number(v[i] || 0);
+      return num / den;
+    };
     document.getElementById('daVolSum').textContent = sum(da).toFixed(2);
     document.getElementById('rtVolSum').textContent = sum(rt).toFixed(2);
+    document.getElementById('daWap').textContent = wavg(dap, da).toFixed(3);
+    document.getElementById('rtWap').textContent = wavg(rtp, rt).toFixed(3);
   }
 
   async function init() {
