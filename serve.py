@@ -20,6 +20,7 @@ import re
 import socketserver
 import subprocess
 import time
+import threading
 import urllib.request
 import webbrowser
 from collections import Counter
@@ -34,6 +35,7 @@ REPORTS_DIR = ROOT / "reports"
 LOG_DIR = ROOT / "logs"
 QUERY_LOG_PATH = LOG_DIR / "qa_queries.jsonl"
 FEEDBACK_LOG_PATH = LOG_DIR / "qa_feedback.jsonl"
+AGENT_LEARNING_PATH = LOG_DIR / "agent_learning.json"
 
 
 def _load_dotenv(dotenv_path: Path) -> None:
@@ -65,6 +67,8 @@ ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 SESSION_MAX_TURNS = int(os.getenv("SESSION_MAX_TURNS", "3"))
 ENABLE_TOOL_AGENT = os.getenv("ENABLE_TOOL_AGENT", "true").strip().lower() in {"1", "true", "yes", "on"}
 TOOL_AGENT_MAX_ROUNDS = int(os.getenv("TOOL_AGENT_MAX_ROUNDS", "5"))
+ENABLE_AUTO_TRAIN = os.getenv("ENABLE_AUTO_TRAIN", "true").strip().lower() in {"1", "true", "yes", "on"}
+AUTO_TRAIN_HOUR = int(os.getenv("AUTO_TRAIN_HOUR", "2"))
 
 # OpenAI 兼容 Function Calling：最小工具集
 REPORT_AGENT_TOOLS: list[dict] = [
@@ -115,6 +119,9 @@ def _resolve_commit() -> str:
 
 APP_COMMIT = _resolve_commit()
 SESSION_STORE: dict[str, list[str]] = {}
+AGENT_LEARNING_CACHE: dict = {}
+AGENT_LEARNING_MTIME: float = -1.0
+LAST_AUTO_TRAIN_DAY: str = ""
 
 
 def _utc_now_iso() -> str:
@@ -142,6 +149,69 @@ def _append_feedback_log(item: dict) -> None:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
     except OSError:
         pass
+
+
+def _load_agent_learning() -> dict:
+    global AGENT_LEARNING_CACHE, AGENT_LEARNING_MTIME
+    if not AGENT_LEARNING_PATH.exists():
+        AGENT_LEARNING_CACHE = {}
+        AGENT_LEARNING_MTIME = -1.0
+        return AGENT_LEARNING_CACHE
+    try:
+        mtime = AGENT_LEARNING_PATH.stat().st_mtime
+    except OSError:
+        return AGENT_LEARNING_CACHE
+    if mtime == AGENT_LEARNING_MTIME and AGENT_LEARNING_CACHE:
+        return AGENT_LEARNING_CACHE
+    try:
+        data = json.loads(AGENT_LEARNING_PATH.read_text(encoding="utf-8", errors="ignore"))
+        AGENT_LEARNING_CACHE = data if isinstance(data, dict) else {}
+        AGENT_LEARNING_MTIME = mtime
+    except (OSError, json.JSONDecodeError):
+        pass
+    return AGENT_LEARNING_CACHE
+
+
+def _run_training_job() -> tuple[bool, str]:
+    global AGENT_LEARNING_MTIME
+    try:
+        proc = subprocess.run(
+            ["python3", str(ROOT / "train_agent_from_logs.py")],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except Exception as e:
+        return False, f"训练执行失败: {e}"
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()[-300:]
+        stdout = (proc.stdout or "").strip()[-300:]
+        return False, f"训练脚本失败: {stderr or stdout or 'unknown error'}"
+    # 强制刷新缓存
+    AGENT_LEARNING_MTIME = -1.0
+    _load_agent_learning()
+    return True, "ok"
+
+
+def _auto_train_loop() -> None:
+    """每晚固定时刻自动训练（默认 02:00）。"""
+    global LAST_AUTO_TRAIN_DAY
+    while True:
+        try:
+            now = datetime.now()
+            day_key = now.strftime("%Y-%m-%d")
+            if now.hour == AUTO_TRAIN_HOUR and now.minute == 0 and LAST_AUTO_TRAIN_DAY != day_key:
+                ok, msg = _run_training_job()
+                LAST_AUTO_TRAIN_DAY = day_key if ok else LAST_AUTO_TRAIN_DAY
+                status = "OK" if ok else "FAIL"
+                print(f"[auto-train] {status} day={day_key} msg={msg}")
+                # 避免同一分钟重复触发
+                time.sleep(65)
+                continue
+        except Exception as e:
+            print(f"[auto-train] loop error: {e}")
+        time.sleep(20)
 
 
 def _read_query_logs(limit: int = 2000) -> list[dict]:
@@ -179,6 +249,7 @@ def _read_feedback_logs(limit: int = 2000) -> list[dict]:
 def _build_log_stats(limit: int = 2000) -> dict:
     items = _read_query_logs(limit=limit)
     feedback_items = _read_feedback_logs(limit=limit)
+    learning = _load_agent_learning()
     if not items:
         return {
             "total": 0,
@@ -189,6 +260,12 @@ def _build_log_stats(limit: int = 2000) -> dict:
             "intent_distribution": {},
             "province_distribution": {},
             "top_questions": [],
+            "learning_generated_at": learning.get("generated_at"),
+            "learning_query_count": learning.get("query_count", 0),
+            "learning_feedback_count": learning.get("feedback_count", 0),
+            "learning_intent_example_buckets": len(learning.get("intent_example_questions") or {})
+            if isinstance(learning.get("intent_example_questions"), dict)
+            else 0,
         }
     mode_counter = Counter((x.get("mode") or "unknown") for x in items)
     intent_counter = Counter((x.get("intent") or "general") for x in items)
@@ -205,6 +282,12 @@ def _build_log_stats(limit: int = 2000) -> dict:
         "intent_distribution": dict(intent_counter),
         "province_distribution": dict(province_counter),
         "top_questions": top_questions,
+        "learning_generated_at": learning.get("generated_at"),
+        "learning_query_count": learning.get("query_count", 0),
+        "learning_feedback_count": learning.get("feedback_count", 0),
+        "learning_intent_example_buckets": len(learning.get("intent_example_questions") or {})
+        if isinstance(learning.get("intent_example_questions"), dict)
+        else 0,
     }
 
 
@@ -234,6 +317,30 @@ def _update_session_memory(session_id: str, question: str) -> None:
 
 
 def _find_feedback_hint(question: str, province: str, intent: str) -> str:
+    learning = _load_agent_learning()
+    learned_pairs = learning.get("feedback_pairs") if isinstance(learning, dict) else []
+    if isinstance(learned_pairs, list):
+        q_tokens = set(_tokenize(question))
+        best_score = 0
+        best_hint = ""
+        for item in learned_pairs:
+            if not isinstance(item, dict):
+                continue
+            if province and item.get("province") and item.get("province") != province:
+                continue
+            if intent and item.get("intent") and item.get("intent") != intent:
+                continue
+            old_q = (item.get("question") or "").strip()
+            hint = (item.get("hint") or "").strip()
+            if not old_q or not hint:
+                continue
+            overlap = len(q_tokens & set(_tokenize(old_q)))
+            if overlap > best_score:
+                best_score = overlap
+                best_hint = hint
+        if best_score >= 2 and best_hint:
+            return best_hint[:300]
+
     items = _read_feedback_logs(limit=300)
     if not items:
         return ""
@@ -386,6 +493,40 @@ def _detect_intent(question: str) -> str:
         return "price_inversion"
     if "供需" in q or "供需关系" in q:
         return "supply_demand"
+    learning = _load_agent_learning()
+    if isinstance(learning, dict):
+        examples = learning.get("intent_example_questions")
+        if isinstance(examples, dict):
+            q_tokens = set(_tokenize(q))
+            best_intent = ""
+            best_score = 0
+            for intent, phrases in examples.items():
+                if not isinstance(phrases, list):
+                    continue
+                for phrase in phrases:
+                    ph = str(phrase).strip()
+                    if len(ph) < 4:
+                        continue
+                    sc = len(q_tokens & set(_tokenize(ph)))
+                    if sc > best_score:
+                        best_score = sc
+                        best_intent = str(intent)
+            if best_intent and best_score >= 2:
+                return best_intent
+    intent_keywords = learning.get("intent_keywords") if isinstance(learning, dict) else {}
+    if isinstance(intent_keywords, dict):
+        q_tokens = set(_tokenize(q))
+        best_intent = ""
+        best_score = 0
+        for intent, words in intent_keywords.items():
+            if not isinstance(words, list):
+                continue
+            overlap = len(q_tokens & set(str(w) for w in words))
+            if overlap > best_score:
+                best_score = overlap
+                best_intent = str(intent)
+        if best_intent and best_score >= 2:
+            return best_intent
     return "general"
 
 
@@ -394,6 +535,13 @@ def _expand_query_tokens(question: str) -> set[str]:
     for key, words in QUERY_SYNONYMS.items():
         if key in question or any(w in question for w in words):
             tokens.update(words)
+    learning = _load_agent_learning()
+    learned_synonyms = learning.get("query_synonyms") if isinstance(learning, dict) else {}
+    if isinstance(learned_synonyms, dict):
+        for tk in list(tokens):
+            related = learned_synonyms.get(tk)
+            if isinstance(related, list):
+                tokens.update(str(x) for x in related[:12])
     return {t.lower() for t in tokens}
 
 
@@ -920,7 +1068,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path not in {"/api/ask", "/api/feedback"}:
+        if parsed.path not in {"/api/ask", "/api/feedback", "/api/admin/train"}:
             self.send_error(404, "Not Found")
             return
 
@@ -930,6 +1078,30 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             payload = json.loads(raw) if raw else {}
         except json.JSONDecodeError:
             self._send_json({"error": "请求体必须是 JSON"}, status=400)
+            return
+
+        if parsed.path == "/api/admin/train":
+            if not self._is_admin_allowed(parsed):
+                self._send_json({"error": "unauthorized"}, status=401)
+                return
+            ok, msg = _run_training_job()
+            if not ok:
+                self._send_json({"error": msg}, status=500)
+                return
+            learning = _load_agent_learning()
+            ex = learning.get("intent_example_questions") if isinstance(learning, dict) else {}
+            ex_n = len(ex) if isinstance(ex, dict) else 0
+            self._send_json(
+                {
+                    "ok": True,
+                    "message": "训练完成",
+                    "learning_file": str(AGENT_LEARNING_PATH.relative_to(ROOT)).replace("\\", "/"),
+                    "query_count": learning.get("query_count", 0),
+                    "feedback_count": learning.get("feedback_count", 0),
+                    "intent_buckets_with_examples": ex_n,
+                    "generated_at": learning.get("generated_at"),
+                }
+            )
             return
 
         if parsed.path == "/api/feedback":
@@ -1062,6 +1234,10 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
 def main() -> None:
     socketserver.TCPServer.allow_reuse_address = True
+    if ENABLE_AUTO_TRAIN:
+        t = threading.Thread(target=_auto_train_loop, name="auto-train-2am", daemon=True)
+        t.start()
+        print(f"已开启自动训练：每天 {AUTO_TRAIN_HOUR:02d}:00 刷新学习文件")
     with socketserver.TCPServer(("", PORT), SiteHandler) as httpd:
         url = f"http://127.0.0.1:{PORT}/index.html"
         print(f"网站根目录: {ROOT}")
