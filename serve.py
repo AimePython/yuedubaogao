@@ -32,6 +32,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent
 PORT = int(os.getenv("PORT", "8080"))
 REPORTS_DIR = ROOT / "reports"
+REPORTS_JSON_PATH = ROOT / "reports.json"
 LOG_DIR = ROOT / "logs"
 QUERY_LOG_PATH = LOG_DIR / "qa_queries.jsonl"
 FEEDBACK_LOG_PATH = LOG_DIR / "qa_feedback.jsonl"
@@ -126,6 +127,8 @@ SESSION_STORE: dict[str, list[str]] = {}
 AGENT_LEARNING_CACHE: dict = {}
 AGENT_LEARNING_MTIME: float = -1.0
 LAST_AUTO_TRAIN_DAY: str = ""
+REPORTS_MANIFEST_CACHE: dict | None = None
+REPORTS_MANIFEST_MTIME: float = -1.0
 
 
 def _utc_now_iso() -> str:
@@ -553,6 +556,193 @@ def _expand_query_tokens(question: str) -> set[str]:
             if isinstance(related, list):
                 tokens.update(str(x) for x in related[:12])
     return {t.lower() for t in tokens}
+
+
+def _load_reports_manifest() -> dict:
+    """已发布报告注册表（与首页 province 卡片一致）。"""
+    global REPORTS_MANIFEST_CACHE, REPORTS_MANIFEST_MTIME
+    if not REPORTS_JSON_PATH.exists():
+        return {}
+    try:
+        mtime = REPORTS_JSON_PATH.stat().st_mtime
+    except OSError:
+        return {}
+    if REPORTS_MANIFEST_CACHE is not None and mtime == REPORTS_MANIFEST_MTIME:
+        return REPORTS_MANIFEST_CACHE
+    try:
+        raw = json.loads(REPORTS_JSON_PATH.read_text(encoding="utf-8", errors="ignore"))
+        REPORTS_MANIFEST_CACHE = raw if isinstance(raw, dict) else {}
+        REPORTS_MANIFEST_MTIME = mtime
+    except (OSError, json.JSONDecodeError):
+        REPORTS_MANIFEST_CACHE = {}
+        REPORTS_MANIFEST_MTIME = mtime
+    return REPORTS_MANIFEST_CACHE
+
+
+def _slug_to_label(slug: str) -> str:
+    names = [n for n, s in PROVINCE_ALIASES.items() if s == slug]
+    if not names:
+        return slug
+    return min(names, key=len)
+
+
+_CN_NUM = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10, "两": 2}
+
+
+def _chinese_month_to_int(s: str) -> int | None:
+    s = s.strip()
+    if not s:
+        return None
+    if s.isdigit():
+        m = int(s)
+        return m if 1 <= m <= 12 else None
+    if s in ("十", "十一", "十二"):
+        return {"十": 10, "十一": 11, "十二": 12}[s]
+    if s.startswith("十") and len(s) == 2:
+        u = s[1]
+        if u in _CN_NUM:
+            return 10 + _CN_NUM[u]
+    if s.endswith("月"):
+        s = s[:-1]
+    if len(s) == 1 and s in _CN_NUM:
+        v = _CN_NUM[s]
+        return v if 1 <= v <= 12 else None
+    if s == "十":
+        return 10
+    return None
+
+
+def _parse_year_month_for_inventory(q: str) -> tuple[int, int] | None:
+    """从问句解析 (年, 月)；缺省年份用环境变量或当前年。"""
+    default_year = int(os.getenv("REPORT_INVENTORY_DEFAULT_YEAR", str(datetime.now().year)))
+    m = re.search(r"(20\d{2})\s*年\s*(\d{1,2})\s*月", q)
+    if m:
+        y, mo = int(m.group(1)), int(m.group(2))
+        if 1 <= mo <= 12:
+            return y, mo
+    m = re.search(r"(20\d{2})\s*年\s*([一二三四五六七八九十两]+)\s*月", q)
+    if m:
+        y = int(m.group(1))
+        mo = _chinese_month_to_int(m.group(2))
+        if mo:
+            return y, mo
+    m = re.search(r"(?<![\d/])(\d{1,2})\s*月", q)
+    if m:
+        mo = int(m.group(1))
+        if 1 <= mo <= 12:
+            return default_year, mo
+    m = re.search(r"([一二三四五六七八九十两]+)\s*月", q)
+    if m:
+        mo = _chinese_month_to_int(m.group(1))
+        if mo:
+            return default_year, mo
+    m = re.search(r"(20\d{2})-(\d{2})\b", q)
+    if m:
+        y, mo = int(m.group(1)), int(m.group(2))
+        if 1 <= mo <= 12:
+            return y, mo
+    return None
+
+
+def _is_report_inventory_question(q: str) -> bool:
+    """是否在问「哪些省份已上线某月报告」类清单（非单省行情）。"""
+    qn = re.sub(r"\s+", "", q)
+    if len(qn) < 6:
+        return False
+    if not (
+        re.search(r"\d{1,2}\s*月", q)
+        or re.search(r"[一二三四五六七八九十两]+\s*月", q)
+        or re.search(r"20\d{2}-\d{2}", q)
+        or re.search(r"20\d{2}\s*年", q)
+    ):
+        return False
+    scope = any(
+        x in qn
+        for x in (
+            "哪些",
+            "哪几个",
+            "有哪些",
+            "都有谁",
+            "所有省",
+            "全部省",
+            "各省",
+            "每个省",
+            "省份",
+            "个省",
+            "列出",
+            "查找",
+            "检索",
+            "统计",
+            "汇总",
+        )
+    )
+    meta = any(x in qn for x in ("报告", "披露", "上线", "上传", "发布", "html", "月报"))
+    if not scope:
+        return False
+    if "省份" in qn or "个省" in qn:
+        return meta or "月" in qn
+    return meta
+
+
+def _try_report_month_inventory_answer(question: str) -> tuple[str, list[dict], dict] | None:
+    """
+    若问句为「已发布某月报告的省份列表」，直接读 reports.json 回答（不经片段检索）。
+    返回 (answer, sources, trust_meta) 或 None。
+    """
+    if not _is_report_inventory_question(question):
+        return None
+    ym = _parse_year_month_for_inventory(question)
+    if not ym:
+        return None
+    year, month = ym
+    key = f"{year}-{month:02d}"
+    manifest = _load_reports_manifest()
+    if not manifest:
+        return None
+    rows: list[tuple[str, str, str, str]] = []
+    for slug in sorted(manifest.keys()):
+        prov_data = manifest.get(slug)
+        if not isinstance(prov_data, dict):
+            continue
+        entry = prov_data.get(key)
+        if not isinstance(entry, dict):
+            continue
+        path = (entry.get("file") or "").strip().replace("\\", "/")
+        label = (entry.get("label") or "").strip()
+        if not path:
+            continue
+        name = _slug_to_label(slug)
+        rows.append((name, slug, path, label))
+
+    if not rows:
+        note = (
+            f"本站 reports.json 中尚未注册 **{year}年{month}月**（键 {key}）的省级报告。"
+            "若刚上传 HTML，请同步更新 reports.json 后重试。"
+        )
+        trust = {
+            "evidence_strength": "high",
+            "numeric_grounding": "ok",
+            "notes": ["依据为项目根目录 reports.json，非模型推测。"],
+        }
+        return note, [], trust
+
+    lines = [
+        f"根据本站 **reports.json** 注册表（与首页已上线省份一致），**{year}年{month}月** 已配置报告的省级行政区共 **{len(rows)}** 个："
+    ]
+    sources: list[dict] = []
+    for i, (name, slug, path, label) in enumerate(rows, start=1):
+        lab = f"（{label}）" if label else ""
+        lines.append(f"{i}. **{name}**（slug: `{slug}`）{lab} → `{path}`")
+        sources.append({"province": slug, "file": path})
+    lines.append(
+        "\n说明：以上为站点发布目录，不是全文检索结果；若需某省行情细节，请点名省份后再问。"
+    )
+    trust = {
+        "evidence_strength": "high",
+        "numeric_grounding": "ok",
+        "notes": ["清单完全来自 reports.json，可按路径打开 HTML 核对。"],
+    }
+    return "\n".join(lines), sources, trust
 
 
 def _build_corpus() -> list[dict]:
@@ -1222,6 +1412,34 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                     "mode": "validation",
                     "empty_result": False,
                     "sources_count": 0,
+                    "latency_ms": int((time.time() - started) * 1000),
+                    "phase": "completed",
+                }
+            )
+            return
+
+        inv = _try_report_month_inventory_answer(question_for_retrieval)
+        if inv is not None:
+            inv_answer, inv_sources, inv_trust = inv
+            self._send_json(
+                {
+                    "answer": inv_answer,
+                    "sources": inv_sources,
+                    "mode": "report-inventory",
+                    "trust": inv_trust,
+                }
+            )
+            _update_session_memory(session_id, question)
+            _append_query_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "session_id": session_id,
+                    "province": province,
+                    "intent": intent,
+                    "mode": "report-inventory",
+                    "empty_result": len(inv_sources) == 0,
+                    "sources_count": len(inv_sources),
                     "latency_ms": int((time.time() - started) * 1000),
                     "phase": "completed",
                 }
