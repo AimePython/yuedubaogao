@@ -141,7 +141,7 @@
         <canvas id="dailyPriceChart"></canvas>
       </div>
       <div class="chart-box">
-        <h3>📊 日度出清电量趋势（日前/实时）</h3>
+        <h3>📊 日度出清电量趋势（日前/实时，亿kWh）</h3>
         <canvas id="dailyVolChart"></canvas>
       </div>
     </div>
@@ -151,8 +151,8 @@
         <thead>
           <tr>
             <th>日期</th>
-            <th>日前电量 (MWh)</th>
-            <th>实时电量 (MWh)</th>
+            <th>日前电量 (亿kWh)</th>
+            <th>实时电量 (亿kWh)</th>
             <th>日前均价 (元/MWh)</th>
             <th>实时均价 (元/MWh)</th>
             <th>价差(实时-日前)</th>
@@ -172,7 +172,7 @@
         <canvas id="hourlyPriceChart"></canvas>
       </div>
       <div class="chart-box">
-        <h3>⚡ 日前/实时电量曲线（24小时）</h3>
+        <h3>⚡ 日前/实时电量曲线（24小时，亿kWh）</h3>
         <canvas id="hourlyVolChart"></canvas>
       </div>
     </div>
@@ -182,8 +182,8 @@
         <thead>
           <tr>
             <th>时段</th>
-            <th>日前电量 (MWh)</th>
-            <th>实时电量 (MWh)</th>
+            <th>日前电量 (亿kWh)</th>
+            <th>实时电量 (亿kWh)</th>
             <th>日前电价 (元/MWh)</th>
             <th>实时电价 (元/MWh)</th>
             <th>价差(实时-日前)</th>
@@ -193,8 +193,8 @@
       </table>
     </div>
     <div class="stats-grid">
-      <div class="stat-item"><div class="stat-label">日前合计电量 (MWh)</div><div class="stat-value" id="daVolSum">-</div></div>
-      <div class="stat-item"><div class="stat-label">实时合计电量 (MWh)</div><div class="stat-value" id="rtVolSum">-</div></div>
+      <div class="stat-item"><div class="stat-label">日前合计电量 (亿kWh)</div><div class="stat-value" id="daVolSum">-</div></div>
+      <div class="stat-item"><div class="stat-label">实时合计电量 (亿kWh)</div><div class="stat-value" id="rtVolSum">-</div></div>
       <div class="stat-item"><div class="stat-label">日前加权均价 (元/MWh)</div><div class="stat-value" id="daWap">-</div></div>
       <div class="stat-item"><div class="stat-label">实时加权均价 (元/MWh)</div><div class="stat-value" id="rtWap">-</div></div>
     </div>
@@ -263,6 +263,8 @@
   if (curveCard) curveCard.insertBefore(daySelectorWrap, curveCard.querySelector('.chart-container'));
 
   function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
+  /** 1 亿kWh = 10^8 kWh = 10^5 MWh */
+  function mwhToYiKwh(mwh) { return Number(mwh) / 1e5; }
   function weightedAvg(price, vol) {
     const s = price.reduce((acc, p, i) => acc + p * vol[i], 0);
     return vol.length ? (s / sum(vol)) : 0;
@@ -404,12 +406,12 @@
 
   function renderDailyTable(dailyData) {
     const dailyTbody = document.querySelector('#dailyTable tbody');
-    dailyTbody.innerHTML = dailyData.map(d => `<tr><td>${d.day}</td><td>${d.daVolMWh.toFixed(2)}</td><td>${d.rtVolMWh.toFixed(2)}</td><td>${d.daAvg.toFixed(2)}</td><td>${d.rtAvg.toFixed(2)}</td><td>${d.spread.toFixed(2)}</td></tr>`).join('');
+    dailyTbody.innerHTML = dailyData.map(d => `<tr><td>${d.day}</td><td>${mwhToYiKwh(d.daVolMWh).toFixed(4)}</td><td>${mwhToYiKwh(d.rtVolMWh).toFixed(4)}</td><td>${d.daAvg.toFixed(2)}</td><td>${d.rtAvg.toFixed(2)}</td><td>${d.spread.toFixed(2)}</td></tr>`).join('');
   }
 
   function renderHourlyTable(p) {
     const tbody = document.querySelector('#hourlyTable tbody');
-    tbody.innerHTML = hours.map((h, i) => `<tr><td>${h}</td><td>${p.daVol[i].toFixed(2)}</td><td>${p.rtVol[i].toFixed(2)}</td><td>${p.daPrice[i].toFixed(2)}</td><td>${p.rtPrice[i].toFixed(2)}</td><td>${(p.rtPrice[i] - p.daPrice[i]).toFixed(2)}</td></tr>`).join('');
+    tbody.innerHTML = hours.map((h, i) => `<tr><td>${h}</td><td>${mwhToYiKwh(p.daVol[i]).toFixed(5)}</td><td>${mwhToYiKwh(p.rtVol[i]).toFixed(5)}</td><td>${p.daPrice[i].toFixed(2)}</td><td>${p.rtPrice[i].toFixed(2)}</td><td>${(p.rtPrice[i] - p.daPrice[i]).toFixed(2)}</td></tr>`).join('');
   }
 
   function updateTimeCurve(p) {
@@ -417,13 +419,13 @@
     hourlyPriceChart.data.datasets[1].data = p.rtPrice;
     hourlyPriceChart.update();
 
-    hourlyVolChart.data.datasets[0].data = p.daVol;
-    hourlyVolChart.data.datasets[1].data = p.rtVol;
+    hourlyVolChart.data.datasets[0].data = p.daVol.map(mwhToYiKwh);
+    hourlyVolChart.data.datasets[1].data = p.rtVol.map(mwhToYiKwh);
     hourlyVolChart.update();
 
     renderHourlyTable(p);
-    document.getElementById('daVolSum').textContent = sum(p.daVol).toFixed(2);
-    document.getElementById('rtVolSum').textContent = sum(p.rtVol).toFixed(2);
+    document.getElementById('daVolSum').textContent = mwhToYiKwh(sum(p.daVol)).toFixed(4);
+    document.getElementById('rtVolSum').textContent = mwhToYiKwh(sum(p.rtVol)).toFixed(4);
     document.getElementById('daWap').textContent = weightedAvg(p.daPrice, p.daVol).toFixed(2);
     document.getElementById('rtWap').textContent = weightedAvg(p.rtPrice, p.rtVol).toFixed(2);
   }
@@ -456,8 +458,8 @@
       dailyVolChart = makeLineChart(
         document.getElementById('dailyVolChart'),
         dailyData.map(d => d.day.slice(5)),
-        { name: '日前电量(MWh)', data: dailyData.map(d => d.daVolMWh) },
-        { name: '实时电量(MWh)', data: dailyData.map(d => d.rtVolMWh) },
+        { name: '日前电量(亿kWh)', data: dailyData.map(d => mwhToYiKwh(d.daVolMWh)) },
+        { name: '实时电量(亿kWh)', data: dailyData.map(d => mwhToYiKwh(d.rtVolMWh)) },
         '#1e5f7a', '#f39c12'
       );
       renderDailyTable(dailyData);
@@ -472,8 +474,8 @@
       hourlyVolChart = makeLineChart(
         document.getElementById('hourlyVolChart'),
         hours,
-        { name: '日前电量', data: month24.daVol },
-        { name: '实时电量', data: month24.rtVol },
+        { name: '日前电量(亿kWh)', data: month24.daVol.map(mwhToYiKwh) },
+        { name: '实时电量(亿kWh)', data: month24.rtVol.map(mwhToYiKwh) },
         '#1e5f7a', '#f39c12'
       );
 
