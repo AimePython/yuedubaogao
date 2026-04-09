@@ -257,6 +257,7 @@ def _build_log_stats(limit: int = 2000) -> dict:
     if not items:
         return {
             "total": 0,
+            "accepted_pending": 0,
             "empty_results": 0,
             "feedback_total": len(feedback_items),
             "feedback_incorrect": sum(1 for x in feedback_items if x.get("is_correct") is False),
@@ -271,14 +272,19 @@ def _build_log_stats(limit: int = 2000) -> dict:
             if isinstance(learning.get("intent_example_questions"), dict)
             else 0,
         }
-    mode_counter = Counter((x.get("mode") or "unknown") for x in items)
-    intent_counter = Counter((x.get("intent") or "general") for x in items)
-    province_counter = Counter((x.get("province") or "unspecified") for x in items)
-    question_counter = Counter((x.get("question") or "").strip() for x in items if (x.get("question") or "").strip())
-    empty_results = sum(1 for x in items if x.get("empty_result"))
+    # 统计时去掉仅「已受理」的 accepted 行，避免与 completed 重复；若全是 accepted（异常中断）则仍用原列表
+    stat_items = [x for x in items if x.get("phase") != "accepted"]
+    if not stat_items:
+        stat_items = items
+    mode_counter = Counter((x.get("mode") or "unknown") for x in stat_items)
+    intent_counter = Counter((x.get("intent") or "general") for x in stat_items)
+    province_counter = Counter((x.get("province") or "unspecified") for x in stat_items)
+    question_counter = Counter((x.get("question") or "").strip() for x in stat_items if (x.get("question") or "").strip())
+    empty_results = sum(1 for x in stat_items if x.get("empty_result"))
     top_questions = [{"question": q, "count": c} for q, c in question_counter.most_common(20)]
     return {
-        "total": len(items),
+        "total": len(stat_items),
+        "accepted_pending": sum(1 for x in items if x.get("phase") == "accepted"),
         "empty_results": empty_results,
         "feedback_total": len(feedback_items),
         "feedback_incorrect": sum(1 for x in feedback_items if x.get("is_correct") is False),
@@ -1174,7 +1180,33 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                     },
                 }
             )
+            _append_query_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "session_id": session_id,
+                    "province": province,
+                    "intent": intent,
+                    "mode": "validation",
+                    "empty_result": False,
+                    "sources_count": 0,
+                    "latency_ms": int((time.time() - started) * 1000),
+                    "phase": "completed",
+                }
+            )
             return
+
+        # 已进入检索/模型流程：先落一条，避免 LLM 超时或异常导致「提问完全无记录」
+        _append_query_log(
+            {
+                "ts": _utc_now_iso(),
+                "question": question,
+                "session_id": session_id,
+                "province": province,
+                "intent": intent,
+                "phase": "accepted",
+            }
+        )
 
         docs = self._ensure_corpus()
         top_docs = _search_relevant_docs(docs, question_for_retrieval, province, top_k=4)
@@ -1204,6 +1236,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
                     "empty_result": True,
                     "sources_count": 0,
                     "latency_ms": int((time.time() - started) * 1000),
+                    "phase": "completed",
                 }
             )
             return
@@ -1211,41 +1244,76 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
         tool_answer: str | None = None
         tool_mode = ""
         tool_top_docs: list[tuple[int, dict]] = []
-        if LLM_API_KEY and ENABLE_TOOL_AGENT:
-            tool_answer, tool_mode, tool_top_docs = _run_tool_agent(
-                question, feedback_hint, docs, province
+        try:
+            if LLM_API_KEY and ENABLE_TOOL_AGENT:
+                tool_answer, tool_mode, tool_top_docs = _run_tool_agent(
+                    question, feedback_hint, docs, province
+                )
+
+            if tool_answer:
+                answer = tool_answer
+                mode = tool_mode or "tool-agent"
+                src_docs = tool_top_docs if tool_top_docs else top_docs
+            else:
+                context = _build_agent_context(question_for_retrieval, top_docs)
+                agent_answer = _call_llm_answer(question, context, feedback_hint=feedback_hint)
+                answer = agent_answer or _build_structured_answer(question, top_docs, intent)
+                mode = "agent" if agent_answer else "retrieval"
+                src_docs = top_docs
+
+            sources = []
+            for _, doc in src_docs:
+                sources.append({"province": doc["province"], "file": doc["path"]})
+            answer, trust_meta = _augment_answer_for_trust(answer, src_docs)
+            self._send_json({"answer": answer, "sources": sources, "mode": mode, "trust": trust_meta})
+            _update_session_memory(session_id, question)
+            _append_query_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "session_id": session_id,
+                    "province": province,
+                    "intent": intent,
+                    "mode": mode,
+                    "empty_result": False,
+                    "sources_count": len(sources),
+                    "latency_ms": int((time.time() - started) * 1000),
+                    "phase": "completed",
+                }
             )
-
-        if tool_answer:
-            answer = tool_answer
-            mode = tool_mode or "tool-agent"
-            src_docs = tool_top_docs if tool_top_docs else top_docs
-        else:
-            context = _build_agent_context(question_for_retrieval, top_docs)
-            agent_answer = _call_llm_answer(question, context, feedback_hint=feedback_hint)
-            answer = agent_answer or _build_structured_answer(question, top_docs, intent)
-            mode = "agent" if agent_answer else "retrieval"
-            src_docs = top_docs
-
-        sources = []
-        for _, doc in src_docs:
-            sources.append({"province": doc["province"], "file": doc["path"]})
-        answer, trust_meta = _augment_answer_for_trust(answer, src_docs)
-        self._send_json({"answer": answer, "sources": sources, "mode": mode, "trust": trust_meta})
-        _update_session_memory(session_id, question)
-        _append_query_log(
-            {
-                "ts": _utc_now_iso(),
-                "question": question,
-                "session_id": session_id,
-                "province": province,
-                "intent": intent,
-                "mode": mode,
-                "empty_result": False,
-                "sources_count": len(sources),
-                "latency_ms": int((time.time() - started) * 1000),
-            }
-        )
+        except Exception as e:
+            err_msg = str(e)[:500]
+            try:
+                self._send_json(
+                    {
+                        "answer": "服务处理异常，请稍后重试。若持续出现，请检查大模型 API 与网络。",
+                        "sources": [],
+                        "mode": "error",
+                        "trust": {
+                            "evidence_strength": "none",
+                            "numeric_grounding": "n/a",
+                            "notes": [f"服务端异常摘要：{err_msg}"],
+                        },
+                    },
+                    status=500,
+                )
+            except Exception:
+                pass
+            _append_query_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "session_id": session_id,
+                    "province": province,
+                    "intent": intent,
+                    "mode": "error",
+                    "empty_result": False,
+                    "sources_count": 0,
+                    "latency_ms": int((time.time() - started) * 1000),
+                    "phase": "completed",
+                    "error": err_msg,
+                }
+            )
 
 
 def main() -> None:

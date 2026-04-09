@@ -393,7 +393,7 @@
             return base.replace(/\/+$/, '') + path;
         }
 
-        async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 120000) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
@@ -414,7 +414,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         },
-                        45000
+                        120000
                     );
                     return res;
                 } catch (err) {

@@ -32,7 +32,7 @@ def load_items() -> list[dict]:
 
 
 def main() -> None:
-    items = load_items()
+    items = [x for x in load_items() if x.get("phase") != "accepted"]
     if not items:
         print("No query logs found.")
         return

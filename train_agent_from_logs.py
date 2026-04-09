@@ -63,6 +63,11 @@ def _load_jsonl(path: Path) -> list[dict]:
     return out
 
 
+def _queries_for_training(items: list[dict]) -> list[dict]:
+    """排除仅用于「已收到提问」的 accepted 行，避免与 completed 重复统计。"""
+    return [x for x in items if x.get("phase") != "accepted"]
+
+
 def _top_keywords_by_intent(query_items: list[dict], top_n: int = 20) -> dict[str, list[str]]:
     by_intent: dict[str, Counter] = defaultdict(Counter)
     for item in query_items:
@@ -145,20 +150,24 @@ def _feedback_pairs(feedback_items: list[dict], top_n: int = 300) -> list[dict]:
 def main() -> None:
     query_items = _load_jsonl(QUERY_FILE)
     feedback_items = _load_jsonl(FEEDBACK_FILE)
+    train_queries = _queries_for_training(query_items)
 
     learning = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "query_count": len(query_items),
+        "query_count_training": len(train_queries),
         "feedback_count": len(feedback_items),
-        "intent_keywords": _top_keywords_by_intent(query_items),
-        "intent_example_questions": _intent_example_questions(query_items),
-        "query_synonyms": _build_synonyms(query_items),
+        "intent_keywords": _top_keywords_by_intent(train_queries),
+        "intent_example_questions": _intent_example_questions(train_queries),
+        "query_synonyms": _build_synonyms(train_queries),
         "feedback_pairs": _feedback_pairs(feedback_items),
     }
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     OUT_FILE.write_text(json.dumps(learning, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Saved: {OUT_FILE} (queries={len(query_items)}, feedback={len(feedback_items)})")
+    print(
+        f"Saved: {OUT_FILE} (lines={len(query_items)}, training_rows={len(train_queries)}, feedback={len(feedback_items)})"
+    )
     if not query_items and not feedback_items:
         print("提示: logs/qa_queries.jsonl 与 logs/qa_feedback.jsonl 暂无数据；站点运行后问答会追加日志，再运行本脚本即可。")
 
