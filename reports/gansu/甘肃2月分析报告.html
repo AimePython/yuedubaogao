@@ -111,7 +111,7 @@
   <div class="header">
     <div class="title-section">
       <h1>⚡ 甘肃电力市场运行分析 · 2026年2月</h1>
-      <p>基于甘肃现货日度明细（日前/实时）自动汇总；其余指标以公开披露补充为准</p>
+      <p>依据《甘肃2026年2月信息披露报告》（GS-08-05-09-202602）整理；现货出清曲线与加权口径来自《甘肃2月现货数据.xlsx》</p>
     </div>
     <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
   </div>
@@ -119,15 +119,24 @@
   <div class="card">
     <h2>📊 核心速览</h2>
     <div class="insight-box">
-      <p><strong>现货规模：</strong>2月日前市场出清总电量约 <span class="highlight" id="kpiDaYI">-</span> 亿kWh，实时市场出清总电量约 <span class="highlight" id="kpiRtYI">-</span> 亿kWh。</p>
-      <p><strong>环比变化：</strong>相较1月，日前变化 <span class="highlight" id="kpiDaMoM">-</span>，实时变化 <span class="highlight" id="kpiRtMoM">-</span>。</p>
-      <p><strong>价格特征：</strong>2月日前加权均价约 <span class="highlight" id="kpiDaAvg">-</span> 元/MWh，实时加权均价约 <span class="highlight" id="kpiRtAvg">-</span> 元/MWh。</p>
+      <p><strong>电网与供需：</strong>2月全社会用电量 <span class="highlight">139.53 亿kWh</span>（同比降低0.01%），省级结算口径上网电量 <span class="highlight">149.54 亿kWh</span>（同比降低5.96%）。截至2月底，全省发电装机容量 <span class="highlight">12559.81 万kW</span>（同比增长24.01%）。</p>
+      <p><strong>装机结构：</strong>水电 <span class="highlight">971.99</span> 万kW、火电 <span class="highlight">3496.90</span> 万kW、风电 <span class="highlight">4141.60</span> 万kW、光电 <span class="highlight">3949.32</span> 万kW。</p>
+      <p><strong>结算与市场：</strong>2月用户侧结算户数 <span class="highlight">6997</span> 户，合计结算电量 <span class="highlight">74.27 亿kWh</span>，市场交易电费结算均价 <span class="highlight">198.113 元/MWh</span>。其中：参与中长期交易（非现货）用户 <span class="highlight">6620</span> 户，结算电量 <span class="highlight">27.02 亿kWh</span>、均价 <span class="highlight">210.982 元/MWh</span>；参与现货市场用户 <span class="highlight">377</span> 户，结算电量 <span class="highlight">47.25 亿kWh</span>、均价 <span class="highlight">190.755 元/MWh</span>。</p>
+      <p><strong>现货出清（明细汇总）：</strong>2月日前出清总电量约 <span class="highlight" id="kpiDaYI">-</span> 亿kWh，实时出清总电量约 <span class="highlight" id="kpiRtYI">-</span> 亿kWh；日前加权均价 <span class="highlight" id="kpiDaAvg">-</span> 元/MWh，实时加权均价 <span class="highlight" id="kpiRtAvg">-</span> 元/MWh（与披露「结算均价」口径不同，见下表说明）。相较1月出清电量，日前 <span class="highlight" id="kpiDaMoM">-</span>、实时 <span class="highlight" id="kpiRtMoM">-</span>。</p>
+      <p><strong>风险观察：</strong>当月未发现市场主体违规行为，未发生市场干预；预计3月全网用电量约160亿kWh（同比+4.59%）、最大用电负荷2350万kW（同比+2.44%），电量平衡可满足内供外送需求。</p>
     </div>
     <div class="stats-grid">
-      <div class="stat-item"><div class="stat-label">2月日前电量</div><div class="stat-value" id="statDaYI">-</div></div>
-      <div class="stat-item"><div class="stat-label">2月实时电量</div><div class="stat-value" id="statRtYI">-</div></div>
-      <div class="stat-item"><div class="stat-label">日前环比</div><div class="stat-value" id="statDaMoM">-</div></div>
-      <div class="stat-item"><div class="stat-label">实时环比</div><div class="stat-value" id="statRtMoM">-</div></div>
+      <div class="stat-item"><div class="stat-label">全社会用电量（2月）</div><div class="stat-value">139.53 亿kWh</div></div>
+      <div class="stat-item"><div class="stat-label">省级上网电量（2月）</div><div class="stat-value">149.54 亿kWh</div></div>
+      <div class="stat-item"><div class="stat-label">全省装机（截至2月）</div><div class="stat-value">12559.81 万kW</div></div>
+      <div class="stat-item"><div class="stat-label">市场交易结算均价</div><div class="stat-value">198.11 元/MWh</div></div>
+    </div>
+    <h3 style="font-size:0.9rem;margin:0.85rem 0 0.4rem;color:#2c5a6e;">出清明细环比（对比1月同口径）</h3>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-label">2月日前出清电量</div><div class="stat-value" id="statDaYI">-</div></div>
+      <div class="stat-item"><div class="stat-label">2月实时出清电量</div><div class="stat-value" id="statRtYI">-</div></div>
+      <div class="stat-item"><div class="stat-label">日前出清环比</div><div class="stat-value" id="statDaMoM">-</div></div>
+      <div class="stat-item"><div class="stat-label">实时出清环比</div><div class="stat-value" id="statRtMoM">-</div></div>
     </div>
   </div>
 
@@ -137,26 +146,84 @@
       <table>
         <thead><tr><th>指标</th><th>2026年1月</th><th>2026年2月</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td>日前出清电量（亿kWh）</td><td id="cmpDaJan">-</td><td id="cmpDaFeb">-</td><td>来源：项目内日前CSV（MWh→亿kWh）</td></tr>
-          <tr><td>实时出清电量（亿kWh）</td><td id="cmpRtJan">-</td><td id="cmpRtFeb">-</td><td>来源：项目内实时CSV（MWh→亿kWh）</td></tr>
-          <tr><td>日前加权均价（元/MWh）</td><td id="cmpDaAvgJan">-</td><td id="cmpDaAvgFeb">-</td><td>来源：甘肃2月现货数据.xlsx（全月电量加权）</td></tr>
-          <tr><td>实时加权均价（元/MWh）</td><td id="cmpRtAvgJan">-</td><td id="cmpRtAvgFeb">-</td><td>来源：甘肃2月现货数据.xlsx（全月电量加权）</td></tr>
-          <tr><td>其它供需指标</td><td>见1月月报</td><td>待补充</td><td>补齐2月信息披露PDF后更新</td></tr>
+          <tr><td>全社会用电量（亿kWh，当月）</td><td>166.65</td><td>139.53</td><td>披露月报；2月同比-0.01%</td></tr>
+          <tr><td>省级结算口径上网电量（亿kWh，当月）</td><td>191.22</td><td>149.54</td><td>披露月报；2月同比-5.96%</td></tr>
+          <tr><td>全省发电装机容量（万kW，月末）</td><td>12482.67</td><td>12559.81</td><td>披露月报；同比为披露原文</td></tr>
+          <tr><td>截至月末累计全社会用电量（亿kWh）</td><td>—</td><td>306.18</td><td>披露「截止2月」累计；同比+3.38%</td></tr>
+          <tr><td>截至月末累计省级上网电量（亿kWh）</td><td>—</td><td>340.76</td><td>披露「截止2月」累计；同比+2.83%</td></tr>
+          <tr><td>日前出清电量（亿kWh）</td><td id="cmpDaJan">-</td><td id="cmpDaFeb">-</td><td>《甘肃2月现货数据.xlsx》全月汇总</td></tr>
+          <tr><td>实时出清电量（亿kWh）</td><td id="cmpRtJan">-</td><td id="cmpRtFeb">-</td><td>同上</td></tr>
+          <tr><td>日前出清加权均价（元/MWh）</td><td id="cmpDaAvgJan">-</td><td id="cmpDaAvgFeb">-</td><td>全月96点折算24点后电量加权</td></tr>
+          <tr><td>实时出清加权均价（元/MWh）</td><td id="cmpRtAvgJan">-</td><td id="cmpRtAvgFeb">-</td><td>同上</td></tr>
+          <tr><td>用户侧市场交易电费结算均价（元/MWh）</td><td>—</td><td>198.113</td><td>披露「五、市场结算」</td></tr>
         </tbody>
       </table>
+    </div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>⚙️ 装机容量结构（万kW，截至2月）</h3>
+        <canvas id="capMixChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>🔌 2月省级结算口径上网电量结构（亿kWh）</h3>
+        <canvas id="genMixChart"></canvas>
+        <div class="note">分项摘自披露正文；若与当月合计149.54存在差异，以披露「省级结算口径上网电量」合计为准。</div>
+      </div>
     </div>
   </div>
 
   <div class="card">
     <h2>📑 交易组织与结算情况（2026年2月）</h2>
-    <div class="insight-box">
-      <p>本版先基于已上传现货出清电量明细完成现货模块。中长期交易分品类、用户侧结算均价、发电侧分类型电价等需以2月信息披露表补齐后更新。</p>
-      <p class="note">为避免误导，暂不沿用1月披露值填充2月结算数据。</p>
+    <h3>🧾 用户侧结算概览</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>项目</th><th>数据</th></tr></thead>
+        <tbody>
+          <tr><td>用户侧结算户数</td><td>6997 户</td></tr>
+          <tr><td>结算电量合计</td><td>74.27 亿kWh</td></tr>
+          <tr><td>市场交易电费结算均价</td><td>198.113 元/MWh</td></tr>
+          <tr><td>参与中长期交易用户（非现货）</td><td>6620 户</td></tr>
+          <tr><td>中长期结算电量</td><td>27.02 亿kWh</td></tr>
+          <tr><td>中长期结算均价</td><td>210.982 元/MWh</td></tr>
+          <tr><td>参与现货市场用户</td><td>377 户</td></tr>
+          <tr><td>现货结算电量</td><td>47.25 亿kWh</td></tr>
+          <tr><td>现货结算均价</td><td>190.755 元/MWh</td></tr>
+        </tbody>
+      </table>
     </div>
+    <h3>⚡ 发电侧结算概览（2月）</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>发电类型</th><th>结算电量（亿kWh）</th><th>平均执行电价（元/MWh）</th></tr></thead>
+        <tbody>
+          <tr><td>水电</td><td>13.50</td><td>204.976</td></tr>
+          <tr><td>火电</td><td>58.86</td><td>339.063</td></tr>
+          <tr><td>风电</td><td>44.73</td><td>203.358</td></tr>
+          <tr><td>光伏</td><td>24.07</td><td>151.238</td></tr>
+          <tr><td>风光光热一体化</td><td>7.76</td><td>139.079</td></tr>
+          <tr><td>其他</td><td>0.98</td><td>303.490</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">现货「出清电量/出清均价」见下文现货章节（xlsx 明细）；本表为披露结算口径。</p>
   </div>
 
   <div class="card">
     <h2>⚡ 现货市场交易（2月）</h2>
+    <div class="insight-box">
+      <p><strong>省内现货执行（披露）：</strong>2月省内现货交易发电侧执行现货正电量 <span class="highlight">60.44 亿kWh</span>，现货负电量 <span class="highlight">-50.81 亿kWh</span>，计量偏差修正电量 <span class="highlight">0.05 亿kWh</span>。</p>
+      <p><strong>跨省跨区：</strong>2月跨区跨省售电量完成 <span class="highlight">67.51 亿kWh</span>（同比+42.40%），购电量完成 <span class="highlight">2.69 亿kWh</span>（同比+26.30%）。截止2月累计售电 <span class="highlight">166.65 亿kWh</span>、累计购电 <span class="highlight">4.44 亿kWh</span>。</p>
+    </div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>📈 2月跨区跨省电量（亿kWh）</h3>
+        <canvas id="crossTradeChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>🧮 2月用户侧价格对比（元/MWh）</h3>
+        <canvas id="priceCompareChart"></canvas>
+      </div>
+    </div>
 
     <h3>现货市场月度汇总（日前/实时）</h3>
     <div class="overflow-x-auto">
@@ -231,14 +298,57 @@
   <div class="card">
     <h2>🔍 市场运行关注点（3月展望）</h2>
     <div class="insight-box">
-      <p>1）2月日前与实时电量均较1月回落，建议跟踪3月复工后负荷恢复节奏与新能源出力变化。</p>
-      <p>2）补齐2月价格明细后，应重点复盘峰谷价差变化及实时偏差成本。</p>
-      <p>3）中长期与结算模块建议在披露PDF落地后再统一更新，保证口径一致。</p>
+      <p>1）披露预计3月全网用电量约 <span class="highlight">160 亿kWh</span>（同比+4.59%），计划外送电量约 <span class="highlight">59.92 亿kWh</span>、月度购电 <span class="highlight">0.19 亿kWh</span>，净外送约 <span class="highlight">59.73 亿kWh</span>；全网预计可发电量约227.59亿kWh，电量可满足内供外送。</p>
+      <p>2）预计3月最大用电负荷约 <span class="highlight">2350 万kW</span>（同比+2.44%）；常规最大发电能力约3390万kW，留取备用后供应充足。2月风光占比高，需持续关注日前—实时价差与不平衡费用。</p>
+      <p>3）披露载明2月省内辅助服务结果暂未发布；规则与分摊方式见报告原文。输电网断面约束按日在平台披露。</p>
     </div>
   </div>
 
-  <footer>数据来源：甘肃2月现货数据.xlsx（含日前/实时电量与价格96点明细，报告内聚合为24点与日度/月度汇总）。</footer>
+  <footer>数据来源：《甘肃2026年2月信息披露报告》（GS-08-05-09-202602）；《甘肃2月现货数据.xlsx》（日前/实时96点明细，本报告内聚合为24点及日月度出清汇总）。本页用于市场洞察分析展示，不构成交易建议。</footer>
 </div>
+
+<script>
+(function () {
+  if (typeof Chart === 'undefined') return;
+  const capData = { labels: ['水电', '火电', '风电', '光电'], values: [971.99, 3496.90, 4141.60, 3949.32] };
+  const genData = { labels: ['火电', '水电', '风电', '光伏', '其它', '一体化'], values: [58.86, 16.19, 44.73, 24.07, 0.98, 7.76] };
+  const capEl = document.getElementById('capMixChart');
+  const genEl = document.getElementById('genMixChart');
+  const crossEl = document.getElementById('crossTradeChart');
+  const priceEl = document.getElementById('priceCompareChart');
+  if (capEl) {
+    new Chart(capEl, {
+      type: 'doughnut',
+      data: { labels: capData.labels, datasets: [{ data: capData.values, backgroundColor: ['#5b9bd5', '#c55a5a', '#70ad47', '#ffc000'] }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+  if (genEl) {
+    new Chart(genEl, {
+      type: 'bar',
+      data: { labels: genData.labels, datasets: [{ label: '亿kWh', data: genData.values, backgroundColor: '#2c7da0' }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+  }
+  if (crossEl) {
+    new Chart(crossEl, {
+      type: 'bar',
+      data: { labels: ['售电量', '购电量', '净外送'], datasets: [{ label: '亿kWh', data: [67.51, 2.69, 64.82], backgroundColor: ['#2c7da0', '#8fbcd4', '#1e5f7a'] }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+  }
+  if (priceEl) {
+    new Chart(priceEl, {
+      type: 'bar',
+      data: {
+        labels: ['中长期结算均价', '现货结算均价', '整体结算均价'],
+        datasets: [{ label: '元/MWh', data: [210.982, 190.755, 198.113], backgroundColor: ['#2c7da0', '#e67e22', '#1a4c63'] }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+  }
+})();
+</script>
 
 <script>
   const period24 = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
