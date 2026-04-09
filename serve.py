@@ -139,9 +139,9 @@ def _append_query_log(item: dict) -> None:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         with QUERY_LOG_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
-    except OSError:
-        # 日志失败不应影响主流程
-        pass
+    except OSError as e:
+        # 日志失败不应影响主流程；打印一次便于排查「提问未落盘」
+        print(f"[qa_queries] write failed: {e}", flush=True)
 
 
 def _append_feedback_log(item: dict) -> None:
@@ -1090,7 +1090,7 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path not in {"/api/ask", "/api/feedback", "/api/admin/train"}:
+        if parsed.path not in {"/api/ask", "/api/feedback", "/api/admin/train", "/api/log-query"}:
             self.send_error(404, "Not Found")
             return
 
@@ -1100,6 +1100,38 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             payload = json.loads(raw) if raw else {}
         except json.JSONDecodeError:
             self._send_json({"error": "请求体必须是 JSON"}, status=400)
+            return
+
+        if parsed.path == "/api/log-query":
+            # 前端走本地兜底或未连上 /api/ask 时仍记录提问，便于分析与训练
+            question = (payload.get("question") or "").strip()
+            if not question:
+                self._send_json({"error": "question 不能为空"}, status=400)
+                return
+            session_id = _normalize_session_id(payload.get("session_id") or "")
+            province = (payload.get("province") or "").strip().lower()
+            if not province:
+                province = _detect_province_from_question(question)
+            reason = (payload.get("reason") or "client").strip()[:120]
+            detail = (payload.get("detail") or "").strip()[:500]
+            intent = _detect_intent(question)
+            _append_query_log(
+                {
+                    "ts": _utc_now_iso(),
+                    "question": question,
+                    "session_id": session_id,
+                    "province": province,
+                    "intent": intent,
+                    "mode": "client_fallback",
+                    "empty_result": True,
+                    "sources_count": 0,
+                    "latency_ms": 0,
+                    "phase": "completed",
+                    "client_fallback_reason": reason,
+                    "client_fallback_detail": detail,
+                }
+            )
+            self._send_json({"ok": True})
             return
 
         if parsed.path == "/api/admin/train":

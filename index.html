@@ -397,6 +397,24 @@
             return base.replace(/\/+$/, '') + path;
         }
 
+        /** 未走通 /api/ask（超时、HTTP 错误、网络失败）时仍上报提问，写入服务端 logs/qa_queries.jsonl */
+        function logClientQuery(question, province, reason, detail) {
+            try {
+                fetch(apiUrl('/api/log-query'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question,
+                        province: province || '',
+                        session_id: getSessionId(),
+                        reason: String(reason || 'unknown').slice(0, 120),
+                        detail: String(detail || '').slice(0, 500)
+                    }),
+                    keepalive: true
+                }).catch(() => {});
+            } catch (e) {}
+        }
+
         async function fetchWithTimeout(url, options = {}, timeoutMs = 120000) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -653,11 +671,26 @@
             qaSources.textContent = '';
             setTrustUI(null, '');
             qaFeedbackStatus.textContent = '';
+            let clientQueryLogged = false;
             try {
                 const res = await postAskWithRetry({ question, province, session_id: getSessionId() }, 1);
-                const data = await res.json();
+                let data;
+                try {
+                    data = await res.json();
+                } catch (parseErr) {
+                    logClientQuery(question, province, 'bad_json', res.status + ' ' + String(parseErr && parseErr.message));
+                    clientQueryLogged = true;
+                    throw parseErr;
+                }
                 if (!res.ok) {
-                    throw new Error(data.error || '请求失败');
+                    logClientQuery(
+                        question,
+                        province,
+                        'http_' + res.status,
+                        (data && (data.error || data.message)) || JSON.stringify(data).slice(0, 300)
+                    );
+                    clientQueryLogged = true;
+                    throw new Error((data && data.error) || '请求失败');
                 }
                 qaAnswer.textContent = data.answer || '未获取到回答。';
                 const list = Array.isArray(data.sources) ? data.sources : [];
@@ -673,6 +706,14 @@
                 };
                 qaBadBtn.disabled = false;
             } catch (err) {
+                if (!clientQueryLogged) {
+                    logClientQuery(
+                        question,
+                        province,
+                        err && err.name === 'AbortError' ? 'timeout' : 'fetch_failed',
+                        err && err.message ? err.message : String(err)
+                    );
+                }
                 const fallback = await fallbackAsk(question, province);
                 qaAnswer.textContent = fallback.answer;
                 const list = Array.isArray(fallback.sources) ? fallback.sources : [];
