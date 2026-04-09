@@ -59,8 +59,12 @@ def _load_dotenv(dotenv_path: Path) -> None:
 _load_dotenv(ROOT / ".env")
 
 LLM_API_BASE = os.getenv("LLM_API_BASE", "https://api.openai.com/v1").rstrip("/")
-LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip()
+# 阿里云百炼可在环境变量 DASHSCOPE_API_KEY 中配置，与 OpenAI 的 LLM_API_KEY 二选一（或同时设置时优先 LLM_API_KEY）
+LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip() or os.getenv("DASHSCOPE_API_KEY", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
+# deepseek-v3.2 等：百炼兼容接口支持 enable_thinking（思考链会按输出 Token 计费，见模型文档）
+LLM_ENABLE_THINKING = os.getenv("LLM_ENABLE_THINKING", "false").strip().lower() in {"1", "true", "yes", "on"}
+LLM_HTTP_TIMEOUT = int(os.getenv("LLM_HTTP_TIMEOUT", "90"))
 CORS_ALLOW_ORIGIN = os.getenv("CORS_ALLOW_ORIGIN", "*").strip() or "*"
 ENABLE_QUERY_LOG = os.getenv("ENABLE_QUERY_LOG", "true").strip().lower() in {"1", "true", "yes", "on"}
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
@@ -735,6 +739,16 @@ LLM_SYSTEM_TRUST_RULES = (
 AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0.15"))
 
 
+def _llm_optional_compat_fields() -> dict:
+    """阿里云百炼 OpenAI 兼容模式下的非标准字段（如 DeepSeek 思考模式）。"""
+    if not LLM_ENABLE_THINKING:
+        return {}
+    m = (LLM_MODEL or "").lower()
+    if "deepseek" not in m:
+        return {}
+    return {"enable_thinking": True}
+
+
 def _grounding_corpus_from_docs(top_docs: list[tuple[int, dict]], max_chars: int = 14000) -> str:
     """拼接用于数值校验的原文池（截取控制长度）。"""
     parts: list[str] = []
@@ -826,7 +840,7 @@ def _post_chat_completions(body: dict) -> dict | None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
+        with urllib.request.urlopen(req, timeout=LLM_HTTP_TIMEOUT) as resp:
             return json.loads(resp.read().decode("utf-8", errors="ignore"))
     except Exception:
         return None
@@ -889,6 +903,7 @@ def _run_tool_agent(
             "tools": REPORT_AGENT_TOOLS,
             "tool_choice": "auto",
             "temperature": AGENT_TEMPERATURE,
+            **_llm_optional_compat_fields(),
         }
         data = _post_chat_completions(body)
         if not data:
@@ -963,6 +978,7 @@ def _call_llm_answer(question: str, context: str, feedback_hint: str = "") -> st
             },
         ],
         "temperature": AGENT_TEMPERATURE,
+        **_llm_optional_compat_fields(),
     }
     req = urllib.request.Request(
         url=f"{LLM_API_BASE}/chat/completions",
@@ -974,7 +990,7 @@ def _call_llm_answer(question: str, context: str, feedback_hint: str = "") -> st
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
+        with urllib.request.urlopen(req, timeout=LLM_HTTP_TIMEOUT) as resp:
             raw = resp.read().decode("utf-8", errors="ignore")
             data = json.loads(raw)
     except Exception:
