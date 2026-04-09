@@ -342,11 +342,15 @@
         const qaBadBtn = document.getElementById('qaBadBtn');
         const qaFeedbackStatus = document.getElementById('qaFeedbackStatus');
 
-        // 方案B: 前端静态托管 + 后端独立部署（可通过全局变量或 URL 参数覆盖）
-        const API_BASE =
-            new URLSearchParams(window.location.search).get('api_base') ||
-            window.__QA_API_BASE__ ||
-            'https://yuedubaogao.onrender.com';
+        // 方案B: 静态托管可指向独立后端。本机打开 127.0.0.1 / localhost 时默认走同源，问答才会写入本机 logs/qa_queries.jsonl
+        const _qaParams = new URLSearchParams(window.location.search);
+        const API_BASE = _qaParams.has('api_base')
+            ? (_qaParams.get('api_base') || '').trim()
+            : typeof window.__QA_API_BASE__ === 'string'
+              ? window.__QA_API_BASE__
+              : ['localhost', '127.0.0.1'].includes(window.location.hostname || '')
+                ? ''
+                : 'https://yuedubaogao.onrender.com';
 
         let reports = {};
         let qaCorpus = null;
