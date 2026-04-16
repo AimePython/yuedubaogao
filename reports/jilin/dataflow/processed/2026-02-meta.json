@@ -1,0 +1,24 @@
+{
+  "province": "吉林",
+  "period": "2026-02",
+  "output_html": "reports/jilin/dataflow/output/吉林2月市场运营分析报告.html",
+  "sources": [
+    "c:\\Users\\wenjiel\\Desktop\\市场洞察网站\\吉林\\2月\\2026年2月份月度双边协商交易申报及成交情况.pdf",
+    "c:\\Users\\wenjiel\\Desktop\\市场洞察网站\\吉林\\2月\\2026年2月月度集中交易申报及成交情况.pdf",
+    "c:\\Users\\wenjiel\\Desktop\\市场洞察网站\\吉林\\2月\\吉林省2026年2月份电力交易信息发布文稿.pdf",
+    "c:\\Users\\wenjiel\\Desktop\\市场洞察网站\\吉林\\2月\\指标数据明细-现货披露价格_实时统一结算点电价_24点限价_吉林（2026-02-01~2026-02-28）.csv",
+    "c:\\Users\\wenjiel\\Desktop\\市场洞察网站\\吉林\\2月\\指标数据明细-现货披露价格_日前统一结算点电价_24点_吉林（2026-02-01~2026-02-28）.csv"
+  ],
+  "spot_from_csv": {
+    "method": "日前24点电价按日简单平均并再按日平均；实时字段全月缺失（--）。",
+    "month_da_price_元每MWh": 254.775,
+    "month_rt_price_元每MWh": null,
+    "avg_spread_元每MWh": null,
+    "da_min_daily_avg_元每MWh": 4.262,
+    "da_max_daily_avg_元每MWh": 845.138
+  },
+  "notes": [
+    "实时统一结算点电价24点限价CSV全月均为缺失值（--），未计算实时均价/价差。",
+    "发电侧结算、生物质口径及中长期交易量价取自2月信息披露和月度交易通报。"
+  ]
+}
