@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>吉林电力市场运营分析 · 2026年1月</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif; background: #f0f4f8; color: #1a2c3e; padding: 1rem; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #2c7da0; padding-bottom: 0.75rem; }
+    .title-section h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #1e5f7a, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+    .title-section p { color: #2c5a6e; margin-top: 0.2rem; font-size: 0.85rem; }
+    .card { background: #fff; border-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 1rem 1.2rem; margin-bottom: 1.2rem; border: 1px solid #e2edf2; }
+    .card h2 { font-size: 1.25rem; font-weight: 600; border-left: 4px solid #2c7da0; padding-left: 0.8rem; margin-bottom: 1rem; color: #1e4a62; }
+    .card h3 { font-size: 1.05rem; margin: 0.8rem 0 0.5rem 0; color: #2c7da0; }
+    .insight-box { background: #eef3fa; padding: 0.8rem; border-radius: 16px; margin-bottom: 0.8rem; }
+    .insight-box p { margin: 0.35rem 0; line-height: 1.45; font-size: 0.88rem; }
+    .highlight { font-weight: 700; color: #c1121f; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 0.8rem; margin-top: 0.8rem; }
+    .stat-item { background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f2 100%); border-radius: 12px; padding: 0.8rem; border: 1px solid #b8d9e8; }
+    .stat-label { font-size: 0.75rem; color: #5f7f8c; margin-bottom: 0.3rem; }
+    .stat-value { font-size: 1.2rem; font-weight: 700; color: #2c7da0; }
+    .stat-unit { font-size: 0.8rem; color: #5f7f8c; margin-left: 0.25rem; }
+    .chart-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 0.8rem 0; }
+    @media (min-width: 900px) { .chart-container { grid-template-columns: 1fr 1fr; } }
+    .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; }
+    .chart-box canvas { width: 100%; max-height: 320px; }
+    .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
+    th, td { border: 1px solid #d4e2e9; padding: 0.45rem 0.35rem; text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
+    th { background: #e9f2f7; color: #1a4c63; font-weight: 600; }
+    .note { font-size: 0.75rem; color: #5f7f8c; margin-top: 0.4rem; }
+    .detail-table-wrap { max-height: 220px; overflow: auto; border: 1px solid #d4e2e9; border-radius: 10px; background: #fff; }
+    footer { text-align: center; margin-top: 1rem; font-size: 0.72rem; color: #5f7f8c; }
+    @media (max-width: 700px) { body { padding: 0.75rem; } .card { padding: 0.8rem; } }
+    .download-btn { background: #2c7da0; border: none; padding: 0.6rem 1.2rem; border-radius: 48px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .download-btn:hover { background: #1f5e7a; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title-section">
+      <h1>吉林电力市场运营分析 · 2026年1月</h1>
+      <p>基于吉林省2026年1月电力交易信息披露与现货24点披露价格</p>
+    </div>
+    <button class="download-btn" id="exportExcelBtn">下载 Excel 报告 (.xlsx)</button>
+  </div>
+
+  <div class="card">
+    <h2>核心速览</h2>
+    <div class="insight-box">
+      <p><strong>价格表现（现货披露）：</strong>1月实时统一结算点日均价算术均值 <span class="highlight">368.500元/MWh</span>，日前 <span class="highlight">348.148元/MWh</span>，实时较日前平均升水 <span class="highlight">20.352元/MWh</span>（按24点简单平均，非电量加权）。</p>
+      <p><strong>结算表现（信息披露）：</strong>全省发电企业上网结算电量 <span class="highlight">86.920亿kWh</span>，结算均价 <span class="highlight">372.376元/MWh</span>（与现货披露均价口径不同）。</p>
+      <p><strong>中长期交易：</strong>1月未达成外送；全年外送合同累计130.32亿kWh（送山东117.21），外购累计48.75亿kWh。省内月内交易2.58亿kWh、代理购电1.57亿kWh、日滚动3.07亿kWh；年度序列1月成交54.9亿kWh；合同转让合计约0.12亿kWh。2026年度集中竞价全年成交103.15亿kWh、均价344.763元/MWh，其中1月分量15.44亿kWh。</p>
+      <p><strong>运行特征：</strong>市场违规与行政干预披露均为「无」；分电源结算价差异大，火电结算均价显著高于风、光。</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-label">现货披露·实时日均价（月均值）</div><div class="stat-value">368.500<span class="stat-unit">元/MWh</span></div></div>
+      <div class="stat-item"><div class="stat-label">现货披露·日前日均价（月均值）</div><div class="stat-value">348.148<span class="stat-unit">元/MWh</span></div></div>
+      <div class="stat-item"><div class="stat-label">发电侧结算电量</div><div class="stat-value">86.920<span class="stat-unit">亿kWh</span></div></div>
+      <div class="stat-item"><div class="stat-label">发电侧结算均价</div><div class="stat-value">372.376<span class="stat-unit">元/MWh</span></div></div>
+      <div class="stat-item"><div class="stat-label">实时日均价最低日</div><div class="stat-value">19.893<span class="stat-unit">元/MWh</span></div></div>
+      <div class="stat-item"><div class="stat-label">实时日均价最高日</div><div class="stat-value">982.354<span class="stat-unit">元/MWh</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>信息披露关键指标（1月）</h2>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>指标</th><th>1月数据</th></tr></thead>
+        <tbody id="infoKeyBody">
+          <tr><td>全社会用电量</td><td>109.62亿kWh（同比+16.02%）</td></tr>
+          <tr><td>全口径发电量</td><td>112.67亿kWh（同比+8.68%）</td></tr>
+          <tr><td>发电装机（1月末）</td><td>5160.56万kW（同比+9.31%）</td></tr>
+          <tr><td>注册市场成员</td><td>7145户（同比+1768户）</td></tr>
+          <tr><td>发电利用小时</td><td>217小时（同比-2小时）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>现货市场图表看板（1月）</h2>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>图1：实时/日前日均价趋势（24点算术平均）</h3>
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>图2：发电侧分类型结算电量（信息披露）</h3>
+        <canvas id="genMixChart"></canvas>
+        <div class="note">电量与均价来自《2026年1月电力市场交易信息报告》发电侧结算；生物质披露原文单位为「千瓦时」此处按亿千瓦时理解（与合计86.92一致）。</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-box">
+        <h3>图3：实时-日前价差（日度）</h3>
+        <canvas id="spreadChart"></canvas>
+        <div class="note">正值为实时升水，负值为贴水。</div>
+      </div>
+      <div class="chart-box">
+        <h3>图4：日度价格波动区间（日前与实时日均价）</h3>
+        <canvas id="rangeChart"></canvas>
+      </div>
+    </div>
+    <h3>价差明细</h3>
+    <div class="detail-table-wrap">
+      <table>
+        <thead><tr><th>日期</th><th>实时日均价</th><th>日前日均价</th><th>价差（实时-日前）</th></tr></thead>
+        <tbody id="spreadDetailBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>1月关键数据表</h2>
+    <h3>中长期与集中交易摘要</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>交易/事项</th><th>成交电量（亿kWh）</th><th>成交均价（元/MWh）</th><th>备注</th></tr></thead>
+        <tbody id="tradeSummaryBody">
+          <tr><td>2026年度集中竞价（全年）</td><td>103.15</td><td>344.763</td><td>2025-12-29 撮合结果</td></tr>
+          <tr><td>其中·2026年1月成交分量</td><td>15.44</td><td>344.200</td><td>年度竞价分月表</td></tr>
+          <tr><td>1月年度交易成交（信息披露）</td><td>54.9</td><td>—</td><td>《1月电力交易信息发布》</td></tr>
+          <tr><td>月内中长期（2次）</td><td>2.58</td><td>—</td><td>省内直接交易</td></tr>
+          <tr><td>月内电网企业代理购电</td><td>1.57</td><td>344.2</td><td>交易结果通报</td></tr>
+          <tr><td>日滚动撮合（20次）</td><td>3.07</td><td>—</td><td>信息披露</td></tr>
+          <tr><td>外送合同转让（2次合计）</td><td>0.122</td><td>约300.86</td><td>第一次+第二次通报加权</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>发电侧分类型结算（信息披露）</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>电源类型</th><th>结算电量（亿kWh）</th><th>结算均价（元/MWh）</th></tr></thead>
+        <tbody>
+          <tr><td>火电</td><td>51.26</td><td>476.998</td></tr>
+          <tr><td>风电</td><td>25.99</td><td>173.102</td></tr>
+          <tr><td>光伏</td><td>4.89</td><td>332.659</td></tr>
+          <tr><td>生物质（含垃圾）</td><td>4.73</td><td>373.243</td></tr>
+          <tr><td>水电</td><td>0.05</td><td>493.078</td></tr>
+          <tr><td>合计</td><td>86.92</td><td>372.376（加权）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>数据来源：《吉林省2026年1月份电力交易信息发布文稿》、2026年度集中竞价/月内交易/合同转让/代理购电成交通报；现货曲线来自「现货披露价格·统一结算点电价·24点」指标明细（2026-01-01—01-31）。</footer>
+</div>
+
+<script>
+  if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
+  const labels = ["1/1", "1/2", "1/3", "1/4", "1/5", "1/6", "1/7", "1/8", "1/9", "1/10", "1/11", "1/12", "1/13", "1/14", "1/15", "1/16", "1/17", "1/18", "1/19", "1/20", "1/21", "1/22", "1/23", "1/24", "1/25", "1/26", "1/27", "1/28", "1/29", "1/30", "1/31"];
+  const rtPrice = [553.943, 481.171, 437.33, 383.538, 193.42, 19.893, 201.312, 214.889, 358.978, 241.294, 186.455, 413.957, 45.572, 389.137, 311.902, 452.913, 76.344, 483.165, 82.387, 572.289, 121.23, 152.431, 107.495, 222.177, 910.28, 982.354, 334.795, 799.308, 601.132, 873.09, 219.308];
+  const daPrice = [308.002, 312.337, 414.056, 414.57, 277.158, 15.287, 177.614, 134.991, 343.375, 40.36, 179.185, 219.85, 58.82, 408.426, 388.051, 316.689, 225.273, 497.823, 84.983, 333.752, 172.495, 126.275, 103.294, 273.349, 886.163, 1044.225, 280.343, 860.982, 632.135, 826.192, 436.523];
+  const genLabels = ["火电", "风电", "光伏", "生物质", "水电"];
+  const genVol = [51.26, 25.99, 4.89, 4.73, 0.05];
+  const genPrice = [476.998, 173.102, 332.659, 373.243, 493.078];
+
+  const spread = rtPrice.map((v, i) => +(v - daPrice[i]).toFixed(2));
+  const rangeLow = rtPrice.map((v, i) => Math.min(v, daPrice[i]));
+  const rangeHigh = rtPrice.map((v, i) => Math.max(v, daPrice[i]));
+  const avgSpread = spread.length ? spread.reduce((a, b) => a + b, 0) / spread.length : 0;
+  const maxSpread = spread.length ? Math.max(...spread) : 0;
+  const minSpread = spread.length ? Math.min(...spread) : 0;
+  const maxSpreadIdx = spread.indexOf(maxSpread);
+  const minSpreadIdx = spread.indexOf(minSpread);
+
+  const baseOption = { responsive: true, plugins: { legend: { position: "top" } }, scales: { x: { ticks: { maxTicksLimit: 12 } } } };
+
+  new Chart(document.getElementById("priceChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "实时日均价", data: rtPrice, borderColor: "#2563eb", backgroundColor: "rgba(37,99,235,.15)", tension: 0.25, pointRadius: 1.6 },
+        { label: "日前日均价", data: daPrice, borderColor: "#f97316", backgroundColor: "rgba(249,115,22,.15)", tension: 0.25, pointRadius: 1.6 }
+      ]
+    },
+    options: baseOption
+  });
+
+  new Chart(document.getElementById("genMixChart"), {
+    type: "bar",
+    data: {
+      labels: genLabels,
+      datasets: [{
+        label: "结算电量（亿kWh）",
+        data: genVol,
+        backgroundColor: ["#c62828", "#2e7d32", "#f9a825", "#6a1b9a", "#0277bd"],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      ...baseOption,
+      scales: {
+        x: { ticks: { maxTicksLimit: 12 } },
+        y: { title: { display: true, text: "亿kWh" }, beginAtZero: true }
+      }
+    }
+  });
+
+  new Chart(document.getElementById("spreadChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "实时-日前价差",
+        data: spread,
+        backgroundColor: spread.map(v => v >= 0 ? "rgba(37,99,235,.65)" : "rgba(239,68,68,.65)"),
+        borderColor: spread.map(v => v >= 0 ? "#2563eb" : "#ef4444"),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      ...baseOption,
+      scales: { ...baseOption.scales, y: { title: { display: true, text: "元/MWh" } } }
+    }
+  });
+
+  new Chart(document.getElementById("rangeChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "区间上沿", data: rangeHigh, borderColor: "#0ea5e9", backgroundColor: "rgba(14,165,233,0.2)", tension: 0.2, pointRadius: 0, fill: false },
+        { label: "区间下沿", data: rangeLow, borderColor: "#0ea5e9", backgroundColor: "rgba(14,165,233,0.2)", tension: 0.2, pointRadius: 0, fill: "+1" }
+      ]
+    },
+    options: {
+      ...baseOption,
+      plugins: { ...baseOption.plugins, tooltip: { mode: "index", intersect: false } }
+    }
+  });
+
+  const spreadBody = document.getElementById("spreadDetailBody");
+  spreadBody.innerHTML = labels.map((d, i) =>
+    `<tr><td>${d}</td><td>${rtPrice[i].toFixed(3)}</td><td>${daPrice[i].toFixed(3)}</td><td>${spread[i].toFixed(3)}</td></tr>`
+  ).join("") + `
+    <tr style="background:#e8f4f8;font-weight:600;"><td>全月平均</td><td>-</td><td>-</td><td>${avgSpread.toFixed(3)}</td></tr>
+    <tr style="background:#f9fbfd;"><td>最大价差日</td><td>-</td><td>-</td><td>${maxSpread.toFixed(3)}（${labels[maxSpreadIdx]}）</td></tr>
+    <tr style="background:#f9fbfd;"><td>最小价差日</td><td>-</td><td>-</td><td>${minSpread.toFixed(3)}（${labels[minSpreadIdx]}）</td></tr>
+  `;
+</script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn) return;
+  const SHEETJS_CDNS = [
+    'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js',
+    'https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js',
+    'https://unpkg.com/xlsx@0.20.2/dist/xlsx.full.min.js'
+  ];
+
+  function loadScript(src){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => reject(new Error(`load failed: ${src}`));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureXLSX(){
+    if (typeof XLSX !== 'undefined') return true;
+    for (const src of SHEETJS_CDNS) {
+      try {
+        await loadScript(src);
+        if (typeof XLSX !== 'undefined') return true;
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  function buildFileStem(){
+    const titleText = (document.querySelector('.title-section h1') || document.querySelector('h1'))?.textContent || '省份月报';
+    const safeTitle = titleText.replace(/[\\\/?*\[\]:]/g, ' ').replace(/\s+/g, '').slice(0, 40);
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    return `${safeTitle || '省份月报'}_${ts}`;
+  }
+
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+  function tableToAoA(table){
+    const aoa = [];
+    table.querySelectorAll('tr').forEach(tr => {
+      const row = [];
+      tr.querySelectorAll('th,td').forEach(cell => row.push((cell.innerText || '').replace(/\s+/g, ' ').trim()));
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+  function exportExcelXlsx(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+    if (!tables.length) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]), '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), sanitizeSheetName(title, idx));
+      });
+    }
+    XLSX.writeFile(wb, `${buildFileStem()}.xlsx`);
+  }
+
+  function csvEscape(v){
+    const s = String(v ?? '').replace(/\r?\n/g, ' ');
+    if (/[",]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+
+  function exportCsvFallback(){
+    const tables = Array.from(document.querySelectorAll('table'));
+    let lines = [];
+    if (!tables.length) {
+      lines = ['提示', '当前页面未检测到可导出的表格数据'];
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        lines.push(`# ${title}`);
+        const aoa = tableToAoA(table);
+        aoa.forEach(row => lines.push(row.map(csvEscape).join(',')));
+        lines.push('');
+      });
+    }
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${buildFileStem()}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  btn.addEventListener('click', async () => {
+    const oldText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '正在准备下载...';
+    try {
+      const ok = await ensureXLSX();
+      if (ok) {
+        exportExcelXlsx();
+      } else {
+        exportCsvFallback();
+        alert('Excel 组件加载失败，已自动导出 CSV 版本。');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = oldText;
+    }
+  });
+})();
+</script>
+</body>
+</html>
+
