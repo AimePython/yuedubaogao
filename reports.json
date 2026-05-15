@@ -33,6 +33,10 @@
     "2026-02": {
       "file": "reports/jiangsu/江苏2月市场运行分析报告.html",
       "label": "2026年2月"
+    },
+    "2026-03": {
+      "file": "reports/jiangsu/江苏3月市场运行分析报告.html",
+      "label": "2026年3月"
     }
   },
   "jiangxi": {
