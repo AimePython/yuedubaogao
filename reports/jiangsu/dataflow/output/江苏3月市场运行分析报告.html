@@ -1,0 +1,4325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>江苏3月市场运行分析报告</title>
+    <script src="../../../assets/xlsx.full.min.js"></script>
+    <script src="../../../assets/chart.umd.min.js"></script>
+    <script src="../../../assets/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; background: #f0f4f8; color: #1a2c3e; padding: 1rem; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #2c7da0; padding-bottom: 0.75rem; }
+        .title-section h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #1e5f7a, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .title-section p { color: #2c5a6e; margin-top: 0.2rem; font-size: 0.8rem; }
+        .download-btn { background: #2c7da0; border: none; padding: 0.6rem 1.2rem; border-radius: 48px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .download-btn:hover { background: #1f5e7a; transform: translateY(-2px); }
+        .card { background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1rem 1.2rem; margin-bottom: 1.5rem; border: 1px solid #e2edf2; }
+        .card h2 { font-size: 1.3rem; font-weight: 600; border-left: 4px solid #2c7da0; padding-left: 0.8rem; margin-bottom: 1rem; color: #1e4a62; }
+        .card h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem 0; color: #2c7da0; }
+        .grid-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.6rem 0; }
+        th, td { border: 1px solid #d4e2e9; padding: 0.5rem 0.3rem; text-align: center; vertical-align: top; }
+        th { background: #e9f2f7; font-weight: 600; color: #1a4c63; }
+        .text-left { text-align: left; }
+        .note { font-size: 0.7rem; color: #5f7f8c; margin-top: 0.5rem; }
+        .chart-container { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
+        @media (min-width: 700px) { .chart-container { grid-template-columns: 1fr 1fr; } }
+        .chart-box { background: #fafcfd; border-radius: 16px; padding: 0.8rem; border: 1px solid #e2edf2; text-align: center; }
+        .chart-box canvas { max-height: 280px; width: 100%; }
+        .insight-box { background: #eef3fa; padding: 0.8rem; border-radius: 16px; margin-bottom: 1rem; }
+        .insight-box p { margin: 0.5rem 0; line-height: 1.4; font-size: 0.85rem; }
+        .highlight { font-weight: bold; color: #d9534f; }
+        .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #5f7f8c; }
+        @media (max-width: 700px) { body { padding: 0.8rem; } .card { padding: 0.8rem; } th, td { font-size: 0.7rem; } }
+        .flex-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+        select { padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid #2c7da0; background: white; font-size: 0.85rem; }
+        .overflow-x-auto table { border-collapse: collapse; }
+        .overflow-x-auto th, .overflow-x-auto td { border: 1px solid #d4e2e9; }
+        .chart-subsection { margin-top: 2rem; border-top: 1px dashed #ccc; padding-top: 1rem; }
+        .data-table-wrapper { overflow-x: auto; }
+        .stats-panel { background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f2 100%); border-radius: 12px; padding: 1rem; margin-top: 1rem; border: 2px solid #b8d9e8; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem; }
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 0.75rem; color: #5f7f8c; margin-bottom: 0.3rem; }
+        .stat-value { font-size: 1.3rem; font-weight: 700; color: #2c7da0; }
+        .stat-unit { font-size: 0.8rem; color: #5f7f8c; margin-left: 0.2rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="title-section">
+            <h1>⚡ 江苏3月市场运行分析报告</h1>
+            <p>基于江苏电力交易中心3月交易信息报告</p>
+        </div>
+        <button class="download-btn" id="exportExcelBtn">📎 下载 Excel 报告 (.xlsx)</button>
+    </div>
+
+    <!-- 核心速览 -->
+    <div class="card">
+        <h2>📊 核心速览</h2>
+                <div class="insight-box" id="coreInsight">
+            <p><strong>💰 市场价格对比与波动</strong><br>
+            3月月度集中竞价（无约束出清）成交电量 <span class="highlight">80.38亿kWh</span>，加权均价 <span class="highlight">317.62元/MWh</span>。发电侧：火电64.66亿kWh均价317.98元/MWh，风电0.96亿kWh均价314.94元/MWh，光伏0.30亿kWh均价314.00元/MWh，核电14.45亿kWh均价316.30元/MWh。<br>
+            现货市场出清（电量加权，基于统一结算点电价 xlsx 与日前/实时出清电量 csv 按行序对齐）：3月日前均价 <span class="highlight">307.91元/MWh</span>，出清电量约456.11亿kWh；实时均价 <span class="highlight">313.00元/MWh</span>，出清电量约453.14亿kWh。<br>
+            绿电交易：省内绿电4.59亿kWh（年度分月计划3.02亿kWh@405.18元/MWh、月度1.28亿kWh@405.89元/MWh、月内0.29亿kWh@394.52元/MWh）；省间绿电7.72亿kWh@349.74元/MWh。<br>
+            <strong>成因简析：</strong> 1）3月工商业复工达产、气温回升带动负荷，现货价格在部分时段高于2月春节月；2）中长期直接交易372.94亿kWh、均价331.09元/MWh，能量块55.88亿kWh、均价297.75元/MWh，反映锁价与灵活交易并行；3）现货分时仍呈早晚高峰特征，可结合下方分时图查看。</p>
+            <p><strong>📌 用电与市场供需：</strong> 截至3月底全社会用电量累计 <strong>2104.06亿kWh</strong>（同比+5.59%）。分产业累计：第一产业18.01亿kWh（+9.72%），第二产业1383.19亿kWh（+4.42%），第三产业384.83亿kWh（+9.22%），城乡居民生活318.03亿kWh（+6.27%）。下方「分产业用电量」表含 <strong>1—3月单月</strong>；3月各产业由「1—3月累计」与「1—2月累计」差分推算。</p>
+            <p><strong>📈 中长期市场：</strong> 3月全月直接交易电量372.94亿kWh，均价331.09元/MWh；其中年度交易225.11亿kWh（均价344.93）、集中竞价88.19亿kWh（均价315.73）、能量块55.88亿kWh（均价297.75）、月度及月内绿电3.76亿kWh（均价358.58）。与表「市场化交易情况」一致。</p>
+            <p><strong>⚡ 现货与结算：</strong> 3月用电侧结算合计855.95亿kWh，均价337.06元/MWh（直接交易用户14.87亿kWh@333.18、售电公司420.54亿kWh@326.49、零售市场420.54亿kWh@347.76）。现货不平衡及结构性偏差等费用详见信息披露报告。</p>
+            <p><strong>📊 市场主体：</strong> 截至3月31日，江苏电力市场经营主体共计194535家，其中发电企业2546家，售电公司438家，电力用户191426家（一类24家、二类191402家）；独立储能67家、虚拟电厂58家。</p>
+            <p class="note">注：现货出清均价按96点电价与出清电量加权核算；与月结算均价口径不同。分产业累计、中长期与结算数据来自《2026年3月江苏电网电力市场交易信息报告》；集中竞价来自《2026年3月江苏电力市场集中竞价交易结果公示》。</p>
+        </div>
+    </div>
+
+    <!-- 市场供需模块 -->
+    <div class="card">
+        <h2>🏭 市场供需情况 & 关键指标月度对比</h2>
+        <div class="overflow-x-auto">
+            <h3>📋 分产业用电量 (亿千瓦时，按月)</h3>
+            <table id="consumptionTable"><thead> <th>月份</th><th>全社会用电量</th><th>第一产业</th><th>第二产业</th><th>第三产业</th><th>城乡居民生活</th> </thead><tbody></tbody> </table>
+            <h3>⚙️ 发电装机容量 (万千瓦) 及占比</h3>
+            <table id="capacityTable"><thead> <th>月份</th><th>总装机</th><th>火电</th><th>风电</th><th>太阳能</th><th>核电</th><th>新能源占比</th> </thead><tbody></tbody> </table>
+            <h3>🔆 发电量结构 (亿千瓦时)</h3>
+            <table id="genStructureTable"><thead> <th>月份</th><th>类型</th><th>发电量</th><th>占比</th><th>同比(%)</th> </thead><tbody></tbody> </table>
+        </div>
+        <div class="chart-row"><h3>📊 分产业用电量对比</h3><div class="chart-box"><canvas id="industryConsumptionChart" width="800" height="400" style="max-height: 380px;"></canvas></div></div>
+        <div class="chart-row"><h3>📊 分市用电量对比 (亿kWh)</h3><div class="chart-box"><canvas id="cityConsumptionChart" width="800" height="400"></canvas><div class="note">全省13个地市截至2026年3月累计用电量（单位：亿kWh）</div></div></div>
+    </div>
+
+    <!-- 集中竞价交易模块 -->
+    <div class="card">
+        <h2>💹 集中竞价交易 (2026年3月)</h2>
+        <div class="overflow-x-auto">
+            <h3>📅 分时段成交量价情况</h3>
+            <table id="hourlyAuctionTable"><thead> <th>时段</th><th>成交电量(亿kWh)</th><th>成交价格(元/MWh)</th> </thead><tbody></tbody> </table>
+        </div>
+        <div class="chart-box">
+            <canvas id="hourlyAuctionChart" width="800" height="320" style="max-height: 300px;"></canvas>
+            <div class="note">🔹 3月集中竞价分时段成交电量与价格（24时段）</div>
+        </div>
+        <div class="grid-2col" style="margin-top:1rem;">
+            <div><h3>发电侧成交结构</h3><table id="genSideTable"><thead><th>类型</th><th>成交量(亿kWh)</th><th>均价(元/MWh)</th></thead><tbody></tbody></table></div>
+            <div><h3>购电侧成交结构</h3><table id="buySideTable"><thead><th>类型</th><th>成交量(亿kWh)</th><th>均价(元/MWh)</th></thead><tbody></tbody></table></div>
+        </div>
+    </div>
+
+    <!-- 现货市场模块 -->
+    <div class="card">
+        <h2>⚡ 现货市场交易 (3月)</h2>
+        <div class="overflow-x-auto">
+            <h3>📅 现货市场月度汇总 (日前/实时)</h3>
+            <table id="spotSummaryTable"><thead> <th>市场类型</th><th>出清电量(亿kWh)</th><th>加权均价(元/MWh)</th> </thead><tbody></tbody> </table>
+        </div>
+        <div style="margin-top: 1.5rem;">
+            <h3>📈 3月现货市场每日出清均价趋势</h3>
+            <div class="chart-box">
+                <canvas id="dailySpotPriceChart" width="800" height="320"></canvas>
+                <div class="note">🔹 日前均价 vs 实时均价 (元/MWh)，基于Excel文件96点电价加权平均核算</div>
+            </div>
+        </div>
+        <div class="data-table-wrapper"><h4>📋 3月现货市场每日明细表（全月31天）</h4><table id="dailySpotTable"><thead> <th>日期</th><th>日前均价(元/MWh)</th><th>实时均价(元/MWh)</th> </thead><tbody></tbody> </table></div>
+    </div>
+
+    <!-- 分时曲线模块 (24小时) 支持全月切换 -->
+    <div class="card">
+        <h2>⏱️ 分时曲线（24小时）- 真实数据</h2>
+        <div class="flex-row">
+            <label>选择日期：</label>
+            <select id="dateSelect"></select>
+            <span style="font-size:0.75rem; color:#5f7f8c;">展示所选日期24点日前/实时电价及电量（真实交易数据）</span>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="chart-container">
+            <div class="chart-box">
+                <canvas id="hourlyPriceChart" width="500" height="280"></canvas>
+                <div class="note">日前电价 vs 实时电价 (元/MWh)</div>
+            </div>
+            <div class="chart-box">
+                <canvas id="hourlyVolumeChart" width="500" height="280"></canvas>
+                <div class="note">日前电量 vs 实时电量 (MWh)</div>
+            </div>
+        </div>
+        
+        <!-- 单日统计信息 -->
+        <div class="stats-panel">
+            <h4 style="margin-bottom: 0.8rem; color: #1e4a62; text-align: center;">📊 当日汇总统计</h4>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">日前合计电量</div>
+                    <div class="stat-value" id="daTotalVol">-<span class="stat-unit">MWh</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">实时合计电量</div>
+                    <div class="stat-value" id="rtTotalVol">-<span class="stat-unit">MWh</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">日前加权均价</div>
+                    <div class="stat-value" id="daWeightedPrice">-<span class="stat-unit">元/MWh</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">实时加权均价</div>
+                    <div class="stat-value" id="rtWeightedPrice">-<span class="stat-unit">元/MWh</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="note" style="margin-top: 1rem;">注：电量数据为每小时真实交易数据，电价为对应时段价格。数据来源：江苏电力交易中心现货市场数据。</div>
+    </div>
+
+    <!-- 绿电交易与结算模块 -->
+    <div class="card">
+        <h2>🌱 绿电交易 & 市场结算</h2>
+        <div class="grid-2col">
+            <div>
+                <h3>省内绿电交易</h3>
+                <div class="overflow-x-auto">
+                    <table id="greenPowerTable">
+                        <thead><tr><th>品种</th><th>量价</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div>
+                <h3>用电侧结算情况</h3>
+                <div class="overflow-x-auto">
+                    <table id="settlementTable">
+                        <thead><tr><th>市场类型</th><th>结算电量(亿kWh)</th><th>结算均价(元/MWh)</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h3>市场主体注册情况</h3>
+            <div class="overflow-x-auto">
+                <table id="participantsTable">
+                    <thead><tr><th>主体类型</th><th>数量(家)</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="note">注：市场主体数据截至2026年3月31日，绿电交易包含年度、月度、月内品种。现货每日均价基于Excel文件96点电价加权平均计算。</div>
+    </div>
+
+    <footer>数据基于江苏电力交易中心2026年3月《江苏电网电力市场交易信息报告》、3月集中竞价交易结果公示，以及现货出清与统一结算点电价明细（2026-03-01—03-31）。分时曲线由96点电量与电价按24时段聚合。</footer>
+</div>
+
+<script>
+    if (window.Chart) { Chart.defaults.devicePixelRatio = Math.max(window.devicePixelRatio || 1, 2); }
+    // 等待 Chart.js 加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+        // 注册插件
+        if (typeof Chart !== 'undefined' && ChartDataLabels) {
+            Chart.register(ChartDataLabels);
+            Chart.defaults.set('plugins.datalabels', { color: '#1a2c3e', anchor: 'end', align: 'top', offset: 2, font: { weight: 'bold', size: 10 } });
+        }
+
+        // ===================== 1. 市场供需数据 =====================
+        const consumptionData = [
+        {
+                "month": "2026年1月",
+                "total": 815.58,
+                "primary": 6.42,
+                "secondary": 530.61,
+                "tertiary": 148.69,
+                "residential": 129.86
+        },
+        {
+                "month": "2026年2月",
+                "total": 552.71,
+                "primary": 5.24,
+                "secondary": 335.6,
+                "tertiary": 111.63,
+                "residential": 100.24
+        },
+        {
+                "month": "2026年3月",
+                "total": 735.77,
+                "primary": 6.35,
+                "secondary": 516.98,
+                "tertiary": 124.51,
+                "residential": 87.92
+        }
+];
+        const capacityData = {
+        "monthLabel": "2026年3月",
+        "total": 25982.22,
+        "thermal": 12174.59,
+        "wind": 2503.82,
+        "solar": 9369.67,
+        "nuclear": 660.8
+};
+        const generationData = [
+        {
+                "type": "火电",
+                "value": 314.11,
+                "pct": 73.3,
+                "yoy": "-12.7%"
+        },
+        {
+                "type": "水电",
+                "value": 4.31,
+                "pct": 1.0,
+                "yoy": "+30.8%"
+        },
+        {
+                "type": "核电",
+                "value": 33.59,
+                "pct": 7.8,
+                "yoy": "-17.3%"
+        },
+        {
+                "type": "风电",
+                "value": 47.92,
+                "pct": 11.2,
+                "yoy": "+23.0%"
+        },
+        {
+                "type": "太阳能",
+                "value": 24.23,
+                "pct": 5.7,
+                "yoy": "+18.0%"
+        },
+        {
+                "type": "储能",
+                "value": 4.3,
+                "pct": 1.0,
+                "yoy": "+39.2%"
+        }
+];
+        const cityConsumption = [
+            { name: "南京", value: 198.77 }, { name: "苏州", value: 450.97 }, { name: "无锡", value: 218.48 },
+            { name: "徐州", value: 127.20 }, { name: "常州", value: 163.62 }, { name: "镇江", value: 78.82 },
+            { name: "扬州", value: 93.37 }, { name: "泰州", value: 101.82 }, { name: "南通", value: 188.11 },
+            { name: "盐城", value: 126.98 }, { name: "淮安", value: 83.66 }, { name: "宿迁", value: 80.27 },
+            { name: "连云港", value: 97.47 }
+        ];
+
+        function renderMarketTables() {
+            const consumptionTbody = document.querySelector("#consumptionTable tbody");
+            if (consumptionTbody) {
+                consumptionTbody.innerHTML = consumptionData.map(d => `
+                    <tr><td>${d.month}</td><td>${d.total}</td><td>${d.primary}</td><td>${d.secondary}</td><td>${d.tertiary}</td><td>${d.residential}</td></tr>
+                `).join('');
+            }
+            const capacityTbody = document.querySelector("#capacityTable tbody");
+            if (capacityTbody) {
+                capacityTbody.innerHTML = `
+                    <tr><td>${capacityData.monthLabel}</td><td>${capacityData.total}</td><td>${capacityData.thermal}</td><td>${capacityData.wind}</td><td>${capacityData.solar}</td><td>${capacityData.nuclear}</td><td>${((capacityData.wind+capacityData.solar)/capacityData.total*100).toFixed(1)}%</td></tr>
+                `;
+            }
+            const genTbody = document.querySelector("#genStructureTable tbody");
+            if (genTbody) {
+                genTbody.innerHTML = generationData.map(g => `
+                    <tr><td>2026年3月*</td><td>${g.type}</td><td>${g.value}</td><td>${g.pct}%</td><td>${g.yoy}</td></tr>
+                `).join('');
+            }
+        }
+        
+        function initMarketCharts() {
+            const industryCtx = document.getElementById('industryConsumptionChart');
+            if (industryCtx && typeof Chart !== 'undefined') {
+                new Chart(industryCtx, {
+                    type: 'bar', data: { labels: ['第一产业', '第二产业', '第三产业', '城乡居民生活'],
+                        datasets: [{ label: '2026年3月用电量', data: [6.35, 516.98, 124.51, 87.92], backgroundColor: '#2c7da0' }] },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}亿kWh` } }, datalabels: { formatter: (v) => v.toFixed(1) } } }
+                });
+            }
+            const cityCtx = document.getElementById('cityConsumptionChart');
+            if (cityCtx && typeof Chart !== 'undefined') {
+                new Chart(cityCtx, {
+                    type: 'bar', data: { labels: cityConsumption.map(c => c.name), datasets: [{ label: '截至2026年3月累计用电量', data: cityConsumption.map(c => c.value), backgroundColor: '#e67e22' }] },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { datalabels: { formatter: (v) => v.toFixed(1), angle: -45 } }, scales: { y: { title: { text: '亿kWh' } } } }
+                });
+            }
+        }
+
+        // ===================== 2. 集中竞价数据 =====================
+                        const hourlyAuction = [
+            { hour: "1时", vol: 3.87, price: 318 },
+            { hour: "2时", vol: 4.08, price: 316.85 },
+            { hour: "3时", vol: 4.56, price: 320 },
+            { hour: "4时", vol: 5.02, price: 312.8 },
+            { hour: "5时", vol: 4.35, price: 312.8 },
+            { hour: "6时", vol: 4.68, price: 312.8 },
+            { hour: "7时", vol: 3.45, price: 312.8 },
+            { hour: "8时", vol: 3.33, price: 312.8 },
+            { hour: "9时", vol: 2.26, price: 312.8 },
+            { hour: "10时", vol: 1.78, price: 312.8 },
+            { hour: "11时", vol: 1.69, price: 312.8 },
+            { hour: "12时", vol: 1.66, price: 312.8 },
+            { hour: "13时", vol: 1.61, price: 312.8 },
+            { hour: "14时", vol: 1.67, price: 312.8 },
+            { hour: "15时", vol: 1.66, price: 312.8 },
+            { hour: "16时", vol: 3.05, price: 312.8 },
+            { hour: "17时", vol: 3.8, price: 330 },
+            { hour: "18时", vol: 4, price: 331.5 },
+            { hour: "19时", vol: 3.83, price: 330 },
+            { hour: "20时", vol: 4.01, price: 320 },
+            { hour: "21时", vol: 4.02, price: 320 },
+            { hour: "22时", vol: 3.83, price: 320 },
+            { hour: "23时", vol: 3.74, price: 320 },
+            { hour: "24时", vol: 4.43, price: 312.8 },
+        ];
+        const genSide = [
+            { type: "火电", vol: 64.66, price: 317.98 }, { type: "风电", vol: 0.96, price: 314.94 },
+            { type: "光伏", vol: 0.30, price: 314.00 }, { type: "核电", vol: 14.45, price: 316.30 },
+            { type: "发电类虚拟电厂", vol: 0.00024, price: 316.90 }
+        ];
+        const buySide = [
+            { type: "售电公司", vol: 48.61, price: 317.92 }, { type: "一类用户", vol: 0.37, price: 317.26 },
+            { type: "国网代理购电", vol: 31.40451, price: 317.17 }
+        ];
+
+        function renderAuctionTables() {
+            const hourlyTbody = document.querySelector("#hourlyAuctionTable tbody");
+            if (hourlyTbody) {
+                hourlyTbody.innerHTML = hourlyAuction.map(h => `<tr><td>${h.hour}</td><td>${h.vol}</td><td>${h.price}</td></tr>`).join('');
+            }
+            const genTbody = document.querySelector("#genSideTable tbody");
+            if (genTbody) {
+                genTbody.innerHTML = genSide.map(g => `<tr><td>${g.type}</td><td>${g.vol}</td><td>${g.price}</td></tr>`).join('');
+            }
+            const buyTbody = document.querySelector("#buySideTable tbody");
+            if (buyTbody) {
+                buyTbody.innerHTML = buySide.map(b => `<tr><td>${b.type}</td><td>${b.vol}</td><td>${b.price}</td></tr>`).join('');
+            }
+        }
+        
+        function initAuctionChart() {
+            const auctionCtx = document.getElementById('hourlyAuctionChart');
+            if (auctionCtx && typeof Chart !== 'undefined') {
+                new Chart(auctionCtx, {
+                    type: 'line', data: {
+                        labels: hourlyAuction.map(h => h.hour),
+                        datasets: [
+                            { label: '成交电量 (亿kWh)', data: hourlyAuction.map(h => h.vol), borderColor: '#3498db', yAxisID: 'y', fill: false, tension: 0.2 },
+                            { label: '成交价格 (元/MWh)', data: hourlyAuction.map(h => h.price), borderColor: '#e74c3c', yAxisID: 'y1', fill: false, tension: 0.2 }
+                        ]
+                    }, options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { text: '电量(亿kWh)' } }, y1: { position: 'right', beginAtZero: true, title: { text: '价格(元/MWh)' } } }, plugins: { datalabels: { display: false } } }
+                });
+            }
+        }
+
+        // ===================== 3. 现货每日均价 =====================
+        const dailySpotMar = [
+        {
+                "date": "2026-03-01",
+                "daPrice": 263.1156246963431,
+                "rtPrice": 250.84203948100216
+        },
+        {
+                "date": "2026-03-02",
+                "daPrice": 247.3294787670795,
+                "rtPrice": 258.1782845551671
+        },
+        {
+                "date": "2026-03-03",
+                "daPrice": 307.3968775915418,
+                "rtPrice": 309.7294594148819
+        },
+        {
+                "date": "2026-03-04",
+                "daPrice": 305.95383897895596,
+                "rtPrice": 375.0513668051863
+        },
+        {
+                "date": "2026-03-05",
+                "daPrice": 322.72427069904387,
+                "rtPrice": 327.892533338836
+        },
+        {
+                "date": "2026-03-06",
+                "daPrice": 291.0873788945143,
+                "rtPrice": 301.716525252685
+        },
+        {
+                "date": "2026-03-07",
+                "daPrice": 314.18733544631067,
+                "rtPrice": 298.51737203647417
+        },
+        {
+                "date": "2026-03-08",
+                "daPrice": 313.64235839399777,
+                "rtPrice": 296.7012286291094
+        },
+        {
+                "date": "2026-03-09",
+                "daPrice": 314.3980830835574,
+                "rtPrice": 295.6254930845387
+        },
+        {
+                "date": "2026-03-10",
+                "daPrice": 293.09531006661757,
+                "rtPrice": 289.7419646169271
+        },
+        {
+                "date": "2026-03-11",
+                "daPrice": 317.3251706790318,
+                "rtPrice": 309.9959964317149
+        },
+        {
+                "date": "2026-03-12",
+                "daPrice": 288.96759518778515,
+                "rtPrice": 306.22556810010707
+        },
+        {
+                "date": "2026-03-13",
+                "daPrice": 292.3677610980293,
+                "rtPrice": 296.8892602444227
+        },
+        {
+                "date": "2026-03-14",
+                "daPrice": 280.7501368623014,
+                "rtPrice": 283.84983813060336
+        },
+        {
+                "date": "2026-03-15",
+                "daPrice": 304.1479724192958,
+                "rtPrice": 308.24625867013435
+        },
+        {
+                "date": "2026-03-16",
+                "daPrice": 314.64338636324703,
+                "rtPrice": 330.1664188164294
+        },
+        {
+                "date": "2026-03-17",
+                "daPrice": 319.4471733186008,
+                "rtPrice": 351.40622582450163
+        },
+        {
+                "date": "2026-03-18",
+                "daPrice": 326.75651286613413,
+                "rtPrice": 352.2868393805315
+        },
+        {
+                "date": "2026-03-19",
+                "daPrice": 306.91043567892075,
+                "rtPrice": 319.0974080880663
+        },
+        {
+                "date": "2026-03-20",
+                "daPrice": 313.0420062247874,
+                "rtPrice": 319.5725319044218
+        },
+        {
+                "date": "2026-03-21",
+                "daPrice": 296.7250140643719,
+                "rtPrice": 300.5533535268848
+        },
+        {
+                "date": "2026-03-22",
+                "daPrice": 313.23601931435394,
+                "rtPrice": 298.46493666394804
+        },
+        {
+                "date": "2026-03-23",
+                "daPrice": 314.10145525164774,
+                "rtPrice": 307.01229009848913
+        },
+        {
+                "date": "2026-03-24",
+                "daPrice": 341.91909307602396,
+                "rtPrice": 345.0480610050133
+        },
+        {
+                "date": "2026-03-25",
+                "daPrice": 309.24711884492604,
+                "rtPrice": 310.5223530746611
+        },
+        {
+                "date": "2026-03-26",
+                "daPrice": 308.19079787913023,
+                "rtPrice": 311.6915322450596
+        },
+        {
+                "date": "2026-03-27",
+                "daPrice": 314.0461743653997,
+                "rtPrice": 330.0555174005852
+        },
+        {
+                "date": "2026-03-28",
+                "daPrice": 304.5876595230659,
+                "rtPrice": 300.1593477174407
+        },
+        {
+                "date": "2026-03-29",
+                "daPrice": 281.8403815882587,
+                "rtPrice": 286.69267230860976
+        },
+        {
+                "date": "2026-03-30",
+                "daPrice": 333.3891036293666,
+                "rtPrice": 351.6759641887312
+        },
+        {
+                "date": "2026-03-31",
+                "daPrice": 364.8030901667764,
+                "rtPrice": 334.20083879551566
+        },
+];
+        const spotSummary = [
+        {
+                "market": "日前市场",
+                "volume": 456.11,
+                "price": 307.90764987094923
+        },
+        {
+                "market": "实时市场",
+                "volume": 453.14,
+                "price": 312.9974124574089
+        }
+];
+
+        function renderSpotTables() {
+            const spotTbody = document.querySelector("#spotSummaryTable tbody");
+            if (spotTbody) {
+                spotTbody.innerHTML = spotSummary.map(s => `<tr><td class="text-left">${s.market}</td><td>${s.volume}</td><td>${s.price.toFixed(2)}</td></tr>`).join('');
+            }
+            const dailyTbody = document.querySelector("#dailySpotTable tbody");
+            if (dailyTbody) {
+                dailyTbody.innerHTML = dailySpotMar.map(d => `<tr><td>${d.date}</td><td>${d.daPrice.toFixed(2)}</td><td>${d.rtPrice.toFixed(2)}</td></tr>`).join('');
+            }
+        }
+        
+        function initDailySpotChart() {
+            const spotCtx = document.getElementById('dailySpotPriceChart');
+            if (spotCtx && typeof Chart !== 'undefined') {
+                const labels = dailySpotMar.map(d => d.date.slice(5));
+                new Chart(spotCtx, {
+                    type: 'line', data: { labels, datasets: [
+                        { label: '日前均价 (元/MWh)', data: dailySpotMar.map(d => d.daPrice), borderColor: '#3498db', fill: false, tension: 0.2 },
+                        { label: '实时均价 (元/MWh)', data: dailySpotMar.map(d => d.rtPrice), borderColor: '#e74c3c', fill: false, tension: 0.2 }
+                    ] }, options: { responsive: true, maintainAspectRatio: true, plugins: { datalabels: { display: false } }, scales: { y: { title: { text: '均价 (元/MWh)' } } } }
+                });
+            }
+        }
+
+        // ===================== 4. 分时曲线数据（真实数据）=====================
+const hourlyRealData = {
+    "2026-03-01": {
+        "daPrice": [
+            284.280711241231,
+            277.0048445952206,
+            277.10840141784234,
+            269.30953817255767,
+            266.9323536430662,
+            274.6090797745282,
+            274.81477266486144,
+            267.9438438618994,
+            273.7499800858236,
+            273.48080178485185,
+            266.630580484225,
+            274.98907518938654,
+            277.9098031297645,
+            262.51688323713694,
+            245.70481595643403,
+            260.77478494276966,
+            258.7499194034725,
+            250.88005150206203,
+            248.53929516454656,
+            245.29756341148845,
+            249.68552099325598,
+            263.6901155394289,
+            253.61672745328593,
+            218.78374546125485
+        ],
+        "rtPrice": [
+            275.24881790922393,
+            263.4432145491697,
+            251.23648551751157,
+            230.3419785520167,
+            226.2978515565943,
+            237.47802126863238,
+            254.12394931455137,
+            256.56642757184784,
+            271.85246866142774,
+            270.44601588125323,
+            280.5116998910449,
+            273.5912851938257,
+            280.0654701281995,
+            275.782897602982,
+            263.7401397904755,
+            250.35428668973202,
+            245.06739564671574,
+            228.62451957229635,
+            233.02506783469664,
+            231.03404418738228,
+            234.66223392582845,
+            246.57865836248988,
+            227.65195702956598,
+            199.99999999999997
+        ],
+        "daVol": [
+            54923.7,
+            56124.40000000001,
+            56988.0,
+            55367.0,
+            55731.899999999994,
+            59111.59999999999,
+            60085.3,
+            59875.200000000004,
+            62267.200000000004,
+            61495.3,
+            60773.4,
+            61567.200000000004,
+            62899.3,
+            61558.100000000006,
+            60083.6,
+            62029.99999999999,
+            61851.3,
+            61395.600000000006,
+            61222.799999999996,
+            60478.0,
+            61357.8,
+            63277.1,
+            61828.3,
+            57449.8
+        ],
+        "rtVol": [
+            55126.9,
+            55986.700000000004,
+            57179.399999999994,
+            55231.3,
+            56222.1,
+            58245.4,
+            59078.100000000006,
+            58596.0,
+            60508.5,
+            60121.2,
+            62594.6,
+            62582.0,
+            65608.7,
+            64868.100000000006,
+            62035.7,
+            61217.399999999994,
+            61176.8,
+            59545.9,
+            60477.9,
+            59890.4,
+            60152.399999999994,
+            61992.9,
+            59845.8,
+            54739.200000000004
+        ],
+        "daTotalVol": 1439741.9000000004,
+        "rtTotalVol": 1433023.3999999994,
+        "daWeightedPrice": 263.1156246963431,
+        "rtWeightedPrice": 250.84203948100227
+    },
+    "2026-03-02": {
+        "daPrice": [
+            200.00000000000003,
+            201.38362469958912,
+            212.41472308283284,
+            200.0,
+            200.0,
+            200.0,
+            200.0,
+            220.46248442051314,
+            276.62337763441525,
+            253.2532228600394,
+            262.33499586976484,
+            258.5297589033357,
+            258.7460497842489,
+            257.9735288674013,
+            254.03574398789837,
+            262.66069922210437,
+            274.1717119395505,
+            267.0890237922939,
+            266.8106866594888,
+            269.9515150032126,
+            274.1845348601698,
+            277.14870943496607,
+            275.85523845799355,
+            263.9408064689556
+        ],
+        "rtPrice": [
+            212.1032215863828,
+            207.78102145860765,
+            222.31373226521242,
+            205.3081208590199,
+            210.53187098561617,
+            201.36201681154841,
+            200.0,
+            245.52702494172414,
+            264.7858220728237,
+            272.195119574898,
+            278.8459151620776,
+            275.8748491873913,
+            281.7243966823408,
+            281.7505208459387,
+            276.32669609890644,
+            278.3328798982917,
+            275.8994007696617,
+            269.9131768278332,
+            273.5583522309205,
+            276.47906390209727,
+            283.79108901461035,
+            288.8074599422117,
+            284.4972829779373,
+            269.4555924461954
+        ],
+        "daVol": [
+            54980.399999999994,
+            56755.6,
+            55709.799999999996,
+            53926.0,
+            53284.6,
+            53763.8,
+            51012.8,
+            57126.399999999994,
+            64483.0,
+            60762.8,
+            60650.3,
+            61597.7,
+            61923.2,
+            62134.100000000006,
+            61347.1,
+            63350.399999999994,
+            64847.5,
+            63428.1,
+            63436.100000000006,
+            63343.100000000006,
+            64185.00000000001,
+            64661.600000000006,
+            63797.4,
+            59521.2
+        ],
+        "rtVol": [
+            54730.8,
+            58167.8,
+            59706.1,
+            57293.200000000004,
+            57029.3,
+            55723.600000000006,
+            54826.8,
+            61174.600000000006,
+            65923.6,
+            66920.4,
+            67936.59999999999,
+            68280.1,
+            70157.90000000001,
+            70241.5,
+            68088.6,
+            69138.9,
+            68003.90000000001,
+            65007.3,
+            66322.4,
+            67087.0,
+            68246.1,
+            69287.4,
+            67117.59999999999,
+            61653.7
+        ],
+        "daTotalVol": 1440028.0,
+        "rtTotalVol": 1538065.2,
+        "daWeightedPrice": 247.3294787670795,
+        "rtWeightedPrice": 258.17828455516707
+    },
+    "2026-03-03": {
+        "daPrice": [
+            275.0423113493677,
+            276.6831355130222,
+            279.71366425672744,
+            278.1964668768648,
+            275.0207556795702,
+            273.78949028942463,
+            273.09101997934715,
+            288.52201789822595,
+            305.1342148585455,
+            308.1579302584074,
+            304.87752938332113,
+            305.4175290804183,
+            316.1588168553668,
+            296.4317312642085,
+            291.04652759153913,
+            296.92797678496777,
+            308.15744721383004,
+            338.68535093340284,
+            387.07012209476005,
+            394.90583352401643,
+            323.4688991803036,
+            309.1618469126781,
+            315.2154853808506,
+            313.4197684937608
+        ],
+        "rtPrice": [
+            273.2573875828404,
+            258.27253130335794,
+            263.25244656732895,
+            259.18732635000254,
+            259.07588638211615,
+            261.8868488126891,
+            283.6811110650871,
+            306.94985662649106,
+            316.4407223324291,
+            378.0406211559588,
+            495.13884727074327,
+            322.80434891006706,
+            323.5367374289914,
+            312.09139006701105,
+            297.04866297529117,
+            300.3639517928062,
+            311.68646110656755,
+            303.58397864461307,
+            301.16503032749984,
+            303.5040135986401,
+            298.89562145731054,
+            300.86106927782555,
+            317.35713802001067,
+            314.8880869802485
+        ],
+        "daVol": [
+            59842.100000000006,
+            60020.799999999996,
+            60914.40000000001,
+            59055.399999999994,
+            57627.6,
+            56798.9,
+            55682.5,
+            62330.2,
+            70888.5,
+            72513.4,
+            72796.4,
+            71508.6,
+            71215.29999999999,
+            71875.80000000002,
+            70101.2,
+            68886.4,
+            70866.1,
+            70537.6,
+            72640.3,
+            72546.20000000001,
+            67586.0,
+            65688.0,
+            66956.7,
+            64888.100000000006
+        ],
+        "rtVol": [
+            58999.0,
+            59035.200000000004,
+            62326.100000000006,
+            61164.700000000004,
+            60631.3,
+            59988.5,
+            57940.8,
+            64516.8,
+            68608.3,
+            73002.6,
+            77343.4,
+            72999.9,
+            74093.1,
+            73987.8,
+            69007.7,
+            65492.299999999996,
+            68962.8,
+            66456.3,
+            64644.3,
+            65006.50000000001,
+            63228.8,
+            63001.399999999994,
+            66154.9,
+            63402.90000000001
+        ],
+        "daTotalVol": 1593766.5000000002,
+        "rtTotalVol": 1579995.4,
+        "daWeightedPrice": 307.3968775915418,
+        "rtWeightedPrice": 309.72945941488183
+    },
+    "2026-03-04": {
+        "daPrice": [
+            311.32564495919434,
+            306.754518881277,
+            300.99580404822353,
+            297.06835909121463,
+            297.24639493389975,
+            296.70758207554593,
+            300.4667152686763,
+            307.0231025898888,
+            309.2294018092056,
+            306.4520795958622,
+            309.9264297848661,
+            303.5368520014381,
+            301.47756744455796,
+            300.4519745005249,
+            299.7665863096631,
+            305.6916921375443,
+            313.9860833045182,
+            308.55801230458115,
+            309.3256589966398,
+            311.3887810728623,
+            310.74020274028686,
+            312.1794157241078,
+            313.6535310417687,
+            305.34123154128025
+        ],
+        "rtPrice": [
+            315.92904415318054,
+            314.5039538821566,
+            317.414730216521,
+            313.9793022245163,
+            309.70210033453395,
+            312.5255342996517,
+            310.39989521077445,
+            322.83349793168514,
+            362.726024212244,
+            628.2250970294828,
+            596.0421663720614,
+            485.49051204515416,
+            437.4470464532125,
+            553.1826183997548,
+            365.45893030846935,
+            334.4905460848986,
+            334.04254977625897,
+            322.65787632496136,
+            319.9859274787108,
+            315.90252066963865,
+            312.7446670370571,
+            320.49898460221056,
+            323.05322963267093,
+            314.9640897755611
+        ],
+        "daVol": [
+            62969.09999999999,
+            62810.899999999994,
+            63968.799999999996,
+            62492.2,
+            60922.6,
+            62232.3,
+            61040.0,
+            64435.2,
+            67654.0,
+            67224.6,
+            67929.8,
+            66479.7,
+            65694.7,
+            64958.2,
+            64089.0,
+            66186.7,
+            69408.0,
+            66658.09999999999,
+            67287.9,
+            68202.6,
+            67416.3,
+            67820.7,
+            67773.2,
+            62849.7
+        ],
+        "rtVol": [
+            61044.3,
+            61832.899999999994,
+            64820.5,
+            63739.7,
+            62385.299999999996,
+            63077.899999999994,
+            61456.7,
+            66140.8,
+            73417.4,
+            79151.2,
+            80107.2,
+            79301.6,
+            77034.5,
+            77286.9,
+            73709.1,
+            72340.4,
+            73388.4,
+            69577.5,
+            68884.6,
+            67720.1,
+            68216.3,
+            69834.70000000001,
+            70144.20000000001,
+            65523.4
+        ],
+        "daTotalVol": 1568504.2999999998,
+        "rtTotalVol": 1670135.5999999999,
+        "daWeightedPrice": 305.953838978956,
+        "rtWeightedPrice": 375.0513668051863
+    },
+    "2026-03-05": {
+        "daPrice": [
+            318.23599789489606,
+            316.1792613383968,
+            311.37384160969174,
+            307.34986561473124,
+            306.64903327183436,
+            310.1289949500812,
+            309.9489653890259,
+            317.7915874189451,
+            320.0762767867831,
+            315.15464196165976,
+            321.99525630896034,
+            329.1918386139675,
+            331.06571984756613,
+            327.68768193032895,
+            325.23857364287875,
+            333.3935338208054,
+            337.524681556351,
+            331.1304403849245,
+            334.7879420354064,
+            331.8641398325085,
+            329.88732377497945,
+            328.67192156258335,
+            325.2231046831715,
+            314.1543967687137
+        ],
+        "rtPrice": [
+            319.1201636967139,
+            323.25092296527936,
+            334.4469893619004,
+            330.42649277052004,
+            330.38475994607205,
+            324.7886901400455,
+            321.0631082776629,
+            334.717164156393,
+            332.35114906460626,
+            324.9503486493295,
+            335.9718641886596,
+            331.62489011700956,
+            328.70575079640474,
+            331.87709620254265,
+            322.58667917816956,
+            328.33634084731455,
+            331.64757155386167,
+            327.90441757946786,
+            332.7279240793892,
+            326.71118406060236,
+            326.5258663694583,
+            327.0770622450909,
+            324.01466952614254,
+            315.32693407767323
+        ],
+        "daVol": [
+            64794.90000000001,
+            66409.30000000002,
+            66696.0,
+            64516.0,
+            62494.3,
+            62020.8,
+            60781.3,
+            64786.3,
+            66824.0,
+            65487.40000000001,
+            69230.9,
+            70913.20000000001,
+            71558.9,
+            70686.4,
+            69934.8,
+            72017.8,
+            72461.8,
+            70933.4,
+            71326.29999999999,
+            70761.8,
+            70137.6,
+            70073.7,
+            68803.8,
+            62810.9
+        ],
+        "rtVol": [
+            64411.8,
+            66833.5,
+            69721.1,
+            68960.7,
+            68461.7,
+            66935.4,
+            64875.799999999996,
+            69003.1,
+            68516.59999999999,
+            65108.399999999994,
+            70556.70000000001,
+            68686.7,
+            68934.8,
+            69464.9,
+            66179.1,
+            67656.1,
+            68640.6,
+            67804.1,
+            68845.6,
+            67139.3,
+            67113.4,
+            68235.09999999999,
+            67518.2,
+            63841.799999999996
+        ],
+        "daTotalVol": 1626461.6,
+        "rtTotalVol": 1623444.5000000005,
+        "daWeightedPrice": 322.72427069904387,
+        "rtWeightedPrice": 327.89253333883596
+    },
+    "2026-03-06": {
+        "daPrice": [
+            318.0517078885465,
+            313.7661834819267,
+            312.52139771851466,
+            308.26951080117954,
+            301.5624878377123,
+            293.32369756795805,
+            285.15659572344623,
+            293.13215653773614,
+            298.12799681042543,
+            275.1228705974689,
+            266.71462054886547,
+            240.89434144874696,
+            228.96338933356128,
+            234.3434340383676,
+            252.82271019850637,
+            282.2130038032147,
+            310.3835402046153,
+            314.4743574136627,
+            312.11362233466167,
+            309.51704436937473,
+            307.91891940556314,
+            299.7556406680833,
+            306.2152019680289,
+            308.2765285706158
+        ],
+        "rtPrice": [
+            310.47686143326564,
+            311.20538493701486,
+            316.15885730196635,
+            315.808192072208,
+            313.2515378685501,
+            310.9044445069419,
+            305.09413161146324,
+            295.78958146163615,
+            290.4798679847435,
+            273.95439762693854,
+            304.3023278322687,
+            288.125250676238,
+            278.6833114770023,
+            243.6456471372992,
+            251.2994674631377,
+            268.8465579615495,
+            305.60539832083754,
+            321.9529197247905,
+            326.38356454978253,
+            321.15654657453354,
+            316.2361798885433,
+            316.5498987908591,
+            321.463284701827,
+            319.0176008121671
+        ],
+        "daVol": [
+            64787.600000000006,
+            63405.7,
+            63967.100000000006,
+            62465.4,
+            61357.7,
+            60640.399999999994,
+            60118.5,
+            64794.6,
+            68723.90000000001,
+            66254.5,
+            65345.700000000004,
+            63853.8,
+            62005.7,
+            60592.8,
+            60617.7,
+            65181.700000000004,
+            70776.70000000001,
+            69659.9,
+            68105.79999999999,
+            67019.2,
+            65534.299999999996,
+            63249.600000000006,
+            64470.59999999999,
+            63274.8
+        ],
+        "rtVol": [
+            62418.299999999996,
+            63618.2,
+            66082.2,
+            65233.8,
+            64082.2,
+            64002.600000000006,
+            62722.5,
+            65114.7,
+            64235.0,
+            63243.2,
+            70980.2,
+            71017.9,
+            67943.7,
+            61765.100000000006,
+            61404.200000000004,
+            63161.7,
+            67676.6,
+            69677.79999999999,
+            71794.20000000001,
+            71461.79999999999,
+            69838.8,
+            68916.7,
+            69392.6,
+            67375.3
+        ],
+        "daTotalVol": 1546203.7000000002,
+        "rtTotalVol": 1593159.3,
+        "daWeightedPrice": 291.08737889451425,
+        "rtWeightedPrice": 301.716525252685
+    },
+    "2026-03-07": {
+        "daPrice": [
+            331.2724452602981,
+            321.50935539800844,
+            325.38204076727806,
+            321.2526422980282,
+            316.0087600598248,
+            313.9656613226293,
+            312.7629446823611,
+            318.7449295746715,
+            313.7668724144724,
+            297.4876095392266,
+            293.5918541943971,
+            275.1658625840548,
+            270.66719180786566,
+            266.8395640010502,
+            273.9458206636059,
+            297.76680489650744,
+            322.8353828816121,
+            330.5548559841266,
+            332.91063347116926,
+            330.9355504362176,
+            327.8715305268363,
+            331.45742601128427,
+            350.7855412389281,
+            333.62296072995525
+        ],
+        "rtPrice": [
+            321.33950526934285,
+            317.5550444329088,
+            319.2630555199288,
+            312.6428530275969,
+            313.6518645078289,
+            315.05000706629437,
+            316.75964612836447,
+            312.6918902671406,
+            281.7032815839703,
+            202.1170749338264,
+            200.0,
+            200.00000000000003,
+            199.99999999999997,
+            200.00000000000003,
+            200.00000000000003,
+            236.36156635930504,
+            304.75078733191793,
+            328.00045189831985,
+            333.68046049463777,
+            339.6595201440688,
+            337.4867632308905,
+            335.5968144392701,
+            346.23254287419985,
+            332.41999185801325
+        ],
+        "daVol": [
+            68095.0,
+            66096.59999999999,
+            66573.0,
+            64911.3,
+            63184.5,
+            62555.7,
+            61996.5,
+            65551.70000000001,
+            67007.59999999999,
+            64554.5,
+            64159.4,
+            60719.3,
+            58504.899999999994,
+            57513.9,
+            56762.600000000006,
+            61178.3,
+            67349.8,
+            68794.5,
+            69648.0,
+            69323.2,
+            67144.2,
+            68165.8,
+            71013.0,
+            68102.8
+        ],
+        "rtVol": [
+            66545.3,
+            64726.8,
+            66273.5,
+            64220.899999999994,
+            63738.0,
+            63682.6,
+            63333.700000000004,
+            62712.3,
+            56844.5,
+            46619.8,
+            46370.9,
+            39249.899999999994,
+            36346.3,
+            35669.7,
+            37229.2,
+            46405.7,
+            58780.8,
+            66298.1,
+            68535.0,
+            69633.4,
+            68893.7,
+            68779.09999999999,
+            69849.70000000001,
+            67059.8
+        ],
+        "daTotalVol": 1558906.1,
+        "rtTotalVol": 1397798.7,
+        "daWeightedPrice": 314.1873354463108,
+        "rtWeightedPrice": 298.5173720364743
+    },
+    "2026-03-08": {
+        "daPrice": [
+            330.26698289285395,
+            325.1375126548622,
+            327.2148415257896,
+            322.5996416950483,
+            319.6297400319083,
+            319.50524762963107,
+            315.50523108543587,
+            318.51209401824605,
+            313.35957441097855,
+            298.440174513846,
+            292.4439070870512,
+            276.5712572252787,
+            274.56199237687224,
+            274.19872244636525,
+            278.4916358756629,
+            302.2831306805474,
+            319.2293790083442,
+            325.48245281337114,
+            327.0313996200513,
+            326.5064629939764,
+            326.78898753094614,
+            326.38917122308686,
+            332.66518411961,
+            326.1706902970723
+        ],
+        "rtPrice": [
+            325.930415620538,
+            323.3604455873004,
+            328.23781665476565,
+            327.666502490263,
+            325.87820497839897,
+            318.5280331061344,
+            316.1982887443163,
+            310.2798365169212,
+            289.1862996064041,
+            203.01538262146826,
+            204.25610684484488,
+            202.2263318195281,
+            203.86550818551424,
+            205.39949084189627,
+            201.21895875695378,
+            252.31884552973202,
+            309.63649461315987,
+            322.6305470714913,
+            324.38685423062867,
+            325.79198581016243,
+            328.10953330447563,
+            327.4035087988557,
+            325.12634435072164,
+            319.0066639374609
+        ],
+        "daVol": [
+            66597.90000000001,
+            64500.899999999994,
+            65086.3,
+            63186.399999999994,
+            61676.8,
+            61551.6,
+            60914.7,
+            63060.100000000006,
+            63338.100000000006,
+            60006.7,
+            59453.5,
+            56018.600000000006,
+            54806.9,
+            54330.399999999994,
+            54101.3,
+            59017.2,
+            63804.4,
+            65071.40000000001,
+            65745.7,
+            66040.6,
+            66244.0,
+            66115.5,
+            67847.2,
+            65001.0
+        ],
+        "rtVol": [
+            64643.100000000006,
+            63233.4,
+            64699.799999999996,
+            63366.8,
+            62473.9,
+            60593.0,
+            59424.2,
+            58477.0,
+            54065.6,
+            45137.3,
+            45108.399999999994,
+            40516.0,
+            41542.9,
+            40046.5,
+            39097.5,
+            45849.6,
+            57983.899999999994,
+            63059.4,
+            63221.100000000006,
+            63876.7,
+            65147.4,
+            65156.2,
+            64386.100000000006,
+            61312.09999999999
+        ],
+        "daTotalVol": 1493517.2,
+        "rtTotalVol": 1352417.9000000001,
+        "daWeightedPrice": 313.6423583939978,
+        "rtWeightedPrice": 296.7012286291093
+    },
+    "2026-03-09": {
+        "daPrice": [
+            317.5529296225987,
+            316.13802886884383,
+            318.54055862694804,
+            316.03979872950293,
+            313.55578630995217,
+            313.08954625434836,
+            309.01426641817835,
+            316.652805327599,
+            320.23425348610783,
+            318.26589573625677,
+            314.17728072958465,
+            300.8598514577808,
+            292.94481308692565,
+            286.32310335034606,
+            292.8362617410163,
+            310.73035040282866,
+            324.44263010635507,
+            324.62707829846755,
+            325.8598442108798,
+            324.183177277809,
+            326.9035820053589,
+            326.1449010743765,
+            315.59737651714494,
+            312.26431199447785
+        ],
+        "rtPrice": [
+            315.22317121948083,
+            319.35835305442356,
+            324.3083867492161,
+            323.6751249056934,
+            324.32568593301187,
+            323.13675767254097,
+            317.13639338620925,
+            311.4236587687546,
+            278.5410402485426,
+            202.35661254105977,
+            202.6402929867189,
+            200.0,
+            201.48606475750833,
+            205.23067493267507,
+            201.11689527745037,
+            229.09999414405232,
+            286.929351698014,
+            312.5949948844061,
+            329.51354915696385,
+            339.7819046568238,
+            343.17651404254843,
+            347.6715881368094,
+            324.6791637576127,
+            317.9951788789286
+        ],
+        "daVol": [
+            60789.399999999994,
+            60175.600000000006,
+            60938.700000000004,
+            59929.3,
+            59057.5,
+            59332.799999999996,
+            58487.0,
+            63803.600000000006,
+            67890.90000000001,
+            65111.799999999996,
+            64299.6,
+            62406.5,
+            61453.7,
+            61620.5,
+            62015.5,
+            65387.6,
+            70838.2,
+            69060.1,
+            69093.4,
+            68426.5,
+            68782.70000000001,
+            68197.7,
+            63350.90000000001,
+            60556.2
+        ],
+        "rtVol": [
+            59003.8,
+            60045.7,
+            62185.0,
+            61766.6,
+            61551.200000000004,
+            61681.00000000001,
+            60443.399999999994,
+            61771.59999999999,
+            57294.0,
+            46182.7,
+            42391.0,
+            40413.0,
+            42978.8,
+            42777.6,
+            43946.6,
+            49522.299999999996,
+            59345.8,
+            64899.600000000006,
+            71147.6,
+            72506.5,
+            72002.6,
+            71077.0,
+            65170.100000000006,
+            62659.700000000004
+        ],
+        "daTotalVol": 1531005.6999999997,
+        "rtTotalVol": 1392763.2000000002,
+        "daWeightedPrice": 314.39808308355754,
+        "rtWeightedPrice": 295.6254930845387
+    },
+    "2026-03-10": {
+        "daPrice": [
+            320.72639632348415,
+            318.41487798185875,
+            320.6430553313263,
+            318.1952596946066,
+            315.3026858310273,
+            313.9553508586246,
+            310.7234157887208,
+            307.1927543755201,
+            295.6666377894399,
+            267.2244241478689,
+            249.65708910706007,
+            217.9436191342173,
+            219.59651709454775,
+            217.7100324309217,
+            217.78617296707267,
+            284.2735699235825,
+            314.78574351397936,
+            319.6168501461666,
+            309.28330107751856,
+            306.65724926805603,
+            308.0102390416942,
+            305.46152280874554,
+            307.5680252298234,
+            301.1873326514199
+        ],
+        "rtPrice": [
+            324.8039114071855,
+            321.618049148227,
+            326.41839075197436,
+            322.4799467051089,
+            321.1004189217971,
+            321.5270993175562,
+            321.83924310888113,
+            310.9721888198916,
+            264.2427152694886,
+            208.1569285830818,
+            205.8675451467147,
+            200.00000000000003,
+            200.0,
+            199.99999999999997,
+            202.2866249654358,
+            237.01743026883304,
+            303.8431463919819,
+            316.1865987854643,
+            308.5972823455559,
+            307.52603509992963,
+            309.0841394555196,
+            306.4013032695469,
+            307.0353676605165,
+            298.3438434863462
+        ],
+        "daVol": [
+            63386.1,
+            61957.99999999999,
+            63179.4,
+            61730.2,
+            60744.7,
+            60468.8,
+            60121.40000000001,
+            61644.09999999999,
+            59908.8,
+            55378.8,
+            54564.7,
+            51909.100000000006,
+            52347.1,
+            51524.9,
+            51486.100000000006,
+            57238.2,
+            67009.5,
+            68073.0,
+            65001.200000000004,
+            65339.7,
+            67318.79999999999,
+            66196.1,
+            67475.70000000001,
+            64035.5
+        ],
+        "rtVol": [
+            64488.3,
+            63273.9,
+            65527.5,
+            64096.2,
+            63854.4,
+            64151.8,
+            64931.399999999994,
+            62836.6,
+            54455.0,
+            49036.0,
+            46276.9,
+            38444.7,
+            37092.4,
+            39084.100000000006,
+            40142.7,
+            45582.2,
+            59335.9,
+            66066.40000000001,
+            65471.899999999994,
+            67242.3,
+            68626.9,
+            68144.0,
+            68843.4,
+            65604.5
+        ],
+        "daTotalVol": 1458039.9,
+        "rtTotalVol": 1392609.3999999997,
+        "daWeightedPrice": 293.0953100666175,
+        "rtWeightedPrice": 289.7419646169272
+    },
+    "2026-03-11": {
+        "daPrice": [
+            309.2246727566014,
+            309.63858544192215,
+            326.9319035336931,
+            315.552001060396,
+            315.5599089490658,
+            317.0499750552026,
+            315.7820122595974,
+            324.0335910598722,
+            324.2641523051258,
+            312.3134117392848,
+            309.9640153925964,
+            296.4272161376319,
+            289.94961417597466,
+            283.6297486328837,
+            285.81487140795656,
+            302.835045134968,
+            322.2656420905957,
+            325.73782747259486,
+            322.7239678569463,
+            325.61647810696945,
+            334.78590612376223,
+            337.88961213621724,
+            355.03098608485556,
+            327.81745861611944
+        ],
+        "rtPrice": [
+            298.64866646804296,
+            308.7703678059379,
+            313.6284936336239,
+            311.50438593232457,
+            311.85147924000574,
+            315.3714535088971,
+            317.6622575558917,
+            318.70075591044025,
+            312.5713326455911,
+            306.12724890089936,
+            304.5260043527432,
+            274.5855895753707,
+            264.6675247127403,
+            245.7051547100526,
+            248.74368455359556,
+            278.14567796309404,
+            307.68288562743004,
+            335.67123930106953,
+            369.5900991139981,
+            341.382546159798,
+            331.8023247584805,
+            321.48998908942684,
+            320.73943669550994,
+            316.17521803164834
+        ],
+        "daVol": [
+            68068.59999999999,
+            67782.3,
+            70291.9,
+            68653.59999999999,
+            67039.4,
+            66346.5,
+            64308.8,
+            68160.1,
+            69833.5,
+            64791.0,
+            64576.5,
+            59567.6,
+            57629.899999999994,
+            54860.0,
+            54606.799999999996,
+            59510.4,
+            66886.2,
+            66803.3,
+            65407.600000000006,
+            66813.5,
+            69932.5,
+            70117.4,
+            71519.2,
+            67453.8
+        ],
+        "rtVol": [
+            64779.100000000006,
+            67013.6,
+            68586.9,
+            67294.7,
+            66358.4,
+            66566.5,
+            65515.1,
+            66462.9,
+            64365.200000000004,
+            61391.09999999999,
+            60835.2,
+            50940.899999999994,
+            49336.9,
+            49453.8,
+            49859.5,
+            53536.1,
+            61547.1,
+            67892.29999999999,
+            70383.6,
+            68885.70000000001,
+            68389.9,
+            65257.8,
+            65041.200000000004,
+            63213.3
+        ],
+        "daTotalVol": 1570960.4000000001,
+        "rtTotalVol": 1502906.7999999998,
+        "daWeightedPrice": 317.3251706790317,
+        "rtWeightedPrice": 309.99599643171496
+    },
+    "2026-03-12": {
+        "daPrice": [
+            313.68964572862654,
+            312.33195288476395,
+            320.13240149411666,
+            317.49212628439125,
+            313.64057079543284,
+            312.35319856822804,
+            310.41938103028303,
+            305.82487117917,
+            288.90197250831415,
+            238.70156677024062,
+            224.34995726959912,
+            200.00000000000003,
+            200.0,
+            200.45524409957258,
+            200.4227121753571,
+            262.06104555997734,
+            302.48834580718864,
+            309.88699153263383,
+            309.6179808990119,
+            309.63219414998554,
+            315.1522030787856,
+            314.02399738663144,
+            325.2630270735064,
+            312.9269364411631
+        ],
+        "rtPrice": [
+            317.4167774404984,
+            322.7826767070636,
+            332.69059382214516,
+            331.47348363103487,
+            330.27707310808825,
+            331.1745464287494,
+            331.10728261423543,
+            317.33981989451917,
+            295.2202554335649,
+            248.52458392820935,
+            212.9385928958952,
+            203.56488880007527,
+            205.1053828625884,
+            205.08372036690878,
+            205.02559564391353,
+            235.29744300586904,
+            303.3592144451763,
+            320.50660977177506,
+            348.3625464830118,
+            339.39357938121094,
+            335.2759741163373,
+            338.6948149847117,
+            402.17565035733304,
+            324.73330742874356
+        ],
+        "daVol": [
+            60247.6,
+            58893.9,
+            61333.899999999994,
+            60077.1,
+            58574.4,
+            58249.5,
+            58009.3,
+            58511.5,
+            54605.6,
+            48628.7,
+            48794.3,
+            45535.399999999994,
+            45428.3,
+            45221.299999999996,
+            46004.4,
+            51562.8,
+            59524.5,
+            61707.49999999999,
+            60530.9,
+            60827.2,
+            62446.7,
+            61835.899999999994,
+            64893.7,
+            62019.7
+        ],
+        "rtVol": [
+            63086.5,
+            63742.49999999999,
+            66142.7,
+            64964.399999999994,
+            63853.399999999994,
+            64201.6,
+            64750.09999999999,
+            63196.3,
+            55787.5,
+            48819.7,
+            48845.0,
+            42536.0,
+            42393.799999999996,
+            43760.2,
+            44002.8,
+            47469.8,
+            58455.5,
+            64563.5,
+            69971.8,
+            69222.3,
+            68985.6,
+            68451.1,
+            71180.09999999999,
+            66397.5
+        ],
+        "daTotalVol": 1353464.1,
+        "rtTotalVol": 1424779.7000000004,
+        "daWeightedPrice": 288.9675951877852,
+        "rtWeightedPrice": 306.22556810010695
+    },
+    "2026-03-13": {
+        "daPrice": [
+            323.42391520534363,
+            323.73630715669685,
+            338.39236034867474,
+            332.68814163121755,
+            324.4757509564678,
+            320.7876234732943,
+            313.88892456047705,
+            306.71797475297103,
+            282.34203405259296,
+            220.43511524596656,
+            219.80601482702144,
+            205.98785836261706,
+            207.8844010861913,
+            210.64977616425253,
+            234.2810754621679,
+            271.0089817703525,
+            303.12358812876994,
+            319.4167088473519,
+            310.40922043114796,
+            306.7863879742991,
+            308.32150642449886,
+            305.000854174995,
+            313.7020305614342,
+            307.543522540039
+        ],
+        "rtPrice": [
+            321.6606592719121,
+            317.9946684421855,
+            321.61944622246403,
+            323.00479389973816,
+            325.1250288971786,
+            321.01744880746554,
+            327.89100019876514,
+            320.249902026595,
+            300.7289339408702,
+            218.12488822842315,
+            211.0966883412869,
+            201.4759092557787,
+            204.03899211383603,
+            200.12575649649006,
+            205.65859445421316,
+            229.43209359885128,
+            310.0812304584243,
+            326.04888893942075,
+            328.72798017728945,
+            320.3427536163463,
+            319.8544784721197,
+            315.44112070952946,
+            317.7828433377499,
+            310.71836037420616
+        ],
+        "daVol": [
+            62848.3,
+            61985.3,
+            64759.5,
+            63776.9,
+            61894.399999999994,
+            60964.600000000006,
+            59462.2,
+            57614.700000000004,
+            53828.5,
+            48240.3,
+            49274.9,
+            47608.9,
+            48720.700000000004,
+            48919.8,
+            49495.0,
+            52535.3,
+            59417.6,
+            62311.3,
+            62011.2,
+            62566.0,
+            63911.6,
+            64038.4,
+            66011.3,
+            62695.1
+        ],
+        "rtVol": [
+            65217.399999999994,
+            63981.299999999996,
+            63585.1,
+            61453.1,
+            60905.6,
+            61713.09999999999,
+            63391.399999999994,
+            62568.0,
+            57148.8,
+            47172.1,
+            42999.6,
+            36392.4,
+            36037.8,
+            36781.4,
+            38274.1,
+            42342.4,
+            55042.899999999994,
+            61567.3,
+            63139.7,
+            63544.8,
+            65675.3,
+            66365.1,
+            69436.0,
+            66498.1
+        ],
+        "daTotalVol": 1394891.8000000003,
+        "rtTotalVol": 1351232.8000000003,
+        "daWeightedPrice": 292.36776109802923,
+        "rtWeightedPrice": 296.8892602444226
+    },
+    "2026-03-14": {
+        "daPrice": [
+            313.1081909011902,
+            311.40537614879986,
+            320.143809605831,
+            318.36705058612114,
+            315.50114089141397,
+            313.2079359932896,
+            303.101462700631,
+            293.4165948848279,
+            247.45932295013796,
+            201.24928074485302,
+            201.22479192405945,
+            200.8134575539603,
+            200.5393091226936,
+            200.0,
+            200.0,
+            200.83739144038537,
+            279.5328718974747,
+            300.54931497734333,
+            305.0019649804173,
+            304.96381995530874,
+            308.7110944687967,
+            304.59134649732727,
+            308.05284460581737,
+            308.74662275757976
+        ],
+        "rtPrice": [
+            312.31310865879874,
+            315.1841571289589,
+            320.6867766356553,
+            321.08809608442783,
+            319.04599027380766,
+            320.30591096684003,
+            314.5002728733779,
+            292.81771573907633,
+            216.45942809683524,
+            200.40153573054624,
+            200.1268509142442,
+            200.00000000000003,
+            200.00000000000003,
+            200.0,
+            199.99999999999997,
+            215.75493934825468,
+            284.019599402337,
+            306.3747697103797,
+            306.4368581363941,
+            301.56234663603556,
+            304.0506668907794,
+            301.84253168824705,
+            308.6091969559961,
+            307.59808194581785
+        ],
+        "daVol": [
+            64896.4,
+            63871.0,
+            66184.79999999999,
+            64440.600000000006,
+            62819.299999999996,
+            61993.5,
+            59643.1,
+            57605.100000000006,
+            52906.0,
+            46527.3,
+            45488.2,
+            41748.3,
+            41758.5,
+            42320.8,
+            42200.5,
+            46023.09999999999,
+            55479.0,
+            60114.8,
+            61074.4,
+            61891.3,
+            63626.3,
+            62706.4,
+            65383.40000000001,
+            62811.6
+        ],
+        "rtVol": [
+            64709.899999999994,
+            64550.8,
+            66824.9,
+            65267.6,
+            63354.7,
+            62659.799999999996,
+            61163.9,
+            56853.4,
+            47077.9,
+            39095.40000000001,
+            39797.9,
+            36621.399999999994,
+            35871.2,
+            36871.6,
+            38024.600000000006,
+            43115.0,
+            56285.9,
+            61780.9,
+            62345.8,
+            61984.899999999994,
+            64253.399999999994,
+            62286.5,
+            64362.600000000006,
+            62599.9
+        ],
+        "daTotalVol": 1353513.7,
+        "rtTotalVol": 1317759.9,
+        "daWeightedPrice": 280.7501368623014,
+        "rtWeightedPrice": 283.84983813060336
+    },
+    "2026-03-15": {
+        "daPrice": [
+            310.7000388648206,
+            307.8269984497223,
+            316.0359278606684,
+            316.6394040649108,
+            312.5609393446127,
+            311.44798912732944,
+            300.6857606269063,
+            300.0800851778744,
+            297.3532918195228,
+            289.2349313695851,
+            290.2649077949015,
+            284.2123812777824,
+            286.5010686739955,
+            284.8620427014974,
+            282.6276317340136,
+            295.17411750191667,
+            309.6770782167668,
+            313.00711655724615,
+            313.80005432130895,
+            313.6253887644448,
+            318.55189018683166,
+            312.5065712027992,
+            314.4172875268872,
+            309.0727415804775
+        ],
+        "rtPrice": [
+            313.6498744455961,
+            312.15624593067275,
+            321.6305968576908,
+            319.0825632509678,
+            316.3003392397973,
+            316.7806174883736,
+            310.6140102170289,
+            309.53471401014974,
+            308.39664420360225,
+            302.1711809663488,
+            303.1350116743481,
+            289.45456713828804,
+            288.25091168226857,
+            287.07716301383084,
+            285.8831430009326,
+            297.2429393193911,
+            308.2880260766392,
+            313.9892434448931,
+            313.67442158673686,
+            314.635401789418,
+            318.32511658185143,
+            315.361361725614,
+            311.61630409279974,
+            311.3078532990193
+        ],
+        "daVol": [
+            61237.9,
+            59279.7,
+            61774.899999999994,
+            61949.7,
+            60819.0,
+            61254.5,
+            57246.2,
+            57855.40000000001,
+            60269.1,
+            58880.600000000006,
+            60072.6,
+            57950.4,
+            57735.1,
+            56639.7,
+            55154.7,
+            56739.5,
+            61279.7,
+            61597.2,
+            61486.0,
+            61830.5,
+            63784.7,
+            61503.2,
+            62483.2,
+            59471.9
+        ],
+        "rtVol": [
+            61845.7,
+            60360.1,
+            64073.90000000001,
+            63651.2,
+            62846.4,
+            63110.5,
+            60213.2,
+            60395.5,
+            61478.7,
+            61365.0,
+            62444.6,
+            57185.7,
+            56691.899999999994,
+            55947.4,
+            55438.1,
+            57680.7,
+            60851.4,
+            61814.4,
+            61608.200000000004,
+            62679.59999999999,
+            63903.600000000006,
+            62326.8,
+            60948.49999999999,
+            59334.299999999996
+        ],
+        "daTotalVol": 1438295.3999999997,
+        "rtTotalVol": 1458195.4000000001,
+        "daWeightedPrice": 304.1479724192958,
+        "rtWeightedPrice": 308.2462586701343
+    },
+    "2026-03-16": {
+        "daPrice": [
+            328.0016369408192,
+            327.8397341685313,
+            332.2322185662498,
+            333.50261846979174,
+            332.5153160218897,
+            327.1474036822783,
+            313.78160325138134,
+            315.3199280819638,
+            307.600032368146,
+            290.3074225501532,
+            290.7853303385894,
+            282.7905634130225,
+            289.6758439979838,
+            288.7254896262299,
+            284.0643656803258,
+            299.25336711120445,
+            322.22376038810506,
+            320.4942248228109,
+            324.45189675852123,
+            323.5510310152746,
+            324.5516498212819,
+            317.74859538061173,
+            324.0611061745833,
+            322.02561017089386
+        ],
+        "rtPrice": [
+            317.8196927466656,
+            323.70004712910514,
+            331.35468247466474,
+            333.63558090491085,
+            334.07674691415707,
+            330.4795918089851,
+            321.85899338540736,
+            329.4638481686038,
+            338.40745929781014,
+            332.23277069604046,
+            363.70572537006075,
+            320.9494527536672,
+            318.32611790127413,
+            324.90811720432947,
+            321.5825549498028,
+            324.0647924037356,
+            334.97343014462587,
+            331.7024659608903,
+            332.89927420078925,
+            332.5269304120802,
+            330.96168519342575,
+            329.67663797428474,
+            332.07999556290537,
+            326.3950350749509
+        ],
+        "daVol": [
+            65207.0,
+            65740.9,
+            67499.9,
+            68112.3,
+            67958.9,
+            65481.2,
+            60429.7,
+            63071.799999999996,
+            64878.600000000006,
+            58725.1,
+            58903.2,
+            54633.1,
+            54955.700000000004,
+            54710.100000000006,
+            53710.299999999996,
+            57138.0,
+            66085.2,
+            64874.2,
+            65865.0,
+            65435.5,
+            66249.6,
+            67861.79999999999,
+            69099.4,
+            65268.6
+        ],
+        "rtVol": [
+            60490.8,
+            62806.2,
+            65916.0,
+            66528.1,
+            67428.9,
+            66189.6,
+            62180.700000000004,
+            66394.7,
+            68884.5,
+            67207.3,
+            70704.6,
+            65957.5,
+            63956.9,
+            64386.7,
+            63649.0,
+            64642.299999999996,
+            69358.29999999999,
+            67349.0,
+            67938.9,
+            68217.3,
+            68990.29999999999,
+            68566.4,
+            68513.29999999999,
+            65402.8
+        ],
+        "daTotalVol": 1511895.1,
+        "rtTotalVol": 1591660.1,
+        "daWeightedPrice": 314.64338636324703,
+        "rtWeightedPrice": 330.1664188164295
+    },
+    "2026-03-17": {
+        "daPrice": [
+            338.2428411681618,
+            337.9318789486331,
+            354.0793170823296,
+            354.6046582430421,
+            348.71357410704087,
+            343.1995999469739,
+            334.8053122153026,
+            326.99572864091596,
+            315.06486694741744,
+            287.1177530532085,
+            288.39056644760035,
+            276.87189614617523,
+            287.0018631057092,
+            283.0425388079042,
+            284.0782988013878,
+            292.8467290294052,
+            312.4821217977857,
+            313.75930403183077,
+            323.8284449135596,
+            326.1937496459335,
+            328.7521094010339,
+            321.72626093669584,
+            328.2136140146088,
+            324.14883006761346
+        ],
+        "rtPrice": [
+            340.220583364784,
+            345.03313284229273,
+            465.06632102346435,
+            352.50603010214877,
+            344.6851843295682,
+            337.08199636369096,
+            329.1485385622545,
+            335.06760137292815,
+            346.3054078812377,
+            339.3285424497608,
+            350.18951109504457,
+            343.0835618450074,
+            351.2658650939322,
+            409.00069552951817,
+            387.8899772132094,
+            355.8175018266198,
+            356.11172364588145,
+            339.4112691318852,
+            335.62432923506384,
+            334.7036270144855,
+            337.35656116045124,
+            332.1018009976448,
+            326.0718104221828,
+            319.32345398342045
+        ],
+        "daVol": [
+            64566.399999999994,
+            65750.6,
+            68172.20000000001,
+            68648.2,
+            69149.29999999999,
+            67891.0,
+            65530.100000000006,
+            65541.2,
+            63591.4,
+            59625.799999999996,
+            59844.9,
+            55905.5,
+            57527.600000000006,
+            56876.299999999996,
+            57299.6,
+            58571.3,
+            62917.399999999994,
+            63787.4,
+            66508.19999999998,
+            67077.8,
+            67820.2,
+            68393.6,
+            67849.2,
+            64084.899999999994
+        ],
+        "rtVol": [
+            64916.50000000001,
+            67733.7,
+            73225.8,
+            71337.1,
+            69259.1,
+            66551.0,
+            64156.0,
+            67796.7,
+            70082.90000000001,
+            68079.3,
+            71369.7,
+            71498.9,
+            74096.0,
+            76991.7,
+            76447.80000000002,
+            74728.2,
+            74424.8,
+            70595.5,
+            71932.8,
+            71761.5,
+            71082.7,
+            69122.8,
+            67868.70000000001,
+            65055.899999999994
+        ],
+        "daTotalVol": 1532930.0999999999,
+        "rtTotalVol": 1690115.0999999999,
+        "daWeightedPrice": 319.4471733186008,
+        "rtWeightedPrice": 351.4062258245016
+    },
+    "2026-03-18": {
+        "daPrice": [
+            331.80895754164885,
+            334.60541858252134,
+            343.8144161481045,
+            341.84173972490197,
+            343.40654645413724,
+            338.7626936538713,
+            327.42606761177075,
+            324.8627285781201,
+            320.4646551464566,
+            312.7126010996612,
+            306.58066915441833,
+            282.70234143628005,
+            285.6659600471004,
+            290.18122778235823,
+            294.2848360164246,
+            304.66490786115327,
+            321.95262275375745,
+            328.56105250404966,
+            339.27626435540014,
+            343.97872238566805,
+            349.2014092522719,
+            355.0368822011473,
+            353.86080360693745,
+            334.9677681380148
+        ],
+        "rtPrice": [
+            326.32037827709604,
+            331.39085516677915,
+            340.5783834976131,
+            337.7019141086612,
+            343.0909636869914,
+            346.1770190770466,
+            341.5855865416711,
+            350.5925825533701,
+            361.9456455378234,
+            368.8567698170585,
+            435.088737149074,
+            351.3215531071388,
+            356.62928155159364,
+            383.64965735799314,
+            341.87217781810676,
+            336.3539833451711,
+            347.1362657723062,
+            343.87066327647705,
+            351.1490865536848,
+            347.283465277991,
+            349.8128768449539,
+            356.589284460713,
+            353.6203105153879,
+            334.93366880462105
+        ],
+        "daVol": [
+            65103.8,
+            66310.70000000001,
+            68956.70000000001,
+            68164.8,
+            68828.09999999999,
+            68027.3,
+            64077.6,
+            65114.50000000001,
+            66422.40000000001,
+            63328.59999999999,
+            63028.799999999996,
+            58246.3,
+            58258.59999999999,
+            59552.9,
+            59204.1,
+            60218.899999999994,
+            65303.5,
+            66857.7,
+            69895.3,
+            70393.7,
+            71690.5,
+            73009.2,
+            70907.8,
+            66184.2
+        ],
+        "rtVol": [
+            65110.99999999999,
+            66827.9,
+            70428.6,
+            69390.0,
+            70101.6,
+            69743.5,
+            66807.7,
+            69800.3,
+            72135.20000000001,
+            73132.70000000001,
+            77669.5,
+            73553.2,
+            75329.0,
+            78887.0,
+            73616.8,
+            71522.79999999999,
+            73348.5,
+            70792.5,
+            72637.0,
+            71646.2,
+            72095.29999999999,
+            73789.1,
+            72196.1,
+            66652.5
+        ],
+        "daTotalVol": 1577086.0,
+        "rtTotalVol": 1717214.0000000002,
+        "daWeightedPrice": 326.7565128661341,
+        "rtWeightedPrice": 352.2868393805314
+    },
+    "2026-03-19": {
+        "daPrice": [
+            330.8212069851131,
+            328.9567110045567,
+            339.8884036912149,
+            336.1822657155542,
+            334.5010085319939,
+            339.7273175974561,
+            341.38833967772825,
+            329.3271317050901,
+            313.8518662746164,
+            248.89580586073245,
+            216.85346364883398,
+            200.34133725148743,
+            200.00000000000003,
+            200.4489401298171,
+            205.99078289086097,
+            250.06517351415178,
+            305.6396214202494,
+            326.490126832579,
+            338.44276290146854,
+            338.9620677640658,
+            340.45302598602166,
+            328.88243274219775,
+            330.187948906941,
+            329.5158232361515
+        ],
+        "rtPrice": [
+            329.2830685852829,
+            330.425588965667,
+            340.4083249196747,
+            335.1147292432609,
+            332.1487297222821,
+            333.75274871719535,
+            332.47878825213286,
+            326.6574356632627,
+            308.5268135243162,
+            285.1846245619687,
+            273.33693717339014,
+            215.86237917957232,
+            228.7277050351275,
+            249.85733805555157,
+            293.6230195169427,
+            329.43208819855903,
+            341.75081701211406,
+            342.7116305535871,
+            344.80645445676595,
+            341.8523798809271,
+            341.07422791191897,
+            337.64503445388436,
+            335.2191215932136,
+            330.42084766350575
+        ],
+        "daVol": [
+            65608.1,
+            65068.5,
+            68476.1,
+            67121.4,
+            66373.7,
+            67548.4,
+            68091.59999999999,
+            65715.0,
+            60706.5,
+            49898.2,
+            47530.8,
+            41346.0,
+            40626.2,
+            41858.9,
+            42774.799999999996,
+            46661.90000000001,
+            55618.4,
+            61293.4,
+            65166.99999999999,
+            65725.1,
+            66474.2,
+            64565.0,
+            63766.0,
+            62401.899999999994
+        ],
+        "rtVol": [
+            66075.4,
+            66323.9,
+            69529.8,
+            67835.8,
+            66772.8,
+            66709.3,
+            65744.70000000001,
+            65040.600000000006,
+            59844.8,
+            53392.299999999996,
+            51054.8,
+            46039.399999999994,
+            46900.5,
+            49327.100000000006,
+            53840.4,
+            58767.4,
+            64833.8,
+            66605.6,
+            67037.4,
+            66665.1,
+            66724.9,
+            66160.90000000001,
+            64694.4,
+            63473.299999999996
+        ],
+        "daTotalVol": 1410417.0999999999,
+        "rtTotalVol": 1479394.4,
+        "daWeightedPrice": 306.91043567892075,
+        "rtWeightedPrice": 319.0974080880663
+    },
+    "2026-03-20": {
+        "daPrice": [
+            333.53707684982965,
+            331.2529287344832,
+            340.8185779078231,
+            337.69046420705985,
+            335.13332496882083,
+            337.60735408438865,
+            339.00534999217837,
+            330.37021044959954,
+            318.2193578401224,
+            279.8350397261277,
+            285.2649891910281,
+            252.85403754017236,
+            230.31847007359374,
+            229.13870777768693,
+            250.04401528680322,
+            285.4136925481419,
+            312.1905237919147,
+            320.92879037218574,
+            330.00182663769226,
+            329.84204970359895,
+            329.4750210383758,
+            325.82800456093287,
+            327.59010229966185,
+            326.65015023027036
+        ],
+        "rtPrice": [
+            331.65434471831946,
+            331.8024201422793,
+            345.5706546022271,
+            338.3753491478137,
+            337.2292287181617,
+            336.9357764241063,
+            332.22745118508294,
+            319.7455841376052,
+            301.70884253937606,
+            246.31032536712965,
+            260.5662756726202,
+            268.5966885963623,
+            292.29541104319964,
+            314.2849330566992,
+            314.42557781715004,
+            303.0979856551812,
+            316.22342149495506,
+            323.8011018155984,
+            334.3562424484679,
+            333.41894993130086,
+            331.03148154626024,
+            330.73614957434467,
+            333.3336159606278,
+            335.9472293972104
+        ],
+        "daVol": [
+            66161.5,
+            65622.2,
+            68967.4,
+            67474.2,
+            66551.0,
+            67276.9,
+            68400.1,
+            66410.2,
+            63411.0,
+            54624.0,
+            55555.7,
+            50719.0,
+            48577.5,
+            47714.700000000004,
+            48381.600000000006,
+            51825.99999999999,
+            58681.7,
+            62103.399999999994,
+            65667.1,
+            66244.7,
+            66307.4,
+            64635.9,
+            64887.8,
+            64467.700000000004
+        ],
+        "rtVol": [
+            65893.8,
+            65954.8,
+            69559.8,
+            67385.5,
+            66456.9,
+            66338.09999999999,
+            65138.9,
+            62230.200000000004,
+            56982.5,
+            48320.8,
+            50418.49999999999,
+            51026.7,
+            57771.3,
+            61694.0,
+            60053.600000000006,
+            56340.9,
+            60029.899999999994,
+            62778.200000000004,
+            66046.2,
+            66085.2,
+            65750.9,
+            65546.00000000001,
+            66117.7,
+            66202.2
+        ],
+        "daTotalVol": 1470668.6999999995,
+        "rtTotalVol": 1490122.5999999999,
+        "daWeightedPrice": 313.0420062247875,
+        "rtWeightedPrice": 319.57253190442185
+    },
+    "2026-03-21": {
+        "daPrice": [
+            333.98547846280616,
+            332.5766372809347,
+            347.51540375939203,
+            343.4418403892758,
+            339.99999999999994,
+            339.0138425091768,
+            327.10635402857855,
+            310.77890565550604,
+            279.4947219824554,
+            202.35434831569833,
+            200.0,
+            200.00000000000003,
+            200.60701642719152,
+            200.02570159247423,
+            199.99999999999997,
+            216.80084511652262,
+            300.31031233492047,
+            317.70137385868065,
+            318.6244682788344,
+            317.4078605064913,
+            316.8317724077818,
+            310.35260626174323,
+            312.2431404093659,
+            312.43888118924355
+        ],
+        "rtPrice": [
+            338.83238591439596,
+            338.40981474342374,
+            353.3760130803322,
+            346.37934878663214,
+            346.97630287147916,
+            346.71017485127334,
+            331.6690175862524,
+            307.0746496237391,
+            255.49376753951657,
+            200.00000000000003,
+            200.0,
+            199.99999999999997,
+            200.0,
+            200.0,
+            200.0,
+            210.4914161927972,
+            289.0542468550327,
+            317.84570060120046,
+            323.24972144654157,
+            324.0264444971392,
+            323.40261952147256,
+            319.87299552382535,
+            318.0517165311338,
+            318.7350879657766
+        ],
+        "daVol": [
+            66745.0,
+            65905.0,
+            69553.8,
+            68044.3,
+            67100.6,
+            66989.3,
+            62837.3,
+            58873.6,
+            52597.4,
+            45288.8,
+            43017.5,
+            39053.2,
+            40219.899999999994,
+            39278.5,
+            40629.8,
+            45828.0,
+            57169.399999999994,
+            63150.600000000006,
+            64248.899999999994,
+            64301.2,
+            64705.2,
+            61950.8,
+            61910.399999999994,
+            61619.0
+        ],
+        "rtVol": [
+            67791.2,
+            66405.2,
+            69723.0,
+            68235.70000000001,
+            67999.79999999999,
+            67388.7,
+            62986.7,
+            56211.0,
+            48675.8,
+            40896.7,
+            39875.9,
+            36946.8,
+            37385.5,
+            37841.5,
+            37294.4,
+            40623.0,
+            52210.4,
+            61926.1,
+            65068.3,
+            65787.6,
+            65672.3,
+            63759.799999999996,
+            63736.1,
+            63348.5
+        ],
+        "daTotalVol": 1371017.4999999998,
+        "rtTotalVol": 1347790.0000000005,
+        "daWeightedPrice": 296.72501406437203,
+        "rtWeightedPrice": 300.5533535268847
+    },
+    "2026-03-22": {
+        "daPrice": [
+            329.7840596940447,
+            326.65592937034063,
+            339.23854276694044,
+            335.2530433855986,
+            334.5039776968663,
+            332.5170915232467,
+            320.5025306781168,
+            319.00428359584254,
+            310.17887360568426,
+            286.9050195777549,
+            269.22949211121465,
+            239.90302115496954,
+            228.61135562561807,
+            264.63323585946995,
+            273.29892074879234,
+            290.4993834762498,
+            311.5439510972518,
+            326.06731061439194,
+            331.52193066777085,
+            332.0279125475848,
+            334.2667061597987,
+            333.76980166534577,
+            340.062532110553,
+            333.2821166740482
+        ],
+        "rtPrice": [
+            319.8039710230725,
+            320.51515896139205,
+            333.6828902694393,
+            333.0545738303452,
+            328.9246384544763,
+            330.28263977984494,
+            320.9489920991897,
+            313.074522004186,
+            284.3697736493279,
+            200.00000000000003,
+            199.99999999999997,
+            200.0,
+            200.00000000000003,
+            200.0508912543437,
+            200.22982991572695,
+            220.71706702490565,
+            298.5113662538737,
+            320.89498753894634,
+            327.7762865680079,
+            330.5037615952086,
+            329.0020164802036,
+            323.7753627515376,
+            330.83505766917625,
+            326.268999361366
+        ],
+        "daVol": [
+            66532.6,
+            65151.100000000006,
+            68354.2,
+            66628.09999999999,
+            65641.0,
+            64774.8,
+            60971.799999999996,
+            60556.600000000006,
+            59222.600000000006,
+            54219.700000000004,
+            52485.9,
+            47932.0,
+            47322.8,
+            50098.9,
+            50572.1,
+            52536.5,
+            56536.700000000004,
+            59559.7,
+            60857.700000000004,
+            60865.1,
+            61951.700000000004,
+            61320.6,
+            63647.3,
+            61640.1
+        ],
+        "rtVol": [
+            63512.600000000006,
+            63119.100000000006,
+            66092.8,
+            64940.100000000006,
+            63719.5,
+            63446.200000000004,
+            59361.0,
+            58002.6,
+            50726.600000000006,
+            40023.7,
+            37272.3,
+            33404.9,
+            34155.2,
+            36431.8,
+            37058.1,
+            40717.7,
+            50533.799999999996,
+            57418.899999999994,
+            59437.2,
+            60240.399999999994,
+            59708.0,
+            58614.5,
+            61271.9,
+            59502.0
+        ],
+        "daTotalVol": 1419379.6,
+        "rtTotalVol": 1278710.9,
+        "daWeightedPrice": 313.23601931435394,
+        "rtWeightedPrice": 298.46493666394804
+    },
+    "2026-03-23": {
+        "daPrice": [
+            358.857952406842,
+            355.7898447658693,
+            366.16923145319277,
+            355.10224122381686,
+            347.96538135580624,
+            358.3495726959416,
+            340.8707102636106,
+            327.5592848462652,
+            308.6300228921962,
+            271.1873208652265,
+            268.00694591691416,
+            225.1594072016199,
+            218.90848118441866,
+            223.11616405430456,
+            250.13966231154222,
+            288.173731365258,
+            302.7259869309376,
+            300.0,
+            310.9768528324978,
+            317.8525685914684,
+            324.95630621043233,
+            331.06085269790657,
+            340.94277904281137,
+            334.3873175207597
+        ],
+        "rtPrice": [
+            332.08526458784985,
+            333.9008005274519,
+            342.6399181017091,
+            338.50695752643605,
+            335.5010541851149,
+            333.7645323916412,
+            319.017600599619,
+            301.47894089451665,
+            286.8401862542015,
+            281.99769837170294,
+            289.6851596327701,
+            224.04903589084577,
+            200.8082353429826,
+            200.0,
+            254.70761804736895,
+            277.617210984858,
+            304.9446552054484,
+            315.3619643467874,
+            331.31732440367773,
+            331.889150589795,
+            328.8753897207203,
+            332.39663224054414,
+            333.70895280484615,
+            329.72457843026064
+        ],
+        "daVol": [
+            66950.8,
+            67214.6,
+            68604.80000000002,
+            67748.7,
+            67257.4,
+            70043.8,
+            68017.0,
+            66078.1,
+            62728.8,
+            56137.899999999994,
+            57160.200000000004,
+            51113.5,
+            48861.100000000006,
+            49093.5,
+            51609.7,
+            55695.7,
+            58137.3,
+            56394.5,
+            59484.6,
+            62176.1,
+            64367.5,
+            65988.2,
+            68026.3,
+            65390.99999999999
+        ],
+        "rtVol": [
+            61025.100000000006,
+            62034.1,
+            64934.200000000004,
+            63700.8,
+            63556.2,
+            63573.49999999999,
+            60571.799999999996,
+            58290.7,
+            57061.8,
+            54787.299999999996,
+            57021.5,
+            49335.700000000004,
+            45744.3,
+            44338.7,
+            46655.0,
+            51915.1,
+            57411.0,
+            59355.1,
+            64235.399999999994,
+            64564.8,
+            63975.3,
+            64882.90000000001,
+            64661.3,
+            62605.3
+        ],
+        "daTotalVol": 1474281.1,
+        "rtTotalVol": 1406236.9000000001,
+        "daWeightedPrice": 314.1014552516477,
+        "rtWeightedPrice": 307.0122900984891
+    },
+    "2026-03-24": {
+        "daPrice": [
+            335.1518181530527,
+            337.753333584374,
+            345.26869751143664,
+            341.62527633701376,
+            343.7772021255469,
+            347.5359119027888,
+            336.1632572912755,
+            333.04983157894736,
+            346.1472550451407,
+            337.4529800104067,
+            338.6620090271628,
+            321.6976634698077,
+            328.3525923132393,
+            339.9190027021052,
+            339.5691341982142,
+            344.4865500087856,
+            348.44824938207483,
+            346.9558552925281,
+            349.4258829452597,
+            346.2185936726634,
+            346.9440550106749,
+            354.98699963196293,
+            352.14526669573917,
+            339.15052418868936
+        ],
+        "rtPrice": [
+            334.64314902680746,
+            343.2260325525082,
+            353.8600217677974,
+            353.85353524808784,
+            352.12171060615486,
+            347.28280390734255,
+            337.53951074381206,
+            336.20387942386316,
+            342.4347862426408,
+            345.0750709984455,
+            345.5770498034978,
+            327.97862789430053,
+            336.9224509196052,
+            349.161752492727,
+            346.45360103673465,
+            347.30603212773565,
+            350.9338280346139,
+            344.54136765247733,
+            347.85952823884,
+            347.9763677686257,
+            350.1792950102527,
+            352.8860762423397,
+            346.221268607284,
+            336.8777380980536
+        ],
+        "daVol": [
+            63206.99999999999,
+            63734.7,
+            66693.1,
+            65590.20000000001,
+            66467.59999999999,
+            67457.3,
+            63912.0,
+            62700.0,
+            66281.6,
+            64573.600000000006,
+            65158.899999999994,
+            61278.899999999994,
+            63373.9,
+            66503.7,
+            65874.2,
+            66016.40000000001,
+            68535.79999999999,
+            67648.2,
+            68127.1,
+            66874.9,
+            67354.2,
+            69286.5,
+            68105.7,
+            64728.6
+        ],
+        "rtVol": [
+            62911.5,
+            65580.20000000001,
+            68174.1,
+            68012.2,
+            67570.2,
+            66572.1,
+            63659.899999999994,
+            63790.4,
+            65445.7,
+            65811.3,
+            66818.6,
+            62009.8,
+            65642.3,
+            68368.9,
+            66825.2,
+            66036.4,
+            67764.79999999999,
+            66493.5,
+            67784.29999999999,
+            67319.5,
+            67640.7,
+            67833.7,
+            66425.59999999999,
+            63424.5
+        ],
+        "daTotalVol": 1579484.0999999999,
+        "rtTotalVol": 1587915.4000000001,
+        "daWeightedPrice": 341.91909307602396,
+        "rtWeightedPrice": 345.04806100501315
+    },
+    "2026-03-25": {
+        "daPrice": [
+            337.33580316500286,
+            337.54995251541663,
+            351.1587683670702,
+            347.30242366206915,
+            344.95395400012563,
+            345.42864989695266,
+            339.85901218890064,
+            325.11903293462393,
+            296.30989531636686,
+            213.28359180412613,
+            200.0,
+            200.00000000000003,
+            200.00000000000003,
+            199.99999999999997,
+            200.0,
+            251.24664060438255,
+            314.0176867907889,
+            336.9875168854227,
+            349.25591780809356,
+            347.543260491498,
+            333.8259787995353,
+            327.6549569826844,
+            335.58820869151845,
+            333.7635488059851
+        ],
+        "rtPrice": [
+            341.5057080899859,
+            343.5458427693303,
+            351.14438247071035,
+            348.4784548880348,
+            344.97622137630424,
+            347.4814566874188,
+            341.2899065743837,
+            321.5521622651414,
+            299.4748613122108,
+            229.6465336687272,
+            236.71751839353877,
+            200.0,
+            200.0,
+            200.0,
+            200.00000000000003,
+            247.6322175144605,
+            313.02447885075236,
+            339.7277275802597,
+            339.7241394841424,
+            334.7704229267965,
+            330.3469162859465,
+            324.19638495520417,
+            331.0818268448872,
+            332.18679997344816
+        ],
+        "daVol": [
+            63159.5,
+            63178.40000000001,
+            67117.4,
+            65999.3,
+            65256.7,
+            65212.8,
+            64099.3,
+            60219.3,
+            52892.700000000004,
+            42558.0,
+            43691.3,
+            38931.2,
+            38729.7,
+            39628.3,
+            41075.7,
+            44713.4,
+            55563.5,
+            62405.9,
+            65393.299999999996,
+            65090.799999999996,
+            62574.1,
+            59801.5,
+            63107.5,
+            62608.100000000006
+        ],
+        "rtVol": [
+            63592.2,
+            64601.9,
+            67430.0,
+            66739.5,
+            65911.3,
+            65920.8,
+            64179.4,
+            59051.5,
+            52834.5,
+            44842.8,
+            45192.5,
+            38636.5,
+            37789.9,
+            37056.0,
+            36962.7,
+            42011.0,
+            54240.7,
+            61634.3,
+            64165.0,
+            64022.899999999994,
+            63104.100000000006,
+            60552.5,
+            62963.2,
+            63272.600000000006
+        ],
+        "daTotalVol": 1353007.7000000002,
+        "rtTotalVol": 1346707.8,
+        "daWeightedPrice": 309.247118844926,
+        "rtWeightedPrice": 310.52235307466105
+    },
+    "2026-03-26": {
+        "daPrice": [
+            330.02978065571796,
+            336.3567848709421,
+            347.6611171378633,
+            343.57853930755533,
+            342.2296060933083,
+            344.2093363133835,
+            339.6288149089106,
+            325.4382884085625,
+            307.53999617417423,
+            248.92679656809227,
+            227.06926979175,
+            200.55472013964047,
+            200.09759290350064,
+            200.4244888447892,
+            215.73501030830673,
+            280.415505227914,
+            315.0945119484373,
+            326.5855942865359,
+            330.25675549697576,
+            328.97571439514616,
+            328.8525624219531,
+            324.34394237341945,
+            327.30525555949544,
+            324.9769221601608
+        ],
+        "rtPrice": [
+            329.8033886450472,
+            332.62008904711143,
+            355.90681062728527,
+            341.4590560080833,
+            334.1750735195011,
+            334.3979529963198,
+            324.7235154482161,
+            313.56156507333236,
+            297.7086383220186,
+            275.668437952225,
+            288.1466351658693,
+            238.6608778438564,
+            212.2957940165482,
+            255.08950574861686,
+            252.13356550236372,
+            299.7203184460579,
+            324.18714928591305,
+            330.0020830537181,
+            327.7894049743415,
+            326.28140355710127,
+            323.75323087061923,
+            318.66594248766825,
+            320.14219652807367,
+            322.22756807212096
+        ],
+        "daVol": [
+            63069.799999999996,
+            63649.7,
+            67569.1,
+            66356.2,
+            65698.3,
+            66083.9,
+            64552.0,
+            61421.2,
+            56458.399999999994,
+            47169.1,
+            45003.6,
+            40561.3,
+            39907.0,
+            39909.600000000006,
+            42441.5,
+            48623.6,
+            57840.2,
+            61202.799999999996,
+            63503.100000000006,
+            63966.700000000004,
+            64384.4,
+            61735.4,
+            63171.200000000004,
+            62930.5
+        ],
+        "rtVol": [
+            63338.0,
+            63988.600000000006,
+            67388.79999999999,
+            65913.70000000001,
+            65288.8,
+            65241.700000000004,
+            62178.700000000004,
+            57464.399999999994,
+            54103.09999999999,
+            49892.2,
+            51004.0,
+            46846.59999999999,
+            43376.3,
+            46272.0,
+            47235.7,
+            51399.600000000006,
+            59642.6,
+            62586.0,
+            64052.7,
+            63889.1,
+            63730.50000000001,
+            61771.09999999999,
+            62184.5,
+            62672.5
+        ],
+        "daTotalVol": 1377208.5999999996,
+        "rtTotalVol": 1401461.2000000002,
+        "daWeightedPrice": 308.1907978791303,
+        "rtWeightedPrice": 311.6915322450596
+    },
+    "2026-03-27": {
+        "daPrice": [
+            332.90042202317557,
+            337.25374647011336,
+            354.1917152014692,
+            347.3270224281563,
+            346.326936113173,
+            347.9264831998341,
+            344.52493159161435,
+            333.66027259585155,
+            315.9066556230119,
+            265.63904478288384,
+            229.93517259117314,
+            200.04851906766453,
+            200.0,
+            200.0,
+            205.74024964140452,
+            238.59371981236148,
+            309.89324084830076,
+            327.0801961060802,
+            334.3567922442441,
+            339.54446959440287,
+            345.4396355840692,
+            342.7337621529999,
+            346.25338738533935,
+            343.4587137013613
+        ],
+        "rtPrice": [
+            327.75029207014785,
+            335.9353307910285,
+            403.46238747653194,
+            345.5052938978887,
+            347.3704895655598,
+            349.04379629729965,
+            338.233191335028,
+            332.1279055957465,
+            313.582434141953,
+            284.2343216252433,
+            270.64892591832876,
+            213.59704410715602,
+            213.5505275988749,
+            231.40255421511432,
+            269.997996778942,
+            288.08896842140166,
+            316.7606336540194,
+            344.32529371312984,
+            395.00873221956465,
+            395.508990065299,
+            351.3832091912899,
+            363.62437538011847,
+            373.16298125403614,
+            337.1866375823817
+        ],
+        "daVol": [
+            63100.8,
+            63670.6,
+            67734.9,
+            65997.4,
+            65202.8,
+            65555.9,
+            64319.600000000006,
+            62187.3,
+            56744.5,
+            46776.8,
+            43156.9,
+            36892.299999999996,
+            36481.0,
+            37979.0,
+            40714.4,
+            43146.8,
+            53716.799999999996,
+            58152.200000000004,
+            60424.799999999996,
+            61674.5,
+            63065.299999999996,
+            62536.0,
+            64222.1,
+            64100.2
+        ],
+        "rtVol": [
+            62673.3,
+            63485.700000000004,
+            66952.7,
+            65044.7,
+            64761.5,
+            64596.100000000006,
+            62864.6,
+            61802.299999999996,
+            57468.3,
+            51118.5,
+            49726.2,
+            40651.0,
+            41347.700000000004,
+            43982.2,
+            44767.9,
+            48254.200000000004,
+            53811.700000000004,
+            62092.9,
+            66393.2,
+            66141.9,
+            64173.8,
+            65275.7,
+            66739.70000000001,
+            64410.5
+        ],
+        "daTotalVol": 1347552.9000000004,
+        "rtTotalVol": 1398536.2999999996,
+        "daWeightedPrice": 314.0461743653996,
+        "rtWeightedPrice": 330.0555174005853
+    },
+    "2026-03-28": {
+        "daPrice": [
+            356.35574968179753,
+            349.14335764966705,
+            371.6276021607711,
+            355.84014788422246,
+            350.3530724789916,
+            353.3558401798653,
+            339.2903103830929,
+            315.43734210354086,
+            290.3166854611602,
+            210.56384789851114,
+            204.95046377611007,
+            199.99999999999997,
+            200.00000000000003,
+            200.0,
+            200.0,
+            235.40093610408874,
+            303.3775844230031,
+            317.20538413395485,
+            319.33682348122113,
+            317.71229224747793,
+            316.9531224997479,
+            314.12270803176983,
+            316.8368162442972,
+            314.9833633817945
+        ],
+        "rtPrice": [
+            337.90066473854733,
+            331.91156004689526,
+            340.11773588124896,
+            338.1862446869616,
+            341.34046305143875,
+            341.96526849113826,
+            335.9157604866794,
+            307.8445087267155,
+            243.3535608072828,
+            200.0,
+            199.99999999999997,
+            200.30134222067954,
+            200.02634806023394,
+            202.84136754366514,
+            200.47830706209893,
+            243.4935088419219,
+            312.4688374195557,
+            328.9061415752742,
+            326.30284924562534,
+            323.2378113618842,
+            320.9838383953557,
+            316.59376472774824,
+            318.1535028257816,
+            316.52474479883864
+        ],
+        "daVol": [
+            64660.100000000006,
+            64140.7,
+            67457.4,
+            65618.9,
+            64736.0,
+            64314.8,
+            60377.0,
+            55004.399999999994,
+            49393.9,
+            42503.200000000004,
+            41334.6,
+            37424.8,
+            38242.2,
+            38980.4,
+            38840.4,
+            42602.1,
+            52867.700000000004,
+            57201.399999999994,
+            58102.6,
+            58789.9,
+            59494.0,
+            58445.399999999994,
+            60058.0,
+            59958.7
+        ],
+        "rtVol": [
+            62686.3,
+            61669.3,
+            63298.799999999996,
+            60935.0,
+            62373.2,
+            63711.6,
+            59899.8,
+            52459.6,
+            44049.0,
+            34962.0,
+            37202.3,
+            33995.9,
+            34983.6,
+            38331.5,
+            38863.799999999996,
+            42360.7,
+            53313.3,
+            59177.0,
+            59731.600000000006,
+            60187.2,
+            61391.8,
+            60260.399999999994,
+            61222.0,
+            61510.299999999996
+        ],
+        "daTotalVol": 1300548.5999999996,
+        "rtTotalVol": 1268575.9999999998,
+        "daWeightedPrice": 304.58765952306595,
+        "rtWeightedPrice": 300.1593477174407
+    },
+    "2026-03-29": {
+        "daPrice": [
+            317.05554795581673,
+            313.81266622815804,
+            322.6129972352761,
+            319.34067150933475,
+            315.7405746981786,
+            313.2769234525822,
+            304.0114123611568,
+            280.32447921453297,
+            217.6433861714334,
+            201.2484984474462,
+            203.69653389358334,
+            200.0,
+            200.0,
+            200.0,
+            200.0,
+            214.61735990499008,
+            291.6304922163024,
+            311.3154859978546,
+            315.73672740945153,
+            314.53086875648245,
+            311.8038898860866,
+            308.4686913912167,
+            315.29315624202593,
+            313.7372823162406
+        ],
+        "rtPrice": [
+            320.5136171538809,
+            317.33976841836966,
+            327.6833244554316,
+            323.84253514244665,
+            323.2281001432434,
+            322.45356765306036,
+            309.53598191725615,
+            258.2566607094325,
+            199.99999999999997,
+            199.99999999999997,
+            222.18675978169878,
+            200.27437689619413,
+            200.3549101056307,
+            200.2018728810971,
+            200.38057307855527,
+            211.07311101676046,
+            299.9132140570534,
+            312.8417377345065,
+            315.76789838876863,
+            312.3762085095036,
+            307.380473885472,
+            302.6120040393626,
+            307.2700508169326,
+            307.0927919099073
+        ],
+        "daVol": [
+            60674.6,
+            59443.899999999994,
+            62646.4,
+            60848.0,
+            59596.5,
+            59382.8,
+            56313.5,
+            52228.8,
+            47062.0,
+            44410.700000000004,
+            45408.3,
+            42413.1,
+            42135.5,
+            42810.3,
+            42323.1,
+            43700.7,
+            51916.2,
+            57330.49999999999,
+            58777.899999999994,
+            58330.5,
+            57271.600000000006,
+            55345.8,
+            57608.700000000004,
+            57348.100000000006
+        ],
+        "rtVol": [
+            62255.3,
+            60419.3,
+            63265.7,
+            61805.600000000006,
+            61364.1,
+            61013.50000000001,
+            56871.9,
+            48568.4,
+            38435.3,
+            35295.600000000006,
+            36793.200000000004,
+            33850.700000000004,
+            31392.399999999998,
+            32740.999999999996,
+            34874.8,
+            38626.6,
+            50605.200000000004,
+            57621.0,
+            59910.7,
+            59625.1,
+            58630.2,
+            56642.6,
+            58523.8,
+            59183.5
+        ],
+        "daTotalVol": 1275327.5,
+        "rtTotalVol": 1218315.5,
+        "daWeightedPrice": 281.84038158825877,
+        "rtWeightedPrice": 286.69267230860976
+    },
+    "2026-03-30": {
+        "daPrice": [
+            340.07910957790074,
+            347.7006064054699,
+            370.7290885894845,
+            360.5761984660688,
+            358.9262551271233,
+            349.18973288603206,
+            328.58674365078735,
+            332.79406745658196,
+            355.91250326335904,
+            346.19931500176,
+            348.6061656393881,
+            321.7761141185077,
+            338.5896176121623,
+            338.9975968702627,
+            328.0931506240456,
+            320.09516568090913,
+            317.46777422703315,
+            314.710979407893,
+            315.95080396969377,
+            314.68028615812517,
+            311.6292173405568,
+            312.41953724901936,
+            316.2983171092136,
+            312.0531628792027
+        ],
+        "rtPrice": [
+            317.44008153071496,
+            324.306366935197,
+            339.92459870170654,
+            341.76395118469765,
+            343.7001419285248,
+            342.2682911804378,
+            330.92230257308887,
+            333.5692665187723,
+            366.6896767725564,
+            421.41613631893745,
+            583.0294898130059,
+            437.0932941378398,
+            382.4915079539152,
+            427.181460481926,
+            343.37720298679693,
+            332.20230446260786,
+            321.1936757587321,
+            292.4242433827464,
+            298.14862010884644,
+            292.1029566017721,
+            290.68783187982933,
+            297.6610658134988,
+            308.3914649441866,
+            314.94698668591076
+        ],
+        "daVol": [
+            64555.899999999994,
+            66077.90000000001,
+            69055.6,
+            68360.3,
+            68142.5,
+            67098.7,
+            63216.5,
+            64800.2,
+            67415.2,
+            63635.2,
+            66048.3,
+            64932.5,
+            68184.7,
+            69858.90000000001,
+            69746.5,
+            70605.6,
+            71096.20000000001,
+            69963.7,
+            70282.5,
+            68815.1,
+            67169.7,
+            66130.6,
+            66249.09999999999,
+            63903.8
+        ],
+        "rtVol": [
+            62062.5,
+            63245.5,
+            65917.3,
+            66274.29999999999,
+            66935.1,
+            65906.9,
+            62088.8,
+            64099.8,
+            68725.6,
+            69149.6,
+            71660.0,
+            71079.6,
+            71581.1,
+            72770.5,
+            71407.6,
+            70189.90000000001,
+            68400.29999999999,
+            63546.0,
+            65247.9,
+            64104.0,
+            61965.2,
+            61887.00000000001,
+            63784.0,
+            62910.8
+        ],
+        "daTotalVol": 1615345.2000000002,
+        "rtTotalVol": 1594939.2999999998,
+        "daWeightedPrice": 333.3891036293667,
+        "rtWeightedPrice": 351.6759641887312
+    },
+    "2026-03-31": {
+        "daPrice": [
+            356.6793712699391,
+            349.52026087773595,
+            406.07937494526226,
+            391.158198570094,
+            391.4499940703395,
+            519.8183323638036,
+            367.94382579398524,
+            350.604216185382,
+            345.4594699459314,
+            324.2833440234065,
+            320.3905488340581,
+            317.02703578863566,
+            323.3636989975819,
+            322.5504587886031,
+            326.062890362398,
+            337.1364926542311,
+            354.370184617927,
+            371.57556101909364,
+            382.3605420253337,
+            375.25456422965715,
+            381.8399622476298,
+            360.3267367188574,
+            376.1352486243993,
+            358.93903308878976
+        ],
+        "rtPrice": [
+            327.97554812069546,
+            326.2422442560175,
+            344.66058537389483,
+            347.58398496307314,
+            348.5051894877166,
+            357.4986028853006,
+            339.80231360485755,
+            322.5570680691657,
+            305.23366215040573,
+            299.4893948501039,
+            278.6625165667196,
+            252.77641272940346,
+            334.150050747827,
+            344.55388655743604,
+            337.83687349379716,
+            333.99947740719927,
+            347.45901995303257,
+            348.002135814333,
+            361.182978129752,
+            352.4496916768447,
+            346.630397192978,
+            338.9657502052328,
+            342.1394842355674,
+            338.00874539658514
+        ],
+        "daVol": [
+            67793.8,
+            70239.79999999999,
+            74217.5,
+            73109.7,
+            72516.8,
+            73919.0,
+            71056.1,
+            69771.6,
+            69226.9,
+            63298.6,
+            63172.09999999999,
+            61293.2,
+            62818.100000000006,
+            61575.200000000004,
+            60988.2,
+            63254.1,
+            67772.40000000001,
+            69552.0,
+            69133.29999999999,
+            68998.5,
+            69664.5,
+            66959.59999999999,
+            68879.0,
+            68304.09999999999
+        ],
+        "rtVol": [
+            63813.5,
+            65808.0,
+            69155.8,
+            67620.2,
+            67212.8,
+            67639.4,
+            62253.5,
+            57820.59999999999,
+            55289.1,
+            53904.0,
+            53344.899999999994,
+            45994.3,
+            51529.3,
+            63455.899999999994,
+            60665.8,
+            60506.0,
+            61574.6,
+            62748.9,
+            64512.3,
+            63699.4,
+            63326.9,
+            61271.899999999994,
+            62675.9,
+            61829.100000000006
+        ],
+        "daTotalVol": 1627514.0999999999,
+        "rtTotalVol": 1467652.0999999999,
+        "daWeightedPrice": 364.8030901667765,
+        "rtWeightedPrice": 334.2008387955157
+    }
+};
+
+        const hourLabels = Array.from({length: 24}, (_, i) => `${(i+1).toString().padStart(2, '0')}:00`);
+        
+        const dateSelect = document.getElementById('dateSelect');
+        if (dateSelect) {
+            const dates = Object.keys(hourlyRealData).sort();
+            dates.forEach(dateStr => {
+                const option = document.createElement('option');
+                option.value = dateStr;
+                option.textContent = dateStr;
+                dateSelect.appendChild(option);
+            });
+            dateSelect.value = dates[0]; // 默认选择第一天
+        }
+        
+        let hourlyPriceChart, hourlyVolumeChart;
+        
+        function updateHourlyCharts(dateStr) {
+            const data = hourlyRealData[dateStr];
+            if (!data) {
+                console.error('没有找到日期数据:', dateStr);
+                return;
+            }
+            
+            // 更新统计信息
+            document.getElementById('daTotalVol').innerHTML = data.daTotalVol.toFixed(2) + '<span class="stat-unit">MWh</span>';
+            document.getElementById('rtTotalVol').innerHTML = data.rtTotalVol.toFixed(2) + '<span class="stat-unit">MWh</span>';
+            document.getElementById('daWeightedPrice').innerHTML = data.daWeightedPrice.toFixed(2) + '<span class="stat-unit">元/MWh</span>';
+            document.getElementById('rtWeightedPrice').innerHTML = data.rtWeightedPrice.toFixed(2) + '<span class="stat-unit">元/MWh</span>';
+            
+            // 销毁旧图表
+            if (hourlyPriceChart) hourlyPriceChart.destroy();
+            if (hourlyVolumeChart) hourlyVolumeChart.destroy();
+            
+            // 创建电价图表
+            const priceCtx = document.getElementById('hourlyPriceChart');
+            if (priceCtx && typeof Chart !== 'undefined') {
+                hourlyPriceChart = new Chart(priceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: hourLabels,
+                        datasets: [
+                            {
+                                label: '日前电价',
+                                data: data.daPrice,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: '实时电价',
+                                data: data.rtPrice,
+                                borderColor: '#e74c3c',
+                                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} 元/MWh`
+                                }
+                            },
+                            datalabels: { display: false },
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: '电价 (元/MWh)'
+                                },
+                                beginAtZero: false
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '时段'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 创建电量图表
+            const volumeCtx = document.getElementById('hourlyVolumeChart');
+            if (volumeCtx && typeof Chart !== 'undefined') {
+                hourlyVolumeChart = new Chart(volumeCtx, {
+                    type: 'line',
+                    data: {
+                        labels: hourLabels,
+                        datasets: [
+                            {
+                                label: '日前电量',
+                                data: data.daVol,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: '实时电量',
+                                data: data.rtVol,
+                                borderColor: '#e74c3c',
+                                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} MWh`
+                                }
+                            },
+                            datalabels: { display: false },
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: '电量 (MWh)'
+                                },
+                                beginAtZero: true
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '时段'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 监听日期选择变化
+        if (dateSelect) {
+            dateSelect.addEventListener('change', (e) => updateHourlyCharts(e.target.value));
+        }
+
+        // ===================== 5. 绿电交易与结算 =====================
+        const greenPower = [
+            { type: "年度绿电分月计划", vol: 3.02, price: 405.18 },
+            { type: "月度绿电交易", vol: 1.28, price: 405.89 },
+            { type: "月内绿电交易", vol: 0.29, price: 394.52 },
+            { type: "省间绿电交易", vol: 7.72, price: 349.74 }
+        ];
+        const settlement = [
+            { type: "批发市场-直接交易用户", vol: 14.87, price: 333.18 },
+            { type: "批发市场-售电公司", vol: 420.54, price: 326.49 },
+            { type: "零售市场", vol: 420.54, price: 347.76 },
+            { type: "合计", vol: 855.95, price: 337.06 }
+        ];
+        const participants = [
+            { type: "发电企业", count: 2546 },
+            { type: "售电公司", count: 438 },
+            { type: "独立储能企业", count: 67 },
+            { type: "虚拟电厂", count: 58 },
+            { type: "电力用户", count: 191426 }
+        ];
+
+        function renderGreenAndSettlement() {
+            const greenTbody = document.querySelector("#greenPowerTable tbody");
+            if (greenTbody) {
+                greenTbody.innerHTML = greenPower.map(g => `
+                    <tr>
+                        <td class="text-left">${g.type}</td>
+                        <td>${g.vol}亿kWh${Number(g.price).toFixed(2)}元/MWh</td>
+                    </tr>
+                `).join('');
+            }
+            const settlementTbody = document.querySelector("#settlementTable tbody");
+            if (settlementTbody) {
+                settlementTbody.innerHTML = settlement.map(s => `
+                    <tr>
+                        <td class="text-left">${s.type}</td>
+                        <td>${s.vol}</td>
+                        <td>${s.price}</td>
+                    </tr>
+                `).join('');
+            }
+            const participantsTbody = document.querySelector("#participantsTable tbody");
+            if (participantsTbody) {
+                participantsTbody.innerHTML = participants.map(p => `
+                    <tr>
+                        <td class="text-left">${p.type}</td>
+                        <td>${p.count.toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function exportToExcel() {
+            if (typeof XLSX === 'undefined') {
+                alert('Excel导出功能需要加载SheetJS库，请检查网络连接');
+                return;
+            }
+            const wb = XLSX.utils.book_new();
+            const auctionSheet = XLSX.utils.json_to_sheet(hourlyAuction.map(h => ({ "时段": h.hour, "成交电量(亿kWh)": h.vol, "成交价格(元/MWh)": h.price })));
+            XLSX.utils.book_append_sheet(wb, auctionSheet, "集中竞价分时段");
+            const dailySpotSheet = XLSX.utils.json_to_sheet(dailySpotMar.map(d => ({ "日期": d.date, "日前均价": d.daPrice, "实时均价": d.rtPrice })));
+            XLSX.utils.book_append_sheet(wb, dailySpotSheet, "现货每日均价");
+            const greenPowerSheet = XLSX.utils.json_to_sheet(greenPower.map(g => ({ "品种": g.type, "量价": `${g.vol}亿kWh${Number(g.price).toFixed(2)}元/MWh` })));
+            XLSX.utils.book_append_sheet(wb, greenPowerSheet, "省内绿电交易");
+            const settlementSheet = XLSX.utils.json_to_sheet(settlement);
+            XLSX.utils.book_append_sheet(wb, settlementSheet, "用电侧结算");
+            const participantsSheet = XLSX.utils.json_to_sheet(participants);
+            XLSX.utils.book_append_sheet(wb, participantsSheet, "市场主体注册");
+            XLSX.writeFile(wb, `江苏3月市场运行分析报告_2026年3月.xlsx`);
+        }
+
+        // 启动所有渲染
+        renderMarketTables();
+        initMarketCharts();
+        renderAuctionTables();
+        initAuctionChart();
+        renderSpotTables();
+        initDailySpotChart();
+        renderGreenAndSettlement();
+        const firstDate = Object.keys(hourlyRealData).sort()[0]; if (firstDate) { updateHourlyCharts(firstDate); }
+        
+        const exportBtn = document.getElementById("exportExcelBtn");
+        if (exportBtn) {
+            exportBtn.addEventListener("click", exportToExcel);
+        }
+    });
+</script>
+
+<script>
+(function(){
+  const btn = document.getElementById('exportExcelBtn');
+  if (!btn || typeof XLSX === 'undefined') return;
+
+  function sanitizeSheetName(name, idx){
+    const n = (name || `表${idx+1}`).replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    return (n || `表${idx+1}`).slice(0, 31);
+  }
+
+  function tableToAoA(table){
+    const aoa = [];
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('th,td');
+      const row = [];
+      cells.forEach(cell => row.push((cell.innerText || '').replace(/\s+/g, ' ').trim()));
+      if (row.some(v => v !== '')) aoa.push(row);
+    });
+    return aoa;
+  }
+
+  function exportExcel(){
+    const wb = XLSX.utils.book_new();
+    const tables = Array.from(document.querySelectorAll('table'));
+
+    if (!tables.length) {
+      const ws = XLSX.utils.aoa_to_sheet([['提示'], ['当前页面未检测到可导出的表格数据']]);
+      XLSX.utils.book_append_sheet(wb, ws, '说明');
+    } else {
+      tables.forEach((table, idx) => {
+        const card = table.closest('.card');
+        const titleEl = (card && card.querySelector('h2')) || table.closest('section')?.querySelector('h2') || table.previousElementSibling;
+        const title = titleEl ? titleEl.textContent : `表${idx+1}`;
+        const aoa = tableToAoA(table);
+        if (!aoa.length) return;
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title, idx));
+      });
+      if (!wb.SheetNames.length) {
+        const ws = XLSX.utils.aoa_to_sheet([['提示'], ['表格存在但未提取到有效数据']]);
+        XLSX.utils.book_append_sheet(wb, ws, '说明');
+      }
+    }
+
+    const titleText = (document.querySelector('.title-section h1') || document.querySelector('h1') || document.querySelector('title'))?.textContent || '省份月报';
+    const safeTitle = titleText.replace(/[\\\/?*\[\]:]/g, ' ').replace(/\s+/g, '').slice(0, 40);
+    const now = new Date();
+    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `${safeTitle || '省份月报'}_${ts}.xlsx`);
+  }
+
+  btn.addEventListener('click', exportExcel);
+})();
+</script>
+
+</body>
+</html>
